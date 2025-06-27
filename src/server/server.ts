@@ -17,7 +17,7 @@ server.register(fastifyStatic, {
 });
 
 server.register(jwt, {
-	secret: process.env.JWT_SECRET || 'dev-secret',
+	secret: 'K2x33Q}zV3#nqfz&UG,V*=3+!aUi/CHsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdf%2#=M*%hJa35ES[{*+1DX%-:c%Dtmhg',
 	cookie: {
 		cookieName: "access_token",
 		signed: false,
@@ -25,7 +25,7 @@ server.register(jwt, {
 });
 
 server.register(fCookie, {
-	secret: process.env.COOKIE_SECRET || 'dev-secret',
+	secret: 'K2x33Q}zV3#nqfz&UG,V*=3+!aUi/CHsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdf%2#=M*%hJa35ES[{*+1DX%-:c%Dtmhg',
 	hook: 'preHandler'
 });
 

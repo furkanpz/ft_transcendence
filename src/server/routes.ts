@@ -2,12 +2,11 @@
 import { FastifyInstance, FastifyReply, FastifyRequest} from 'fastify';
 import { db_User, User, friendstat, userRole, jwtUser } from './types/user.types'
 import * as userUtils from './services/user.services'
-import { kMaxLength } from 'buffer';
 
 const usernameKeySchema = { 
 	type:					'string',
-	minLength:				6,
-	maxLength:				20,
+	minLength:				3,
+	maxLength:				36,
 	pattern:				'^[a-zA-Z0-9_]+$'
 }
 
@@ -19,7 +18,7 @@ const passwordKeySchema = {
 const emailKeySchema = { type: 'string',
 			format:				"email",
 			maxLength:		320,
-			minLength:		2,
+			minLength:		4,
 			}
 
 const loginSchema = {
@@ -48,7 +47,7 @@ const registerSchema = {
 
 const friendRequestSchema = {
 	body: {
-		required: 			['friend_id'],
+		required: 			['friend_id', "request_type"],
 		type: 'object',
 		properties: {
 			friend_id:		{type: 'number'},
@@ -82,6 +81,82 @@ const roleSchema = {
 			user_id:		{type: 'number'}
 			},
 	}
+}
+
+export function InitFriendsRoutes(server: FastifyInstance)
+{
+	server.post("/api/friends/request", {preHandler: server.authenticate, schema: friendRequestSchema},
+				async (request: FastifyRequest, response: FastifyReply) => {
+		const user = request.user as jwtUser;
+		const isAdmin = user.role === userRole.admin;
+		const body = isAdmin
+			? (request.body as { friend_id: number, user_id: number, request_type: friendstat})
+			: (request.body as { friend_id: number, user_id?: number, request_type: friendstat});
+		let targetUserId = isAdmin ? body.user_id : user.id;
+		if (body.friend_id == targetUserId)
+		{	
+			const msg =
+			body.request_type === friendstat.Remove
+			? "You can't remove yourself!"
+			: "You cannot add yourself as a friend!";
+			return response.code(400).send({ success: false, message: msg });
+		}
+		const friend_db = await userUtils.userIdFindInDb(body.friend_id);
+		if (!friend_db)
+			return (response.code(400).send({success: false, message: "There is no such person!"}));
+		if (!targetUserId) targetUserId = user.id;
+		const requestSuccess = await userUtils.addFriend(targetUserId, body.friend_id, body.request_type);
+		if (!requestSuccess)
+		{	
+		const msg =
+		body.request_type === friendstat.Remove
+		? "Friendship Not Removed!"
+		: "Friend couldn't be added!";
+		return response.code(400).send({ success: false, message: msg });
+		}
+		let message: string;
+		switch (body.request_type) {
+			case friendstat.Accepted:
+			message = "Friend is added!";
+			break;
+			case friendstat.Remove:
+			message = "Friendship Removed";
+			break;
+			default:
+			message = "Friend request sent!";
+			break;
+		}
+		return response.code(200).send({success: requestSuccess, message: message});
+	});
+
+	server.get("/api/friends", { preHandler: server.authenticate }, async (request: FastifyRequest, response: FastifyReply) => {
+		const user = request.user as jwtUser;
+		const friends = await userUtils.getFriends(user.id);
+		if (!friends)
+			return (response.code(200).send({success: true, accepted: null, pending: null}))
+		const accepted = friends.filter(friend => friend.stat === friendstat.Accepted).map(({ stat, ...rest }) => rest);
+		const pending = friends.filter(friend => friend.stat === friendstat.Pending).map(({ stat, ...rest }) => rest);
+		response.send({
+			success: true,
+			accepted,
+			pending
+		});
+	});
+	server.get("/api/friends/:id", {preHandler: server.authenticate}, async (request: FastifyRequest, response: FastifyReply) => {
+		const user = request.user as jwtUser;
+		const isAdmin = user.role === userRole.admin;
+		if (!isAdmin)
+			return (response.code(401).send({success: false, message: "Unauthorized Access"}));
+		const params = request.params as {id: number};
+		const friends = await userUtils.getFriends(params.id);
+		const accepted = friends.filter(friend => friend.stat === friendstat.Accepted).map(({ stat, ...rest }) => rest);
+		const pending = friends.filter(friend => friend.stat === friendstat.Pending).map(({ stat, ...rest }) => rest);
+		response.send({
+			success: true,
+			accepted,
+			pending
+		});
+	});
 }
 
 export function InitRoutes(server: FastifyInstance) {
@@ -170,51 +245,6 @@ export function InitRoutes(server: FastifyInstance) {
 		return "PROFIL HG"
 	})
 
-	server.post("/api/friend_request", {preHandler: server.authenticate, schema: friendRequestSchema},
-										async (request: FastifyRequest, response: FastifyReply) => {
-		const user = request.user as jwtUser;
-		const isAdmin = user.role === userRole.admin;
-		const body = isAdmin
-	  	? (request.body as { friend_id: number, user_id: number, request_type: friendstat})
-	  	: (request.body as { friend_id: number, user_id?: number, request_type: friendstat});
-		let targetUserId = isAdmin ? body.user_id : user.id;
-		if (body.friend_id == targetUserId)
-		{	
-			const msg =
-			body.request_type === friendstat.Remove
-			? "You can't remove yourself!"
-			: "You cannot add yourself as a friend!";
-	 		return response.code(400).send({ success: false, message: msg });
-		}
-		const friend_db = await userUtils.userIdFindInDb(body.friend_id);
-		if (!friend_db)
-			return (response.code(400).send({success: false, message: "There is no such person!"}));
-		if (!targetUserId) targetUserId = user.id;
-		const requestSuccess = await userUtils.addFriend(targetUserId, body.friend_id, body.request_type);
-		if (!requestSuccess)
-		{	
-			const msg =
-			body.request_type === friendstat.Remove
-			? "Friendship Not Removed!"
-			: "Friend couldn't be added!";
-			return response.code(400).send({ success: false, message: msg });
-		}
-		let message: string;
-		switch (body.request_type) {
-		case friendstat.Accepted:
-			message = "Friend is added!";
-			break;
-		case friendstat.Remove:
-			message = "Friendship Removed";
-			break;
-		default:
-			message = "Friend request sent!";
-
-			break;
-		}
-		return response.code(200).send({success: requestSuccess, message: message});
-	});
-
 	server.post("/api/roleUpdate", {preHandler: server.authenticate, schema: roleSchema
 		}, async (request: FastifyRequest, response: FastifyReply) => {
 			const user = request.user as jwtUser;
@@ -227,8 +257,8 @@ export function InitRoutes(server: FastifyInstance) {
 				return (response.code(400).send({success: false, message: "There is no such person!"}));
 			await userUtils.userRoleUpdate(body.user_id, body.newRole);
 			return (response.code(200).send({success:true, message: "Role successfully updated!"}));
-
-});
+	});
+	InitFriendsRoutes(server);
 };
 
 1

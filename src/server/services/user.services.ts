@@ -79,7 +79,7 @@ export async function setIsOnline(online: boolean, user_id: number): Promise<voi
 
 export async function getFriends(user_id: number): Promise<u_friendship[]> {
 	const db = await getDb();
-	const friends = await db.all("SELECT * FROM ft_friendship WHERE user_id = ?", user_id);
+	const friends = await db.all("SELECT friend_id, stat FROM ft_friendship WHERE user_id = ?", user_id);
 	return (friends);
 }
 
@@ -112,7 +112,11 @@ export async function addFriend(user_id: number, friend_id: number, stat: friend
 	{
 		const myself = await getFriend(user_id, friend_id);
 		if (!myself)
-			return false;
+		{	
+			const friend = await getFriend(friend_id, user_id);
+			if (!friend)
+				return false;
+		}
 		await deleteFriendship(user_id, friend_id);
 		return true;
 	}
