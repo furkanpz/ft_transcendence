@@ -6,7 +6,7 @@ import { InitRoutes } from './routes'
 import fCookie from '@fastify/cookie'
 
 const server = Fastify({
-		logger: false
+		logger: true
 });
 
 

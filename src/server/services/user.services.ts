@@ -59,6 +59,14 @@ export async function userIdFindInDb(id: number): Promise<User | null> {
 	return (user);
 }
 
+export async function userEmailFindInDb(email: string): Promise<User | null> {
+	const db = await getDb();
+	const user = await db.get("SELECT * FROM ft_users WHERE email = ?", email);
+	if (!user)
+		return null;
+	return (user);
+}
+
 export function checkPW(db_pw:string, user_pw:string): Promise<Boolean>{
 	return (bcrypt.compare(user_pw, db_pw));
 }

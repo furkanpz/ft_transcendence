@@ -1,110 +1,13 @@
 // import { initializeDatabase } from '../db/init';
 import { FastifyInstance, FastifyReply, FastifyRequest} from 'fastify';
 import { db_User, User, friendstat, userRole, jwtUser } from './types/user.types'
+import * as schemas from './types/schema'
 import * as userUtils from './services/user.services'
-
-const usernameKeySchema = { 
-	type:					'string',
-	minLength:				3,
-	maxLength:				36,
-	pattern:				'^[a-zA-Z0-9_]+$'
-}
-
-const passwordKeySchema = { 
-		type:		'string',
-		minLength:	6,
-		maxLength:	64,
-	}
-const emailKeySchema = { type: 'string',
-			format:				"email",
-			maxLength:		320,
-			minLength:		4,
-			}
-
-const loginSchema = {
-	body: {
-		required:			['username', 'password'],
-		type: 'object',
-		properties: {
-			username:		usernameKeySchema,
-			password:		passwordKeySchema
-		},
-		additionalProperties: false
-	},
-};
-
-const registerSchema = {
-	body: {
-		required:			['email', 'username', 'password'],
-		type: 'object',
-		properties: {
-			email:			emailKeySchema,
-			username:		usernameKeySchema,
-			password:		passwordKeySchema
-		},
-		additionalProperties: false
-	},
-};
-
-const friendRequestSchema = {
-	body: {
-		required: 			['friend_id', "request_type"],
-		type: 'object',
-		properties: {
-			friend_id:		{type: 'number'},
-			user_id:		{type: 'number'},
-			request_type:	{type: 'string',
-							enum:		[friendstat.Accepted, friendstat.Pending, friendstat.Remove]},
-		},
-		additionalProperties: false
-	},
-};
-
-const passwordSchema = {
-	body:{
-		required: 			['password', 'new_password', 'new_re_password'],
-		type: 'object',
-		properties: {
-			user_id:		{type: 'number'},
-			password:		passwordKeySchema,
-			new_password:	passwordKeySchema,
-			new_re_password:passwordKeySchema
-		},
-		additionalProperties: false
-	},
-}
-
-const roleSchema = {
-	body: {
-		required:			['newRole', 'user_id'],
-		type: 'object',
-		properties:{
-			newRole: 		{type: 'string',
-				enum:		[userRole.admin, userRole.user]},
-			user_id:		{type: 'number'}
-			},
-		additionalProperties: false
-	}
-}
-
-const friendDetailsSchema = {
-	body: {
-		type: 'object',
-		required: ['friends'],
-		properties: {
-			friends: {
-				type: 'array',
-				items: { type: 'number' },
-				minItems: 1
-			}
-		},
-		additionalProperties: false
-	}
-};
+import authRoutes from './auth'
 
 export function InitFriendsRoutes(server: FastifyInstance)
 {
-	server.post("/api/friends/request", {preHandler: server.authenticate, schema: friendRequestSchema},
+	server.post("/api/friends/request", {preHandler: server.authenticate, schema: schemas.friendRequestSchema},
 				async (request: FastifyRequest, response: FastifyReply) => {
 		const user = request.user as jwtUser;
 		const isAdmin = user.role === userRole.admin;
@@ -176,7 +79,7 @@ export function InitFriendsRoutes(server: FastifyInstance)
 			pending
 		});
 	});
-	server.post("/api/friends/details", { preHandler: server.authenticate, schema: friendDetailsSchema}, async (request: FastifyRequest, response: FastifyReply) => {
+	server.post("/api/friends/details", { preHandler: server.authenticate, schema: schemas.friendDetailsSchema}, async (request: FastifyRequest, response: FastifyReply) => {
 		// const user = request.user as jwtUser;
 		const body = request.body as {friends: number[]};
 		const data = await userUtils.getFriendsDetails(body.friends);
@@ -195,7 +98,7 @@ export function InitRoutes(server: FastifyInstance) {
 	server.post("/api", async (request: FastifyRequest, response: FastifyReply) => {
 		return "FT_TRANSDENCE API";
 	});
-	server.post("/api/register", {schema: registerSchema }, 
+	server.post("/api/register", {schema: schemas.registerSchema }, 
 								  async (request: FastifyRequest, response: FastifyReply) => {
 		const user = request.body as User;
 		if (!user.email || !user.username || !user.password) {
@@ -215,7 +118,7 @@ export function InitRoutes(server: FastifyInstance) {
 	});
 
 	server.post("/api/login",{
-		schema: loginSchema
+		schema: schemas.loginSchema
 	},  async (request: FastifyRequest, response: FastifyReply) => {
 		const user = request.body as {username: string, password: string};
 		const db_user = await userUtils.userFindInDb(user.username) as db_User;
@@ -238,7 +141,7 @@ export function InitRoutes(server: FastifyInstance) {
 		return ({success: true, access_token: token});
 	});
 
-	server.post("/api/password", {preHandler:server.authenticate, schema: passwordSchema},
+	server.post("/api/password", {preHandler:server.authenticate, schema: schemas.passwordSchema},
 								 async (request:FastifyRequest, response: FastifyReply) => {
 		const user = request.user as jwtUser;
 		const isAdmin = user.role === userRole.admin;
@@ -273,7 +176,7 @@ export function InitRoutes(server: FastifyInstance) {
 		return "PROFIL HG"
 	})
 
-	server.post("/api/roleUpdate", {preHandler: server.authenticate, schema: roleSchema
+	server.post("/api/roleUpdate", {preHandler: server.authenticate, schema: schemas.roleSchema
 		}, async (request: FastifyRequest, response: FastifyReply) => {
 			const user = request.user as jwtUser;
 			const isAdmin = user.role === userRole.admin;
@@ -286,6 +189,7 @@ export function InitRoutes(server: FastifyInstance) {
 			await userUtils.userRoleUpdate(body.user_id, body.newRole);
 			return (response.code(200).send({success:true, message: "Role successfully updated!"}));
 	});
+	authRoutes(server);
 	InitFriendsRoutes(server);
 };
 
