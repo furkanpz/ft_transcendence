@@ -12,8 +12,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
 		scope: ['profile', 'email'],
 		credentials: {
 			client: {
-				id: "pass",
-				secret: "123"
+				id: "213701391346-4ckm789dkg3g4b21lid4nap0gdqdhn92.apps.googleusercontent.com",
+				secret: "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"
 			},
 			auth: require('@fastify/oauth2').GOOGLE_CONFIGURATION
 		},
