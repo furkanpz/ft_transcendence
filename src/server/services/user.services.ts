@@ -138,3 +138,31 @@ export async function userRoleUpdate(user_id: number, newRole: userRole): Promis
 	await db.run("UPDATE ft_users SET user_role = ? WHERE id = ?", newRole, user_id);
 
 }
+
+export async function getFriendsDetails(friends?: number[], user_id?: number) {
+	const db = await getDb();
+
+	if (!friends && !user_id)
+		return [];
+
+	let friendIds: number[] = [];
+
+	if (friends && friends.length > 0) {
+		friendIds = friends;
+	} else if (user_id) {
+		const rows = await db.all(
+			"SELECT friend_id FROM friends WHERE user_id = ? AND stat = 'Accepted'",
+			[user_id]
+		);
+		friendIds = rows.map(row => row.friend_id);
+	}
+
+	if (friendIds.length === 0)
+		return [];
+
+	const placeholders = friendIds.map(() => '?').join(', ');
+	const query = `SELECT id, username, avatar_url, is_online FROM ft_users WHERE id IN (${placeholders})`;
+
+	const result = await db.all(query, friendIds);
+	return result;
+}

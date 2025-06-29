@@ -28,7 +28,8 @@ const loginSchema = {
 		properties: {
 			username:		usernameKeySchema,
 			password:		passwordKeySchema
-		}
+		},
+		additionalProperties: false
 	},
 };
 
@@ -40,8 +41,8 @@ const registerSchema = {
 			email:			emailKeySchema,
 			username:		usernameKeySchema,
 			password:		passwordKeySchema
-			
-		}
+		},
+		additionalProperties: false
 	},
 };
 
@@ -54,7 +55,8 @@ const friendRequestSchema = {
 			user_id:		{type: 'number'},
 			request_type:	{type: 'string',
 							enum:		[friendstat.Accepted, friendstat.Pending, friendstat.Remove]},
-		}
+		},
+		additionalProperties: false
 	},
 };
 
@@ -68,6 +70,7 @@ const passwordSchema = {
 			new_password:	passwordKeySchema,
 			new_re_password:passwordKeySchema
 		},
+		additionalProperties: false
 	},
 }
 
@@ -80,8 +83,24 @@ const roleSchema = {
 				enum:		[userRole.admin, userRole.user]},
 			user_id:		{type: 'number'}
 			},
+		additionalProperties: false
 	}
 }
+
+const friendDetailsSchema = {
+	body: {
+		type: 'object',
+		required: ['friends'],
+		properties: {
+			friends: {
+				type: 'array',
+				items: { type: 'number' },
+				minItems: 1
+			}
+		},
+		additionalProperties: false
+	}
+};
 
 export function InitFriendsRoutes(server: FastifyInstance)
 {
@@ -134,8 +153,8 @@ export function InitFriendsRoutes(server: FastifyInstance)
 		const friends = await userUtils.getFriends(user.id);
 		if (!friends)
 			return (response.code(200).send({success: true, accepted: null, pending: null}))
-		const accepted = friends.filter(friend => friend.stat === friendstat.Accepted).map(({ stat, ...rest }) => rest);
-		const pending = friends.filter(friend => friend.stat === friendstat.Pending).map(({ stat, ...rest }) => rest);
+		const accepted = friends.filter(friend => friend.stat === friendstat.Accepted).map(friend => friend.friend_id);
+		const pending = friends.filter(friend => friend.stat === friendstat.Pending).map(friend => friend.friend_id);
 		response.send({
 			success: true,
 			accepted,
@@ -149,13 +168,22 @@ export function InitFriendsRoutes(server: FastifyInstance)
 			return (response.code(401).send({success: false, message: "Unauthorized Access"}));
 		const params = request.params as {id: number};
 		const friends = await userUtils.getFriends(params.id);
-		const accepted = friends.filter(friend => friend.stat === friendstat.Accepted).map(({ stat, ...rest }) => rest);
-		const pending = friends.filter(friend => friend.stat === friendstat.Pending).map(({ stat, ...rest }) => rest);
+		const accepted = friends.filter(friend => friend.stat === friendstat.Accepted).map(friend => friend.friend_id);
+		const pending = friends.filter(friend => friend.stat === friendstat.Pending).map(friend => friend.friend_id);
 		response.send({
 			success: true,
 			accepted,
 			pending
 		});
+	});
+	server.post("/api/friends/details", { preHandler: server.authenticate, schema: friendDetailsSchema}, async (request: FastifyRequest, response: FastifyReply) => {
+		// const user = request.user as jwtUser;
+		const body = request.body as {friends: number[]};
+		const data = await userUtils.getFriendsDetails(body.friends);
+		response.code(200).send({
+			success: true,
+			data
+		})
 	});
 }
 
