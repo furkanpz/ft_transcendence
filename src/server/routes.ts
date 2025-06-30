@@ -11,10 +11,10 @@ export function InitFriendsRoutes(server: FastifyInstance)
 				async (request: FastifyRequest, response: FastifyReply) => {
 		const user = request.user as jwtUser;
 		const isAdmin = user.role === userRole.admin;
-		const body = isAdmin
-			? (request.body as { friend_id: number, user_id: number, request_type: friendstat})
-			: (request.body as { friend_id: number, user_id?: number, request_type: friendstat});
-		let targetUserId = isAdmin ? body.user_id : user.id;
+		const body = (request.body as { friend_id: number, user_id?: number, request_type: friendstat})
+		let targetUserId = user.id;
+		if (body.user_id && isAdmin)
+			targetUserId = body.user_id;
 		if (body.friend_id == targetUserId)
 		{	
 			const msg =
@@ -145,11 +145,10 @@ export function InitRoutes(server: FastifyInstance) {
 								 async (request:FastifyRequest, response: FastifyReply) => {
 		const user = request.user as jwtUser;
 		const isAdmin = user.role === userRole.admin;
-		const body = isAdmin
-		? (request.body as {user_id: number, password: string, new_password: string, new_re_password: string})
-		: (request.body as {user_id?: number, password: string, new_password: string, new_re_password: string});
-		if (!body.user_id) body.user_id = user.id;
-		const targetUserId = isAdmin ? body.user_id  : user.id;
+		const body = (request.body as {user_id?: number, password: string, new_password: string, new_re_password: string});
+		let targetUserId = user.id;
+		if (body.user_id && isAdmin) 
+			targetUserId = body.user_id;
 		if (!body.password)
 			return (response.code(400).send({success:false, message:"Password not be empty!"}))
 		if (body.new_password != body.new_re_password)
@@ -173,7 +172,9 @@ export function InitRoutes(server: FastifyInstance) {
 	});
 	server.get("/profile", {preHandler: server.authenticate}, async (request: FastifyRequest, response: FastifyReply) => {
 		
-		return "PROFIL HG"
+		const user = request.user as jwtUser;
+		const body = request.body;
+		return response.code(200).send(`Id: ${user.id}, User: ${user.username}, Email: ${user.email}, Role: ${user.role}`)
 	})
 
 	server.post("/api/roleUpdate", {preHandler: server.authenticate, schema: schemas.roleSchema
