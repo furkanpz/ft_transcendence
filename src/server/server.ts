@@ -2,44 +2,62 @@ import Fastify, { FastifyReply, FastifyRequest } from 'fastify'
 import jwt from '@fastify/jwt'
 import fastifyStatic from '@fastify/static';
 import path from 'path';
-import { InitRoutes } from './routes'
+import registerRoutes from './routes'
 import fCookie from '@fastify/cookie'
 
 const server = Fastify({
 		logger: true
 });
+export default server;
 
+async function main() {
+	server.register(fastifyStatic, {
+		root: path.join(__dirname, '../frontend'),
+		prefix: '/', 
+		decorateReply: false
+	});
 
-server.register(fastifyStatic, {
-	root: path.join(__dirname, '../frontend'),
-	prefix: '/', 
-	decorateReply: false
-});
+	server.register(jwt, {
+		secret: 'K2x33Q}zV3#nqfz&UG,V*=3+!aUi/CHsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdf%2#=M*%hJa35ES[{*+1DX%-:c%Dtmhg',
+		cookie: {
+			cookieName: "access_token",
+			signed: false,
+		}
+	});
 
-server.register(jwt, {
-	secret: 'K2x33Q}zV3#nqfz&UG,V*=3+!aUi/CHsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdf%2#=M*%hJa35ES[{*+1DX%-:c%Dtmhg',
-	cookie: {
-		cookieName: "access_token",
-		signed: false,
-	}
-});
+	server.register(fCookie, {
+		secret: 'K2x33Q}zV3#nqfz&UG,V*=3+!aUi/CHsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdf%2#=M*%hJa35ES[{*+1DX%-:c%Dtmhg',
+		hook: 'preHandler'
+	});
 
-server.register(fCookie, {
-	secret: 'K2x33Q}zV3#nqfz&UG,V*=3+!aUi/CHsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdf%2#=M*%hJa35ES[{*+1DX%-:c%Dtmhg',
-	hook: 'preHandler'
-});
+	server.register(require('@fastify/oauth2'), {
+			name: 'googleOAuth2',
+			scope: ['profile', 'email'],
+			credentials: {
+				client: {
+					id: "213701391346-4ckm789dkg3g4b21lid4nap0gdqdhn92.apps.googleusercontent.com",
+					secret: "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"
+				},
+				auth: require('@fastify/oauth2').GOOGLE_CONFIGURATION
+			},
+			startRedirectPath: '/api/auth/login/google',
+			callbackUri: 'http://localhost:3000/api/auth/login/google/callback'
+		});
 
-server.decorate('authenticate', async function (request: FastifyRequest , response: FastifyReply) {
+	server.decorate('authenticate', async function (request: FastifyRequest , response: FastifyReply) {
 		try {
 			const token = request.cookies.access_token;
 			if (!token)
 				return (response.code(401).send({ message: 'Authentication required' }));
-
+			
 			await request.jwtVerify();
 		} catch (err) {
 			response.code(401).send({ message: 'Unauthorized Access' });
 		}
-});
+	});
+	await registerRoutes(server);
 
-server.listen({port:3000});
-InitRoutes(server);
+	server.listen({port:3000});
+}
+
+main();
