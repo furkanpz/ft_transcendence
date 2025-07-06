@@ -4,7 +4,7 @@ import { friendstat, userRole, jwtUser } from '../types/user.types'
 import * as userServices from '../services/user/user.services'
 import * as userFriendsUtils from '../services/user/friends.services'
 
-export async function adminFriendDetailsController(request: FastifyRequest, response: FastifyReply) {
+export async function adminFriendDetailsController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
 	const user = request.user as jwtUser;
 	const isAdmin = user.role === userRole.admin;
 	if (!isAdmin)
@@ -13,15 +13,14 @@ export async function adminFriendDetailsController(request: FastifyRequest, resp
 	const friends = await userFriendsUtils.getFriends(params.id);
 	const accepted = friends.filter(friend => friend.stat === friendstat.Accepted).map(friend => friend.friend_id);
 	const pending = friends.filter(friend => friend.stat === friendstat.Pending).map(friend => friend.friend_id);
-	response.send({
+	return (response.send({
 		success: true,
 		accepted,
 		pending
-	});
-	
+	}));
 }
 
-export async function adminRoleUpdateController(request:FastifyRequest, response: FastifyReply) {
+export async function adminRoleUpdateController(request:FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
 	const user = request.user as jwtUser;
 	const isAdmin = user.role === userRole.admin;
 	if (!isAdmin)

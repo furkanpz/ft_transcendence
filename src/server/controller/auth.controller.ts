@@ -4,37 +4,35 @@ import * as authServices from '../services/auth/auth.services'
 import { db_User, User, userRole, jwtUser } from '../types/user.types'
 import server from '../server';
 import crypto from 'crypto';
+import { createJWT } from '../services/auth/jwt.services';
 
-export async function loginController(request: FastifyRequest, response: FastifyReply) {
+export async function loginController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
 	const user = request.body as {username: string, password: string};
-		const db_user = await userServices.userFindInDb(user.username) as db_User;
+	const db_user = await userServices.userFindInDb(user.username) as db_User;
 
-		if (!db_user || !(await authServices.checkPW(db_user.password, user.password)))
-			return (response.code(401).send({success: false, message: "Invalid Username or Password!"}));
-		const token = server.jwt.sign({
-			id: db_user.id,
-			email: db_user.email,
-			username: user.username,
-			role: db_user.user_role,
-		}, {expiresIn : '1h'});
-
-		response.setCookie('access_token', token, {
-			httpOnly: true,
-			path: '/',
-			// secure: true only https durumu
-		});
-		userServices.setIsOnline(true, db_user.id);
-		return (response.code(200).send({success: true, access_token: token}).redirect("/"));
+	if (!db_user || !(await authServices.checkPW(db_user.password, user.password)))
+		return (response.code(401).send({success: false, message: "Invalid Username or Password!"}));
+	const token = await createJWT(db_user);
+	if (!token)
+		return response.code(500).send({success:false,  message: 'Failed to generate token' });
+	response.setCookie('access_token', token, {
+		httpOnly: true,
+		path: '/',
+		sameSite: 'strict',
+		// secure: true only https durumu
+	});
+	userServices.setIsOnline(true, db_user.id);
+	return (response.code(200).send({success: true, access_token: token}).redirect("/"));
 };
 
-export async function logoutController(request: FastifyRequest, response: FastifyReply) {
+export async function logoutController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
 	const user = request.user as {username: string, email: string, id: number, role: userRole};
 	response.clearCookie("access_token");
 	userServices.setIsOnline(false, user.id);
 	return (response.code(200).send({success: true, message:"Logout"}));
 };
 
-export async function registerController(request: FastifyRequest, response: FastifyReply) {
+export async function registerController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
 	const user = request.body as User;
 	if (!user.email || !user.username || !user.password) {
 		return response.status(400).send({
@@ -52,7 +50,7 @@ export async function registerController(request: FastifyRequest, response: Fast
 	return response.code(201).send(ret_message);
 };
 
-export async function googleAuthController(request: FastifyRequest, response: FastifyReply) {
+export async function googleAuthController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
 		const { token } = await server.googleOAuth2.getAccessTokenFromAuthorizationCodeFlow(request);
         const access_token = token.access_token;
 
@@ -65,7 +63,13 @@ export async function googleAuthController(request: FastifyRequest, response: Fa
 				Authorization: `Bearer ${token.access_token}`
 			}
 		});
+		if (!res.ok) {
+			const errJson = await res.json().catch(() => ({}));
+			return response.code(res.status).send({success: false,  message: 'Failed to fetch user info from Google', ...errJson });
+		}
 		const googleUser = await res.json();
+		if (!googleUser.email)
+			return response.code(400).send({success: false, message: "Google account does not have a public email address."});
         let db_user = await userServices.userEmailFindInDb(googleUser.email) as db_User;
         if (!db_user) {
             const randomPassword = crypto.randomBytes(16).toString('hex'); 
@@ -82,12 +86,9 @@ export async function googleAuthController(request: FastifyRequest, response: Fa
             db_user = await userServices.userEmailFindInDb(googleUser.email) as db_User;
         }
        
-        const jwt_token = server.jwt.sign({
-            id: db_user.id,
-            email: db_user.email,
-            username: db_user.username,
-            role: db_user.user_role
-        }, { expiresIn: '1h' });
+        const jwt_token = await createJWT(db_user);
+		if (!jwt_token)
+			return response.code(500).send({success:false,  message: 'Failed to generate token' });
     
         response.setCookie('access_token', jwt_token, {
             httpOnly: true,
@@ -98,7 +99,7 @@ export async function googleAuthController(request: FastifyRequest, response: Fa
         return response.redirect('/');
 }
 
-export async function changePasswordController(request:FastifyRequest, response: FastifyReply) {
+export async function changePasswordController(request:FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
 	const user = request.user as jwtUser;
 	const isAdmin = user.role === userRole.admin;
 	const body = (request.body as {user_id?: number, password: string, new_password: string, new_re_password: string});

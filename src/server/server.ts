@@ -4,7 +4,7 @@ import fastifyStatic from '@fastify/static';
 import path from 'path';
 import registerRoutes from './routes'
 import fCookie from '@fastify/cookie'
-
+import {authJwtVerify} from './services/auth/jwt.services'
 const server = Fastify({
 		logger: true
 });
@@ -40,21 +40,11 @@ async function main() {
 				},
 				auth: require('@fastify/oauth2').GOOGLE_CONFIGURATION
 			},
-			startRedirectPath: '/api/auth/login/google',
-			callbackUri: 'http://localhost:3000/api/auth/login/google/callback'
+			startRedirectPath: '/api/v1/auth/login/google',
+			callbackUri: 'http://localhost:3000/api/v1/auth/login/google/callback'
 		});
 
-	server.decorate('authenticate', async function (request: FastifyRequest , response: FastifyReply) {
-		try {
-			const token = request.cookies.access_token;
-			if (!token)
-				return (response.code(401).send({ message: 'Authentication required' }));
-			
-			await request.jwtVerify();
-		} catch (err) {
-			response.code(401).send({ message: 'Unauthorized Access' });
-		}
-	});
+	server.decorate('authenticate', authJwtVerify );
 	await registerRoutes(server);
 
 	server.listen({port:3000});
