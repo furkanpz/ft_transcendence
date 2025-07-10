@@ -51,3 +51,12 @@ export interface jwtUser {
 	id: number,
 	role: userRole 
 }
+
+export interface twoFactor {
+	id: number,
+	user_id: number,
+	twof_secret: string,
+	twof_code: string,
+	twof_expiry: string,
+	is_verified: boolean
+};

@@ -6,7 +6,7 @@
     "build": "tsc",
     "start": "node out/server/server.js",
     "dev": "ts-node-dev --respawn --transpile-only server/server.ts",
-    "db:init": "ts-node server/db/init.ts",
+    "db:init": "ts-node-dev server/db/db.init.ts",
     "clean": "rm -rf out",
     "kill": "kill -9 $(lsof -ti :3000)"
   },
@@ -32,6 +32,8 @@
     "bcrypt": "^6.0.0",
     "dotenv": "^16.5.0",
     "fastify": "^5.4.0",
+    "nodemailer": "^7.0.5",
+    "speakeasy": "^2.0.0",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7"
   }

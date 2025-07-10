@@ -17,6 +17,15 @@ export const emailKeySchema = { type: 'string',
 			maxLength:		320,
 			minLength:		4,
 			}
+export const twoFSchema = {
+	body : {
+		required:			['email', 't2type'],
+		type: 'object',
+		properties: {
+			email:	emailKeySchema,
+			t2type: { type: 'boolean' }
+	}
+}};
 
 export const loginSchema = {
 	body: {

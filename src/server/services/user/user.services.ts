@@ -1,5 +1,5 @@
 import { getDb } from "../../db/db.get"
-import { User, userRole } from "../../types/user.types"
+import { User, userRole, twoFactor } from "../../types/user.types"
 
 
 export async function userFindInDb(user_name: string): Promise<User | null> {
@@ -41,3 +41,51 @@ export async function userRoleUpdate(user_id: number, newRole: userRole): Promis
 
 }
 
+export async function getUser2FAStatus(user_id: number): Promise<boolean>
+{
+	const db = await getDb();
+	const twofactorstatus = await db.get("SELECT twof_active FROM ft_users WHERE id = ?", user_id);
+	return (twofactorstatus);
+}
+
+export async function setUser2FA(user_id : number, t2type: boolean) {
+	const db = await getDb();
+	await db.run("UPDATE ft_users SET twof_active = ? WHERE id = ?", t2type, user_id);
+}
+
+export async function setTemp2FA(user_id: number, otp: string, secret: string) {
+	const db = await getDb();
+	const expiry = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 dakika sonrası
+  	await db.run(`DELETE FROM ft_twof WHERE user_id = ?`, [user_id]);
+	const stmt = `
+    INSERT INTO ft_twof (user_id, twof_secret, twof_code, twof_expiry)
+    VALUES (?, ?, ?, ?)
+  `;
+  await db.run(stmt, [user_id, secret, otp, expiry]);
+}
+
+export async function updateTemp2FAVerified(user_id: number, is_verified: boolean) {
+	const db = await getDb();
+	await db.run("UPDATE ft_twof SET is_verified = ? WHERE id = ?", is_verified, user_id);
+}
+
+export async function getTemp2FAVerified(user_id: number, is_verified: boolean) : Promise<boolean> {
+	const db = await getDb();
+	await db.get("SELECT is_verified FROM ft_twof WHERE id = ?", is_verified, user_id);
+}
+
+
+export async function get2FAOTP(user_id: number): Promise<twoFactor | null> {
+	const db = await getDb();
+
+	const db_otp = await db.get(
+		`SELECT * FROM ft_twof 
+		 WHERE user_id = ? 
+		   AND twof_expiry > CURRENT_TIMESTAMP 
+		   AND is_verified = FALSE
+		 ORDER BY twof_expiry DESC LIMIT 1`,
+		user_id
+	);
+
+	return db_otp ?? null;
+}
