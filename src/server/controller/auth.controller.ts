@@ -20,7 +20,7 @@ export async function loginController(request: FastifyRequest, response: Fastify
 		const OTP = generateOTP();
 		await setTemp2FA(db_user.id, OTP.otp, OTP.secret);
 		await send2FA(db_user.email, OTP.otp);
-		return (response.code(200).send({success: true, message: "2FAREQUIRED"}));
+		return (response.code(200).send({success: true, message: "2FAREQUIRED", username: db_user.username}));
 	}
 	const token = await createJWT(db_user);
 	if (!token)
@@ -85,7 +85,7 @@ export async function googleAuthController(request: FastifyRequest, response: Fa
             const randomPassword = crypto.randomBytes(16).toString('hex'); 
             const newUser: User = {
                 email: googleUser.email,
-                username: googleUser.name.replace(/\s+/g, '_').toLowerCase(), 
+                username: googleUser.name.replace(/\s+/g, '_').toLowerCase(),  // aynı adda login olunursa diğer hesaba giriş yapılabilir!!!
                 password: randomPassword,
             };
     
@@ -95,6 +95,13 @@ export async function googleAuthController(request: FastifyRequest, response: Fa
     
             db_user = await userServices.userEmailFindInDb(googleUser.email) as db_User;
         }
+		if (db_user.twof_active)
+		{
+			const OTP = generateOTP();
+			await setTemp2FA(db_user.id, OTP.otp, OTP.secret);
+			await send2FA(db_user.email, OTP.otp);
+			return (response.code(200).send({success: true, message: "2FAREQUIRED", username: db_user.username}));
+		}
        
         const jwt_token = await createJWT(db_user);
 		if (!jwt_token)

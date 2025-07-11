@@ -50,11 +50,10 @@ export const loginSchema = {
 
 export const twoFloginSchema = {
 	body: {
-		required:			['username', 'password', 'OTP'],
+		required:			['username', 'OTP'],
 		type: 'object',
 		properties: {
 			username:		usernameKeySchema,
-			password:		passwordKeySchema,
 			OTP: {type :'number'}
 		},
 		additionalProperties: false

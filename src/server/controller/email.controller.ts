@@ -46,8 +46,10 @@ export async function veriyfandSetOTPController(request: FastifyRequest, respons
 }
 
 export async function veriyfOTPController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
-	const user = request.body as {username: string, password: string, OTP: string};
+	const user = request.body as {username: string, OTP: string};
 	const db_user = await userServices.userFindInDb(user.username) as db_User;
+	if (!db_user)
+		return (response.code(401).send({success: false, message: "Invalid Username"}));
 	const db_OTP = await get2FAOTP(db_user.id);
 	const is_verified = await userServices.getTemp2FAVerified(db_user.id);
 	if (!db_OTP || is_verified)
