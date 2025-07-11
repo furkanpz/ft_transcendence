@@ -19,11 +19,20 @@ export const emailKeySchema = { type: 'string',
 			}
 export const twoFSchema = {
 	body : {
-		required:			['email', 't2type'],
+		required:			['t2type'],
 		type: 'object',
 		properties: {
-			email:	emailKeySchema,
 			t2type: { type: 'boolean' }
+	}
+}};
+
+
+export const twoFSVerifySchema = {
+	body : {
+		required:			['OTP'],
+		type: 'object',
+		properties: {
+			OTP: { type: 'number' }
 	}
 }};
 
@@ -34,6 +43,19 @@ export const loginSchema = {
 		properties: {
 			username:		usernameKeySchema,
 			password:		passwordKeySchema
+		},
+		additionalProperties: false
+	},
+};
+
+export const twoFloginSchema = {
+	body: {
+		required:			['username', 'password', 'OTP'],
+		type: 'object',
+		properties: {
+			username:		usernameKeySchema,
+			password:		passwordKeySchema,
+			OTP: {type :'number'}
 		},
 		additionalProperties: false
 	},

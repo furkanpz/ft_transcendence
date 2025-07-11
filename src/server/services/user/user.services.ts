@@ -44,8 +44,9 @@ export async function userRoleUpdate(user_id: number, newRole: userRole): Promis
 export async function getUser2FAStatus(user_id: number): Promise<boolean>
 {
 	const db = await getDb();
-	const twofactorstatus = await db.get("SELECT twof_active FROM ft_users WHERE id = ?", user_id);
-	return (twofactorstatus);
+	const twofactorstatus = await db.get("SELECT twof_active FROM ft_users WHERE id = ?", user_id) as boolean;
+	return twofactorstatus;
+
 }
 
 export async function setUser2FA(user_id : number, t2type: boolean) {
@@ -66,12 +67,13 @@ export async function setTemp2FA(user_id: number, otp: string, secret: string) {
 
 export async function updateTemp2FAVerified(user_id: number, is_verified: boolean) {
 	const db = await getDb();
-	await db.run("UPDATE ft_twof SET is_verified = ? WHERE id = ?", is_verified, user_id);
+	await db.run("UPDATE ft_twof SET is_verified = ? WHERE user_id = ?", is_verified, user_id);
 }
 
-export async function getTemp2FAVerified(user_id: number, is_verified: boolean) : Promise<boolean> {
+export async function getTemp2FAVerified(user_id: number) : Promise<boolean> {
 	const db = await getDb();
-	await db.get("SELECT is_verified FROM ft_twof WHERE id = ?", is_verified, user_id);
+	const twofactorstatus = await db.get("SELECT is_verified FROM ft_twof WHERE user_id = ?", user_id);
+	return !!twofactorstatus?.is_verified;
 }
 
 

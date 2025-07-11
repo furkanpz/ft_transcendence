@@ -2,9 +2,12 @@ import {FastifyReply, FastifyRequest} from 'fastify';
 import * as userServices from '../services/user/user.services'
 import * as authServices from '../services/auth/auth.services'
 import { db_User, User, userRole, jwtUser } from '../types/user.types'
+import {setTemp2FA} from '../services/user/user.services'
 import server from '../server';
 import crypto from 'crypto';
 import { createJWT } from '../services/auth/jwt.services';
+import { generateOTP, verifyOTP, send2FA } from '../services/mail/email.services';
+
 
 export async function loginController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
 	const user = request.body as {username: string, password: string};
@@ -12,6 +15,13 @@ export async function loginController(request: FastifyRequest, response: Fastify
 
 	if (!db_user || !(await authServices.checkPW(db_user.password, user.password)))
 		return (response.code(401).send({success: false, message: "Invalid Username or Password!"}));
+	if (db_user.twof_active)
+	{
+		const OTP = generateOTP();
+		await setTemp2FA(db_user.id, OTP.otp, OTP.secret);
+		await send2FA(db_user.email, OTP.otp);
+		return (response.code(200).send({success: true, message: "2FAREQUIRED"}));
+	}
 	const token = await createJWT(db_user);
 	if (!token)
 		return response.code(500).send({success:false,  message: 'Failed to generate token' });
@@ -22,7 +32,7 @@ export async function loginController(request: FastifyRequest, response: Fastify
 		// secure: true only https durumu
 	});
 	userServices.setIsOnline(true, db_user.id);
-	return (response.code(200).send({success: true, access_token: token}).redirect("/"));
+	return (response.code(200).send({success: true, access_token: token}));
 };
 
 export async function logoutController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
@@ -55,7 +65,7 @@ export async function googleAuthController(request: FastifyRequest, response: Fa
         const access_token = token.access_token;
 
         if (!access_token) {
-        return response.code(500).send({ error: 'Access token missing' });
+        return response.code(500).send({success: false,  message: 'Access token missing' });
         }
 	
 		const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -81,7 +91,7 @@ export async function googleAuthController(request: FastifyRequest, response: Fa
     
             const register_result = await authServices.createUser(newUser);
             if (!register_result.success)
-                return response.code(500).send({ error: 'Failed to register Google user' });
+                return response.code(500).send({success: false,  message: 'Failed to register Google user' });
     
             db_user = await userServices.userEmailFindInDb(googleUser.email) as db_User;
         }

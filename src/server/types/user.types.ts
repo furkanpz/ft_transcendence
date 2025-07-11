@@ -12,6 +12,7 @@ export interface User {
 	password?: string,
 	avatar_url? : string,
 	is_online? : boolean;
+	twof_active?: boolean;
 	created_at? : string,
 	updated_at? : string,
 	role? : userRole;
@@ -25,6 +26,7 @@ export interface db_User {
 	password: string,
 	avatar_url : string,
 	is_online : boolean;
+	twof_active : boolean;
 	created_at : string,
 	updated_at : string,
 	user_role : userRole,

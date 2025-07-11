@@ -6,7 +6,12 @@ import registerRoutes from './routes'
 import fCookie from '@fastify/cookie'
 import {authJwtVerify} from './services/auth/jwt.services'
 const server = Fastify({
-		logger: true
+		logger: true,
+		ajv: {
+			customOptions: {
+				removeAdditional: false
+			}
+		}
 });
 export default server;
 
