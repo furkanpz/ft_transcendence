@@ -6,7 +6,8 @@ import {setTemp2FA} from '../services/user/user.services'
 import server from '../server';
 import crypto from 'crypto';
 import { createJWT } from '../services/auth/jwt.services';
-import { generateOTP, verifyOTP, send2FA } from '../services/mail/email.services';
+import { generateOTP, send2FA } from '../services/mail/email.services';
+import { sendSuccess, sendError } from '../helpers/response';
 
 
 export async function loginController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
@@ -14,17 +15,17 @@ export async function loginController(request: FastifyRequest, response: Fastify
 	const db_user = await userServices.userFindInDb(user.username) as db_User;
 
 	if (!db_user || !(await authServices.checkPW(db_user.password, user.password)))
-		return (response.code(401).send({success: false, message: "Invalid Username or Password!"}));
+		return (sendError(response, 401, "Invalid Username or Password!"))
 	if (db_user.twof_active)
 	{
 		const OTP = generateOTP();
 		await setTemp2FA(db_user.id, OTP.otp, OTP.secret);
 		await send2FA(db_user.email, OTP.otp);
-		return (response.code(200).send({success: true, message: "2FAREQUIRED", username: db_user.username}));
+		return (sendSuccess(response, "2FAREQUIRED", {username : db_user.username}))
 	}
 	const token = await createJWT(db_user);
 	if (!token)
-		return response.code(500).send({success:false,  message: 'Failed to generate token' });
+		return (sendError(response, 500, 'Failed to generate token'));
 	response.setCookie('access_token', token, {
 		httpOnly: true,
 		path: '/',
@@ -32,7 +33,7 @@ export async function loginController(request: FastifyRequest, response: Fastify
 		// secure: true only https durumu
 	});
 	userServices.setIsOnline(true, db_user.id);
-	return (response.code(200).send({success: true, access_token: token}));
+	return (sendSuccess(response, "", {access_token: token}));
 };
 
 export async function logoutController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
@@ -100,12 +101,12 @@ export async function googleAuthController(request: FastifyRequest, response: Fa
 			const OTP = generateOTP();
 			await setTemp2FA(db_user.id, OTP.otp, OTP.secret);
 			await send2FA(db_user.email, OTP.otp);
-			return (response.code(200).send({success: true, message: "2FAREQUIRED", username: db_user.username}));
+			return (sendSuccess(response, "2FAREQUIRED", {username: db_user.username}));
 		}
        
         const jwt_token = await createJWT(db_user);
 		if (!jwt_token)
-			return response.code(500).send({success:false,  message: 'Failed to generate token' });
+			return (sendError(response, 500, "Failed to generate token"));
     
         response.setCookie('access_token', jwt_token, {
             httpOnly: true,
@@ -124,16 +125,16 @@ export async function changePasswordController(request:FastifyRequest, response:
 	if (body.user_id && isAdmin) 
 		targetUserId = body.user_id;
 	if (!body.password)
-		return (response.code(400).send({success:false, message:"Password not be empty!"}))
-	if (body.new_password != body.new_re_password)
-		return (response.code(400).send({success:false, message:"Password do not match!"}));
-	if (body.password == body.new_password)
-		return (response.code(400).send({success:false, message:"Your password cannot be the same as the old password!"}));
+		return sendError(response, 400, "Password must not be empty!");
+	if (body.new_password !== body.new_re_password)
+		return sendError(response, 400, "Passwords do not match!");
+	if (body.password === body.new_password)
+		return sendError(response, 400, "New password cannot be the same as the old password!");
 	const db_user = await userServices.userIdFindInDb(targetUserId) as db_User;
+	if (!db_user?.id)
+		return sendError(response, 400, "There is no such user");
 	if (!isAdmin && !(await authServices.checkPW(db_user.password, body.password)))
-		return (response.code(400).send({success:false, message:"Old password is wrong!"}));
-	if (!db_user.id)
-		response.code(400).send({success:false, message: "There is no such user"});
-	authServices.setNewPw(body.new_password, targetUserId);
-	return (response.code(200).send({success:true, message: "Pasword changed!"}));
+		return sendError(response, 400, "Old password is incorrect!");
+	await authServices.setNewPw(body.new_password, targetUserId);
+	return sendSuccess(response, "Password changed successfully");
 }
