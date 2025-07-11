@@ -45,7 +45,7 @@ export async function getUser2FAStatus(user_id: number): Promise<boolean>
 {
 	const db = await getDb();
 	const twofactorstatus = await db.get("SELECT twof_active FROM ft_users WHERE id = ?", user_id) as boolean;
-	return twofactorstatus;
+	return !!twofactorstatus?.twof_active;
 
 }
 

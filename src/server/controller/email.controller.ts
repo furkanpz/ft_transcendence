@@ -25,12 +25,15 @@ export async function veriyfandSetOTPController(request: FastifyRequest, respons
 	const user = request.user as jwtUser;
 	const body = request.body as {OTP: string};
 	const db_OTP = await get2FAOTP(user.id);
-	if (!db_OTP)
+	const is_verified = await userServices.getTemp2FAVerified(user.id);
+	if (!db_OTP || is_verified)
 		return (response.code(400).send({success: false, message: "OTP Invalid!"}));
 	const otpstatus = verifyOTP(body.OTP, db_OTP.twof_secret);
 	if (otpstatus)
 	{
+		await userServices.updateTemp2FAVerified(user.id, true);
 		const db_twoFactorStatus = await getUser2FAStatus(user.id);
+		console.log(db_twoFactorStatus);
 		const newStatus = db_twoFactorStatus === false ? true : false;
 		await setUser2FA(user.id, newStatus);
 		if (newStatus)

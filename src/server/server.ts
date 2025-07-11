@@ -5,6 +5,8 @@ import path from 'path';
 import registerRoutes from './routes'
 import fCookie from '@fastify/cookie'
 import {authJwtVerify} from './services/auth/jwt.services'
+import fastifyOauth2, { GOOGLE_CONFIGURATION } from '@fastify/oauth2';
+
 const server = Fastify({
 		logger: true,
 		ajv: {
@@ -35,7 +37,7 @@ async function main() {
 		hook: 'preHandler'
 	});
 
-	server.register(require('@fastify/oauth2'), {
+	server.register(fastifyOauth2, {
 			name: 'googleOAuth2',
 			scope: ['profile', 'email'],
 			credentials: {
@@ -43,10 +45,10 @@ async function main() {
 					id: "213701391346-4ckm789dkg3g4b21lid4nap0gdqdhn92.apps.googleusercontent.com",
 					secret: "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"
 				},
-				auth: require('@fastify/oauth2').GOOGLE_CONFIGURATION
+				auth: GOOGLE_CONFIGURATION
 			},
-			startRedirectPath: '/api/v1/auth/login/google',
-			callbackUri: 'http://localhost:3000/api/v1/auth/login/google/callback'
+			startRedirectPath: '/api/auth/login/google',
+			callbackUri: 'http://localhost:3000/api/auth/login/google/callback'
 		});
 
 	server.decorate('authenticate', authJwtVerify );
