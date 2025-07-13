@@ -93,6 +93,29 @@ Eğer 2fa aktif ise Aşşağıdaki Gibi Response Döner
 | `new_re_password`      | `string` | **Gerekli**. Min-Max 6-64|
 | `user_id`      | `number` | **ADMIN için**. Min  1|
 
+#### SET 2FA
+
+```http
+  POST /api/auth/2fa/set2FA
+```
+| Parametre | Tip     | Açıklama                       |
+| :-------- | :------- | :-------------------------------- |
+| `t2type`      | `boolean` | **Gerekli**.|
+
+Başarılı ise aşşağıdaki gibi response döner ve verify bekler
+```example
+  {success: true, message:"OTP sent successfully"}
+```
+
+#### 2FA VERIFY (FOR SET)
+
+```http
+  POST /api/auth/2fa/set2FA/verify
+```
+| Parametre | Tip     | Açıklama                       |
+| :-------- | :------- | :-------------------------------- |
+| `OTP`      | `number` | **Gerekli**.|
+
 
 #### LIST FRIENDS
 
@@ -127,4 +150,17 @@ Eğer 2fa aktif ise Aşşağıdaki Gibi Response Döner
 | :-------- | :------- | :-------------------------------- |
 | `friend_id`      | `number` | **Gerekli**|
 | `request_type`      | `enum string` | **Gerekli**. "Pending" - "Accepted" - "Remove"|
+| `user_id`      | `number` | **ADMIN için**. Girilen User Adına İstek Yönetimi|
+
+## ADMIN ENDPOINTS (JWT REQUIRED - ROLE REQUIRED)
+
+#### FRIEND REQUEST
+
+```http
+  POST /api/user/friends/request
+```
+| Parametre | Tip     | Açıklama                       |
+| :-------- | :------- | :-------------------------------- |
+| `newRole`      | `number` | **Gerekli**|
+| `request_type`      | `enum string` | **Gerekli**. "USER" - "ADMIN"|
 | `user_id`      | `number` | **ADMIN için**. Girilen User Adına İstek Yönetimi|

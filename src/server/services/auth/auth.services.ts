@@ -44,9 +44,3 @@ export async function createUser(new_user: User): Promise<{success: boolean; mes
 export function checkPW(db_pw:string, user_pw:string): Promise<Boolean>{
 	return (bcrypt.compare(user_pw, db_pw));
 }
-
-export async function setNewPw(new_pw: string, user_id: number): Promise<void> {
-	const db = await getDb();
-	const hashed_pw = await bcrypt.hash(new_pw, S_R);
-	await db.run("UPDATE ft_users SET password = ? WHERE id = ?",hashed_pw, user_id);
-}

@@ -3,6 +3,7 @@ import { db_User, friendstat, userRole, jwtUser } from '../types/user.types';
 import * as userServices from '../services/user/user.services';
 import * as userFriendsUtils from '../services/user/friends.services';
 import { sendSuccess, sendError } from '../helpers/response';
+import * as authServices from '../services/auth/auth.services';
 
 export async function friendsDetailsController(request: FastifyRequest, response: FastifyReply) {
     const body = request.body as { friends: number[] };
@@ -72,4 +73,25 @@ export async function userProfileController(request: FastifyRequest, response: F
         role: user.role,
     };
     return sendSuccess(response, "User profile retrieved successfully", profileData);
+}
+export async function changePasswordController(request:FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
+	const user = request.user as jwtUser;
+	const isAdmin = user.role === userRole.admin;
+	const body = (request.body as {user_id?: number, password: string, new_password: string, new_re_password: string});
+	let targetUserId = user.id;
+	if (body.user_id && isAdmin) 
+		targetUserId = body.user_id;
+	if (!body.password)
+		return sendError(response, 400, "Password must not be empty!");
+	if (body.new_password !== body.new_re_password)
+		return sendError(response, 400, "Passwords do not match!");
+	if (body.password === body.new_password)
+		return sendError(response, 400, "New password cannot be the same as the old password!");
+	const db_user = await userServices.userIdFindInDb(targetUserId) as db_User;
+	if (!db_user?.id)
+		return sendError(response, 400, "There is no such user");
+	if (!isAdmin && !(await authServices.checkPW(db_user.password, body.password)))
+		return sendError(response, 400, "Old password is incorrect!");
+	await userServices.setNewPw(body.new_password, targetUserId);
+	return sendSuccess(response, "Password changed successfully");
 }

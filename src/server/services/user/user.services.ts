@@ -1,5 +1,8 @@
 import { getDb } from "../../db/db.get"
 import { User, userRole, twoFactor } from "../../types/user.types"
+import * as bcrypt from 'bcrypt'
+
+const S_R = 10;
 
 
 export async function userFindInDb(user_name: string): Promise<User | null> {
@@ -90,4 +93,10 @@ export async function get2FAOTP(user_id: number): Promise<twoFactor | null> {
 	);
 
 	return db_otp ?? null;
+}
+
+export async function setNewPw(new_pw: string, user_id: number): Promise<void> {
+	const db = await getDb();
+	const hashed_pw = await bcrypt.hash(new_pw, S_R);
+	await db.run("UPDATE ft_users SET password = ? WHERE id = ?",hashed_pw, user_id);
 }

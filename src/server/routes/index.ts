@@ -7,7 +7,7 @@ import { emailRoutes } from './email.routes';
 
 export default async function registerRoutes(server: FastifyInstance) {
 	await server.register(authRoutes, { prefix: '/api/auth' });
-	await server.register(userRoutes, { prefix: '/api/users' });
+	await server.register(userRoutes, { prefix: '/api/user' });
 	await server.register(adminRoutes, { prefix: '/api/admin' });
 	await server.register(emailRoutes, { prefix: '/api/auth/2fa'})
 }

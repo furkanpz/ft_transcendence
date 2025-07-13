@@ -120,25 +120,3 @@ export async function googleAuthController(request: FastifyRequest, response: Fa
         userServices.setIsOnline(true, db_user.id);
         return response.redirect('/');
 }
-
-export async function changePasswordController(request:FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
-	const user = request.user as jwtUser;
-	const isAdmin = user.role === userRole.admin;
-	const body = (request.body as {user_id?: number, password: string, new_password: string, new_re_password: string});
-	let targetUserId = user.id;
-	if (body.user_id && isAdmin) 
-		targetUserId = body.user_id;
-	if (!body.password)
-		return sendError(response, 400, "Password must not be empty!");
-	if (body.new_password !== body.new_re_password)
-		return sendError(response, 400, "Passwords do not match!");
-	if (body.password === body.new_password)
-		return sendError(response, 400, "New password cannot be the same as the old password!");
-	const db_user = await userServices.userIdFindInDb(targetUserId) as db_User;
-	if (!db_user?.id)
-		return sendError(response, 400, "There is no such user");
-	if (!isAdmin && !(await authServices.checkPW(db_user.password, body.password)))
-		return sendError(response, 400, "Old password is incorrect!");
-	await authServices.setNewPw(body.new_password, targetUserId);
-	return sendSuccess(response, "Password changed successfully");
-}

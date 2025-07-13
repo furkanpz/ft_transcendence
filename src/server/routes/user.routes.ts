@@ -4,7 +4,8 @@ import {
 	friendsController,
 	friendsDetailsController,
 	friendRequestController,
-	userProfileController
+	userProfileController,
+	changePasswordController
 } from '../controller/user.controller'
 export default async function userRoutes(server: FastifyInstance) {
 
@@ -30,6 +31,12 @@ export default async function userRoutes(server: FastifyInstance) {
 	{
 		preHandler: server.authenticate,
 		handler: userProfileController
+	});
+	server.post("/password",
+	{
+		preHandler:server.authenticate,
+		schema: schemas.passwordSchema,
+		handler:changePasswordController
 	});
 	
 

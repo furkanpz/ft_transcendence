@@ -4,7 +4,6 @@ import {loginController,
 	logoutController,
 	registerController,
 	googleAuthController,
-	changePasswordController
 } from '../controller/auth.controller'
 
 
@@ -28,10 +27,5 @@ export default async function AuthRoutes(server:FastifyInstance) {
 	{
 		handler: googleAuthController
 	});
-	server.post("/password",
-	{
-		preHandler:server.authenticate,
-		schema: schemas.passwordSchema,
-		handler:changePasswordController
-	});
+
 }
