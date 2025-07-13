@@ -84,3 +84,30 @@ export async function getFriendsDetails(friends?: number[], user_id?: number) {
 	const result = await db.all(query, friendIds);
 	return result;
 }
+
+export async function getblockStatus(blocker_id: number, blocked_id: number): Promise<boolean> {
+	const db = await getDb();
+	const block = await db.get("SELECT * FROM ft_blocks WHERE blocker_id = ? AND blocked_id = ?", blocker_id, blocked_id);
+	return !!block;
+}
+
+export async function blockUser(blocker_id: number, blocked_id: number): Promise<void> {
+	const db = await getDb();
+	await db.run("INSERT INTO ft_blocks (blocker_id, blocked_id) VALUES (?, ?)", blocker_id, blocked_id);
+}
+
+export async function unblockUser(blocker_id: number, blocked_id: number): Promise<void> {
+	const db = await getDb();
+	await db.run("DELETE FROM ft_blocks WHERE blocker_id = ? AND blocked_id = ?", blocker_id, blocked_id);
+}
+export async function getBlockedUsers(user_id: number): Promise<number[]> {
+	const db = await getDb();
+	const blocks = await db.all("SELECT blocked_id FROM ft_blocks WHERE blocker_id = ?", user_id);
+	return blocks.map(block => block.blocked_id);
+}
+
+export async function getBlockedUserAndBlocker(blocked_id: number, blocker_id: number): Promise<{ blocked_id: number, blocker_id: number } | null> {
+	const db = await getDb();
+	const block = await db.get("SELECT * FROM ft_blocks WHERE blocked_id = ? AND blocker_id = ?", blocked_id, blocker_id);
+	return block ? { blocked_id: block.blocked_id, blocker_id: block.blocker_id } : null;
+}

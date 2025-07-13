@@ -95,3 +95,57 @@ export async function changePasswordController(request:FastifyRequest, response:
 	await userServices.setNewPw(body.new_password, targetUserId);
 	return sendSuccess(response, "Password changed successfully");
 }
+
+export async function blockUserController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
+    const user = request.user as jwtUser;
+    const isAdmin = user.role === userRole.admin;
+    const body = request.body as { blocked_id: number, user_id?: number };
+    let targetUserId = user.id;
+
+    if (body.user_id && isAdmin)
+        targetUserId = body.user_id;
+
+    if (body.blocked_id === targetUserId) {
+        return sendError(response, 400, "You cannot block yourself!");
+    }
+
+    const blockedUser = await userServices.userIdFindInDb(body.blocked_id);
+    if (!blockedUser) {
+        return sendError(response, 400, "There is no such user to block!");
+    }
+
+    await userFriendsUtils.blockUser(targetUserId, body.blocked_id);
+    return sendSuccess(response, "User blocked successfully");
+}
+
+export async function getBlockedUsersController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
+    const user = request.user as jwtUser;
+
+    const blockedUsers = await userFriendsUtils.getBlockedUsers(user.id);
+    return sendSuccess(response, "Blocked users retrieved successfully", { blockedUsers });
+}
+
+export async function unblockUserController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
+    const user = request.user as jwtUser;
+    const isAdmin = user.role === userRole.admin;
+    const body = request.body as { blocked_id: number, user_id?: number };
+    let targetUserId = user.id;
+
+    if (body.user_id && isAdmin)
+        targetUserId = body.user_id;
+
+    if (body.blocked_id === targetUserId) {
+        return sendError(response, 400, "You cannot unblock yourself!");
+    }
+
+    const blockedUser = await userServices.userIdFindInDb(body.blocked_id);
+    if (!blockedUser) {
+        return sendError(response, 400, "There is no such user to unblock!");
+    }
+
+    const resp = await userFriendsUtils.getBlockedUserAndBlocker(body.blocked_id,targetUserId);
+    if (!resp) {
+        return sendError(response, 400, "This user is not blocked!");
+    }
+    return sendSuccess(response, "User unblocked successfully");
+}

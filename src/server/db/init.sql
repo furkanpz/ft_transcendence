@@ -19,6 +19,14 @@ CREATE TABLE IF NOT EXISTS ft_friendship (
 	stat		TEXT CHECK(stat IN ('Pending', 'Accepted')) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS ft_blocks (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    blocker_id  INTEGER NOT NULL, 
+    blocked_id  INTEGER NOT NULL, 
+    blocked_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (blocker_id, blocked_id) 
+);
+
 CREATE TABLE IF NOT EXISTS ft_twof (
 	id			INTEGER PRIMARY KEY AUTOINCREMENT,
 	user_id		INTEGER NOT NULL,

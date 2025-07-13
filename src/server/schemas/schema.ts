@@ -128,3 +128,15 @@ export const friendDetailsSchema = {
 		additionalProperties: false
 	}
 };
+
+export const blockUserSchema = {
+	body: {
+		required: ['blocked_id'],
+		type: 'object',
+		properties: {
+			blocked_id: { type: 'number' },
+			user_id: { type: 'number' } 
+		},
+		additionalProperties: false
+	}
+};

@@ -5,7 +5,10 @@ import {
 	friendsDetailsController,
 	friendRequestController,
 	userProfileController,
-	changePasswordController
+	changePasswordController,
+	blockUserController,
+	getBlockedUsersController,
+	unblockUserController
 } from '../controller/user.controller'
 export default async function userRoutes(server: FastifyInstance) {
 
@@ -39,5 +42,24 @@ export default async function userRoutes(server: FastifyInstance) {
 		handler:changePasswordController
 	});
 	
+	server.post("/friends/block",
+	{
+		preHandler: server.authenticate,
+		schema: schemas.blockUserSchema,
+		handler: blockUserController
+	});
 
-};
+	server.get("/friends/block",
+	{
+		preHandler: server.authenticate,
+		handler:getBlockedUsersController
+	});
+
+	server.post("/friends/unblock",
+	{
+		preHandler: server.authenticate,
+		schema: schemas.blockUserSchema,
+		handler: unblockUserController
+	}
+	)
+}
