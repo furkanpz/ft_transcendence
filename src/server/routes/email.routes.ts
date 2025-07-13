@@ -4,18 +4,19 @@ import { set2FAController,
 	veriyfandSetOTPController,
 	veriyfOTPController
  } from '../controller/email.controller';
+import { authJwtVerify } from '../services/auth/jwt.services'
 
 export async function emailRoutes(server : FastifyInstance)
 {
 	server.post("/set2FA",
 	{
 		schema: 	schemas.twoFSchema,
-		preHandler: server.authenticate,
+		preHandler: authJwtVerify,
 		handler: 	set2FAController
 	});
 	server.post("/set2FA/verify",
 	{
-		preHandler:	server.authenticate,
+		preHandler:	authJwtVerify,
 		schema:		schemas.twoFSVerifySchema,
 		handler:	veriyfandSetOTPController
 	}

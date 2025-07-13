@@ -1,7 +1,5 @@
 
-/node_modules
-
-/src/node_modules
+**/node_modules/
 
 package-lock.json
 yarn.lock
@@ -10,8 +8,14 @@ pnpm-lock.yaml
 dist/
 build/
 out/
+**/dist/
+**/build/
+**/out/
+
 
 *.tsbuildinfo
 
 .DS_Store
+
 .env
+.env.*

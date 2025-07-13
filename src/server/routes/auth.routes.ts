@@ -5,6 +5,7 @@ import {loginController,
 	registerController,
 	googleAuthController,
 } from '../controller/auth.controller'
+import { authJwtVerify } from '../services/auth/jwt.services'
 
 
 export default async function AuthRoutes(server:FastifyInstance) {
@@ -15,7 +16,7 @@ export default async function AuthRoutes(server:FastifyInstance) {
 	});
 	server.get("/logout", 
 	{
-		preHandler: server.authenticate, 
+		preHandler: authJwtVerify, 
 		handler:logoutController
 	});
 	server.post("/sign-up",

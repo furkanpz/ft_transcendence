@@ -10,54 +10,56 @@ import {
 	getBlockedUsersController,
 	unblockUserController
 } from '../controller/user.controller'
+import { authJwtVerify } from '../services/auth/jwt.services'
+
 export default async function userRoutes(server: FastifyInstance) {
 
 
 	server.get("/friends",
 	{
-		preHandler: server.authenticate,
+		preHandler: authJwtVerify,
 		handler:friendsController
 	});
 	server.post("/friends/details", 
 	{
-		preHandler: server.authenticate,
+		preHandler: authJwtVerify,
 		schema: schemas.friendDetailsSchema,
 		handler: friendsDetailsController
 	});
 	server.post("/friends/request",
 	{
-		preHandler: server.authenticate,
+		preHandler: authJwtVerify,
 		schema: schemas.friendRequestSchema,
 		handler:friendRequestController
 	});
 	server.get("/profile",
 	{
-		preHandler: server.authenticate,
+		preHandler: authJwtVerify,
 		handler: userProfileController
 	});
 	server.post("/password",
 	{
-		preHandler:server.authenticate,
+		preHandler:authJwtVerify,
 		schema: schemas.passwordSchema,
 		handler:changePasswordController
 	});
 	
 	server.post("/friends/block",
 	{
-		preHandler: server.authenticate,
+		preHandler: authJwtVerify,
 		schema: schemas.blockUserSchema,
 		handler: blockUserController
 	});
 
 	server.get("/friends/block",
 	{
-		preHandler: server.authenticate,
+		preHandler: authJwtVerify,
 		handler:getBlockedUsersController
 	});
 
 	server.post("/friends/unblock",
 	{
-		preHandler: server.authenticate,
+		preHandler: authJwtVerify,
 		schema: schemas.blockUserSchema,
 		handler: unblockUserController
 	}

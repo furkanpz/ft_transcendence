@@ -10,7 +10,7 @@ const smtp = nodemailer.createTransport( {
 	}
 });
 
-export default async function send2FA(email: string, otp: number){
+export default async function send2FA(email: string, otp: string){
     await smtp.sendMail({
         from: '"ft_transcendance" <furkanvibe@gmail.com>',
         to: email,

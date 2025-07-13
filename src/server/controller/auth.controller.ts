@@ -8,10 +8,16 @@ import {setTemp2FA} from '../services/user/user.services'
 import { sendSuccess, sendError } from '../helpers/response';
 import { db_User, User, userRole, jwtUser } from '../types/user.types'
 
-
 import {FastifyReply, FastifyRequest} from 'fastify';
 import server from '../server';
 import crypto from 'crypto';
+import { OAuth2Namespace } from '@fastify/oauth2';
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    googleOAuth2: OAuth2Namespace;
+  }
+}
 
 
 export async function loginController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {

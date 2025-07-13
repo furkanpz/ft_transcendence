@@ -5,7 +5,8 @@ import path from 'path';
 import registerRoutes from './routes';
 import fCookie from '@fastify/cookie';
 import { authJwtVerify } from './services/auth/jwt.services';
-import fastifyOauth2, { GOOGLE_CONFIGURATION } from '@fastify/oauth2';
+import fastifyOauth2 from '@fastify/oauth2';
+const { GOOGLE_CONFIGURATION } = fastifyOauth2;
 import cors from '@fastify/cors';
 
 const server = Fastify({
@@ -33,7 +34,7 @@ async function main() {
   });
 
   await server.register(jwt, {
-    secret: 'K2x33Q}zV3#nqfz&UG,V*=3+!aUi/CHsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdf%2#=M*%hJa35ES[{*+1DX%-:c%Dtmhg',
+    secret: process.env.JWT_SECRET || 'default_secret',
     cookie: {
       cookieName: 'access_token',
       signed: false
@@ -41,7 +42,7 @@ async function main() {
   });
 
   await server.register(fCookie, {
-    secret: 'K2x33Q}zV3#nqfz&UG,V*=3+!aUi/CHsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdf%2#=M*%hJa35ES[{*+1DX%-:c%Dtmhg',
+    secret: process.env.COOKIE_SECRET || 'default_cookie_secret',
     hook: 'preHandler'
   });
 
@@ -50,18 +51,17 @@ async function main() {
     scope: ['profile', 'email'],
     credentials: {
       client: {
-        id: '213701391346-4ckm789dkg3g4b21lid4nap0gdqdhn92.apps.googleusercontent.com',
-        secret: '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'
+        id: process.env.GOOGLE_CLIENT_ID || "default_client_id",
+        secret: process.env.GOOGLE_CLIENT_SECRET || "default_client_secret"
       },
       auth: GOOGLE_CONFIGURATION
     },
     startRedirectPath: '/api/auth/login/google',
-    callbackUri: 'http://localhost:3000/api/auth/login/google/callback'
+    callbackUri: process.env.GOOGLE_CALLBACK_URI || 'http://localhost:3000/api/auth/login/google/callback'
   });
 
-  server.decorate('authenticate', authJwtVerify);
 
-  await registerRoutes(server);
+  await registerRoutes(server);ç
 
   await server.listen({ port: 3000, host: '0.0.0.0' });
 }

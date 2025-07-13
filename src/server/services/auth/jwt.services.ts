@@ -17,14 +17,14 @@ export async function createJWT(db_user: db_User): Promise<string | null> {
 	return token;
 };
 
-export async function authJwtVerify(request: FastifyRequest , response: FastifyReply)
+export async function authJwtVerify(request: FastifyRequest , reply: FastifyReply): Promise<void>
 {
 	try {
 	const token = request.cookies.access_token;
 	if (!token)
-		return (response.code(401).send({ message: 'Authentication required' }));
+		return (reply.code(401).send({ message: 'Authentication required' }));
 	await request.jwtVerify();
 	} catch (err) {
-		response.code(401).send({ message: 'Unauthorized Access' });
+		reply.code(401).send({ message: 'Unauthorized Access' });
 	}
 };

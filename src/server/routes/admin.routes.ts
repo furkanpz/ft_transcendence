@@ -4,16 +4,17 @@ import {
 	adminFriendDetailsController,
 	adminRoleUpdateController
 } from '../controller/admin.controller'
+import { authJwtVerify } from '../services/auth/jwt.services'
 
 export default async function adminRoutes(server: FastifyInstance) {
 	server.get("/friends/:id",
 	{
-		preHandler: server.authenticate,
+		preHandler: authJwtVerify,
 		handler: adminFriendDetailsController
 	});
 	server.post("/roleUpdate",
 	{
-		preHandler: server.authenticate,
+		preHandler: authJwtVerify,
 		schema: schemas.roleSchema,
 		handler: adminRoleUpdateController	
 	});
