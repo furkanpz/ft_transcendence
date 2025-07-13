@@ -54,7 +54,7 @@ async function main() {
 	server.decorate('authenticate', authJwtVerify );
 	await registerRoutes(server);
 
-	server.listen({port:3000});
+	server.listen({port:3000, host: "0.0.0.0"});
 }
 
 main();
