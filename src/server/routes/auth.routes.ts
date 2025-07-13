@@ -9,7 +9,7 @@ import {loginController,
 
 
 export default async function AuthRoutes(server:FastifyInstance) {
-	server.post("/login",
+	server.post("/sign-in",
 	{
 		schema: schemas.loginSchema,
 		handler: loginController
@@ -19,7 +19,7 @@ export default async function AuthRoutes(server:FastifyInstance) {
 		preHandler: server.authenticate, 
 		handler:logoutController
 	});
-	server.post("/register",
+	server.post("/sign-up",
 	{
 		schema: schemas.registerSchema,
 		handler: registerController
