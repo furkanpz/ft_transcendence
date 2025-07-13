@@ -1,7 +1,7 @@
 interface WSMessage {
   type: "global" | "direct" | "invite" | "notification";
-  from: string;       // user ID
-  to?: string;        // receiver user ID (optional for global)
+  from: string;    
+  to?: string; 
   message: string;
   timestamp: string;
 }
