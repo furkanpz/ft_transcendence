@@ -1,8 +1,6 @@
 
 # BACKEND
 
-
-
 ## AUTH ENDPOINTS
 
 #### SIGN-IN
@@ -151,6 +149,35 @@ Başarılı ise aşşağıdaki gibi response döner ve verify bekler
 | `friend_id`      | `number` | **Gerekli**|
 | `request_type`      | `enum string` | **Gerekli**. "Pending" - "Accepted" - "Remove"|
 | `user_id`      | `number` | **ADMIN için**. Girilen User Adına İstek Yönetimi|
+
+
+
+#### BLOCK USER
+
+```http
+  POST /api/user/friends/block
+```
+| Parametre | Tip     | Açıklama                       |
+| :-------- | :------- | :-------------------------------- |
+| `blocked_id`      | `number` | **Gerekli**|
+| `user_id`      | `number` | **ADMIN için**. Girilen User Adına İstek Yönetimi|
+
+#### LIST BLOCKED USER
+
+```http
+  GET /api/user/friends/block
+```
+
+#### UNBLOCK USER
+
+```http
+  POST /api/user/friends/unblock
+```
+| Parametre | Tip     | Açıklama                       |
+| :-------- | :------- | :-------------------------------- |
+| `blocked_id`      | `number` | **Gerekli**|
+| `user_id`      | `number` | **ADMIN için**. Girilen User Adına İstek Yönetimi|
+
 
 ## ADMIN ENDPOINTS (JWT REQUIRED - ROLE REQUIRED)
 
