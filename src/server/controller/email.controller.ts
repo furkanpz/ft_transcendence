@@ -1,11 +1,14 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { db_User, friendstat, userRole, jwtUser } from '../types/user.types';
-import { getUser2FAStatus, setTemp2FA, get2FAOTP, setUser2FA } from '../services/user/user.services';
-import { generateOTP, verifyOTP, send2FA } from '../services/mail/email.services';
+import { db_User, jwtUser } from '../types/user.types';
+import {
+    getUser2FAStatus, setTemp2FA,
+    get2FAOTP, setUser2FA 
+} from '../services/user/user.services';
+import send2FA from '../services/mail/email.services';
 import * as userServices from '../services/user/user.services';
-import { createJWT } from '../services/auth/jwt.services';
+import { generateOTP, verifyOTP } from '../services/auth/2fa.services';
 import { sendSuccess, sendError } from '../helpers/response';
-
+import { createJWT } from '../services/auth/jwt.services';
 export async function set2FAController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
     const user = request.user as jwtUser;
     const body = request.body as { t2type: boolean };

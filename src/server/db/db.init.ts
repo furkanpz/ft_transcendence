@@ -21,7 +21,7 @@ async function initializeDatabase() {
       driver: sqlite3.Database
     });
 
-    const sql_init = fs.readFileSync(path.join(__dirname, 'init.sql'), 'utf-8');
+    const sql_init = fs.readFileSync(path.join(process.cwd(), 'server/db/init.sql'), 'utf-8');
     db.exec(sql_init);
     console.log('DB CREATED');
     await db.close();

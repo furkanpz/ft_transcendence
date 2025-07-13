@@ -1,13 +1,17 @@
-import {FastifyReply, FastifyRequest} from 'fastify';
 import * as userServices from '../services/user/user.services'
 import * as authServices from '../services/auth/auth.services'
-import { db_User, User, userRole, jwtUser } from '../types/user.types'
+import { createJWT } from '../services/auth/jwt.services';
+import send2FA from '../services/mail/email.services';
+import { generateOTP } from '../services/auth/2fa.services';
 import {setTemp2FA} from '../services/user/user.services'
+
+import { sendSuccess, sendError } from '../helpers/response';
+import { db_User, User, userRole, jwtUser } from '../types/user.types'
+
+
+import {FastifyReply, FastifyRequest} from 'fastify';
 import server from '../server';
 import crypto from 'crypto';
-import { createJWT } from '../services/auth/jwt.services';
-import { generateOTP, send2FA } from '../services/mail/email.services';
-import { sendSuccess, sendError } from '../helpers/response';
 
 
 export async function loginController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
