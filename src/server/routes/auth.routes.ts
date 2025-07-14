@@ -12,7 +12,13 @@ export default async function AuthRoutes(server:FastifyInstance) {
 	server.post("/sign-in",
 	{
 		schema: schemas.loginSchema,
-		handler: loginController
+		handler: loginController,
+		config: {
+			rateLimit: {
+				max: 10,
+				timeWindow: '1 minute'
+			}
+		}
 	});
 	server.get("/logout", 
 	{
@@ -22,7 +28,13 @@ export default async function AuthRoutes(server:FastifyInstance) {
 	server.post("/sign-up",
 	{
 		schema: schemas.registerSchema,
-		handler: registerController
+		handler: registerController,
+		config: {
+			rateLimit: {
+				max: 10,
+				timeWindow: '1 minute'
+			}
+		}
 	});
 	server.get('/login/google/callback',
 	{

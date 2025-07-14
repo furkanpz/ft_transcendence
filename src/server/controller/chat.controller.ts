@@ -7,6 +7,8 @@ import {
     } from '../services/chat/chat.services';
 import { sendSuccess, sendError } from '../helpers/response';
 import { jwtUser, userRole } from '../types/user.types';
+import { chatManager } from '../services/chat/websocket.manager';
+import server from '../server';
 
 export async function createRoomController(request: FastifyRequest, response: FastifyReply) {
     const user = request.user as jwtUser;
@@ -75,4 +77,25 @@ export async function getRoomHistoryController(request: FastifyRequest, response
 
     const messages = await getChatHistory(roomId, limit ? parseInt(limit) : 50);
     return sendSuccess(response, 'Chat history retrieved successfully', { messages });
+}
+
+export async function chatController(connection: any, req: any) {
+    try {
+        const token = req.cookies.access_token;
+        if (!token) {
+          connection.close(1008, 'Authentication required');
+          return;
+        }
+
+        const jwtusr = server.jwt.verify(token) as any;
+        chatManager.addUser(jwtusr.id, jwtusr.username, connection);
+        
+        connection.send(JSON.stringify({
+          type: 'connected',
+          data: { message: 'Connected to chat server' }
+        }));
+      } catch (error) {
+        console.log(error); // debug
+        connection.close(1008, 'Invalid token');
+      }
 }

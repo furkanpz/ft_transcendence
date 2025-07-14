@@ -2,15 +2,13 @@ import Fastify from 'fastify';
 import jwt from '@fastify/jwt';
 import fastifyStatic from '@fastify/static';
 import path from 'path';
-import registerRoutes from './routes';
+import setRoutes from './routes';
 import fCookie from '@fastify/cookie';
-import { authJwtVerify } from './services/auth/jwt.services';
 import fastifyOauth2 from '@fastify/oauth2';
 const { GOOGLE_CONFIGURATION } = fastifyOauth2;
 import cors from '@fastify/cors';
 import fastifyWebsocket from '@fastify/websocket';
-import { chatManager } from './services/chat/websocket.manager';
-
+import rateLimit from '@fastify/rate-limit';
 const server = Fastify({
   logger: true,
   ajv: {
@@ -28,6 +26,11 @@ async function main() {
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   });
   await server.register(fastifyWebsocket);
+  await server.register(rateLimit, {
+    global: true,
+    max: 200,
+    timeWindow: '1 minute'
+  });
 
   await server.register(fastifyStatic, {
     root: path.join(__dirname, '../frontend'),
@@ -63,30 +66,7 @@ async function main() {
     callbackUri: process.env.GOOGLE_CALLBACK_URI || 'http://localhost:3000/api/auth/login/google/callback'
   });
 
-
-  server.register(async function (fastify) {
-    fastify.get('/ws/chat', { websocket: true }, async (connection, req) => {
-      try {
-        const token = req.cookies.access_token;
-        if (!token) {
-          connection.close(1008, 'Authentication required');
-          return;
-        }
-
-        const jwtusr = fastify.jwt.verify(token) as any;
-        chatManager.addUser(jwtusr.id, jwtusr.username, connection);
-        
-        connection.send(JSON.stringify({
-          type: 'connected',
-          data: { message: 'Connected to chat server' }
-        }));
-      } catch (error) {
-        connection.close(1008, 'Invalid token');
-      }
-    });
-  });
-
-  await registerRoutes(server);
+  await setRoutes(server);
 
   await server.listen({ port: 3000, host: '0.0.0.0' });
 }

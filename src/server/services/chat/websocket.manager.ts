@@ -1,7 +1,7 @@
 import { WebSocket } from 'ws';
 import { ChatMessage, ChatEvent, WebSocketUser } from '../../types/chat.types';
 import { saveMessage, getChatHistory } from '../chat/chat.services';
-
+import chatLimiter from './chat.limiter';
 class ChatManager {
     private connectedUsers: Map<number, WebSocketUser> = new Map();
     private rooms: Map<string, Set<number>> = new Map();
@@ -20,14 +20,14 @@ class ChatManager {
         });
         
         socket.on('message', async (data: string) => {
-            try {
-                const event: ChatEvent = JSON.parse(data);
-                await this.handleMessage(userId, event);
-            } catch (error) {
-                console.error('Error parsing message:', error);
-                this.sendError(socket, 'Invalid message format');
-            }
-        });
+        try {
+            const event: ChatEvent = JSON.parse(data);
+            await this.handleMessage(userId, event);
+        } catch (error) {
+            console.error('Error parsing message:', error);
+            this.sendError(socket, 'Invalid message format');
+        }
+     });
     }
 
     removeUser(userId: number): void {
@@ -40,8 +40,13 @@ class ChatManager {
 
     async handleMessage(userId: number, event: ChatEvent): Promise<void> {
         const user = this.connectedUsers.get(userId);
-        if (!user) return;
-
+        if (!user)
+            return;
+        if (!chatLimiter(userId))
+        {   
+            this.sendError(user.socket, 'Rate limit exceeded. Please Slow Down!');
+            return;
+        }
         switch (event.type) {
             case 'join_room':
                 await this.joinRoom(userId, event.data.room_id);
@@ -71,7 +76,6 @@ class ChatManager {
         
         this.rooms.get(roomId)!.add(userId);
         user.current_room = roomId;
-
         const history = await getChatHistory(roomId);
         this.sendToUser(userId, {
             type: 'chat_history',
@@ -148,12 +152,15 @@ class ChatManager {
     }
 
     sendError(socket: WebSocket, message: string): void {
+    try {
         if (socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({
                 type: 'error',
                 data: { message }
             }));
-        }
+        }}catch (err) {
+        console.error('sendError failed:', err);
+    }
     }
 
     getConnectedUsersCount(): number {
