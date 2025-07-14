@@ -8,6 +8,8 @@ import { authJwtVerify } from './services/auth/jwt.services';
 import fastifyOauth2 from '@fastify/oauth2';
 const { GOOGLE_CONFIGURATION } = fastifyOauth2;
 import cors from '@fastify/cors';
+import fastifyWebsocket from '@fastify/websocket';
+import { chatManager } from './services/chat/websocket.manager';
 
 const server = Fastify({
   logger: true,
@@ -25,6 +27,7 @@ async function main() {
     credentials: true,
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   });
+  await server.register(fastifyWebsocket);
 
   await server.register(fastifyStatic, {
     root: path.join(__dirname, '../frontend'),
@@ -61,7 +64,29 @@ async function main() {
   });
 
 
-  await registerRoutes(server);ç
+  server.register(async function (fastify) {
+    fastify.get('/ws/chat', { websocket: true }, async (connection, req) => {
+      try {
+        const token = req.cookies.access_token;
+        if (!token) {
+          connection.close(1008, 'Authentication required');
+          return;
+        }
+
+        const jwtusr = fastify.jwt.verify(token) as any;
+        chatManager.addUser(jwtusr.id, jwtusr.username, connection);
+        
+        connection.send(JSON.stringify({
+          type: 'connected',
+          data: { message: 'Connected to chat server' }
+        }));
+      } catch (error) {
+        connection.close(1008, 'Invalid token');
+      }
+    });
+  });
+
+  await registerRoutes(server);
 
   await server.listen({ port: 3000, host: '0.0.0.0' });
 }

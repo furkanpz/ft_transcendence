@@ -9,7 +9,7 @@ export async function adminFriendDetailsController(request: FastifyRequest, resp
     const user = request.user as jwtUser;
     const isAdmin = user.role === userRole.admin;
     if (!isAdmin)
-        return sendError(response, 401, "Unauthorized Access");
+        return sendError(response, 403, "Unauthorized Access");
 
     const params = request.params as { id: number };
     const friends = await userFriendsUtils.getFriends(params.id);
@@ -23,7 +23,7 @@ export async function adminRoleUpdateController(request: FastifyRequest, respons
     const user = request.user as jwtUser;
     const isAdmin = user.role === userRole.admin;
     if (!isAdmin)
-        return sendError(response, 401, "Unauthorized Access");
+        return sendError(response, 403, "Unauthorized Access");
 
     const body = request.body as { newRole: userRole, user_id: number };
     const db_user = await userServices.userIdFindInDb(body.user_id);

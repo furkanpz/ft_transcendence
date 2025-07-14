@@ -35,3 +35,34 @@ CREATE TABLE IF NOT EXISTS ft_twof (
 	twof_expiry	DATETIME NOT NULL,
 	is_verified	BOOLEAN DEFAULT FALSE
 );
+
+-- Chat tables
+CREATE TABLE IF NOT EXISTS ft_chat_rooms (
+    id          TEXT PRIMARY KEY,
+    name        VARCHAR(100) NOT NULL,
+    created_by  INTEGER NOT NULL,
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_private  BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (created_by) REFERENCES ft_users(id)
+);
+
+CREATE TABLE IF NOT EXISTS ft_chat_messages (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    room_id     TEXT NOT NULL,
+    user_id     INTEGER NOT NULL,
+    message     TEXT NOT NULL,
+    message_type VARCHAR(20) DEFAULT 'text',
+    timestamp   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (room_id) REFERENCES ft_chat_rooms(id),
+    FOREIGN KEY (user_id) REFERENCES ft_users(id)
+);
+
+CREATE TABLE IF NOT EXISTS ft_chat_participants (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    room_id     TEXT NOT NULL,
+    user_id     INTEGER NOT NULL,
+    joined_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (room_id, user_id),
+    FOREIGN KEY (room_id) REFERENCES ft_chat_rooms(id),
+    FOREIGN KEY (user_id) REFERENCES ft_users(id)
+);

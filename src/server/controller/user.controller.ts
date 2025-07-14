@@ -24,33 +24,33 @@ export async function friendsController(request: FastifyRequest, response: Fasti
 export async function friendRequestController(request: FastifyRequest, response: FastifyReply) {
     const user = request.user as jwtUser;
     const isAdmin = user.role === userRole.admin;
-    const body = request.body as { friend_id: number, user_id?: number, request_type: friendstat };
+    const {friend_id, user_id, request_type} = request.body as { friend_id: number, user_id?: number, request_type: friendstat };
     let targetUserId = user.id;
 
-    if (body.user_id && isAdmin)
-        targetUserId = body.user_id;
+    if (user_id && isAdmin)
+        targetUserId = user_id;
 
-    if (body.friend_id === targetUserId) {
-        const msg = body.request_type === friendstat.Remove
+    if (friend_id === targetUserId) {
+        const msg = request_type === friendstat.Remove
             ? "You can't remove yourself!"
             : "You cannot add yourself as a friend!";
         return sendError(response, 400, msg);
     }
 
-    const friend_db = await userServices.userIdFindInDb(body.friend_id);
+    const friend_db = await userServices.userIdFindInDb(friend_id);
     if (!friend_db)
         return sendError(response, 400, "There is no such person!");
 
-    const requestSuccess = await userFriendsUtils.addFriend(targetUserId, body.friend_id, body.request_type);
+    const requestSuccess = await userFriendsUtils.addFriend(targetUserId, friend_id, request_type);
     if (!requestSuccess) {
-        const msg = body.request_type === friendstat.Remove
+        const msg = request_type === friendstat.Remove
             ? "Friendship Not Removed!"
             : "Friend couldn't be added!";
         return sendError(response, 400, msg);
     }
 
     let message: string;
-    switch (body.request_type) {
+    switch (request_type) {
         case friendstat.Accepted:
             message = "Friend is added!";
             break;
@@ -77,44 +77,48 @@ export async function userProfileController(request: FastifyRequest, response: F
 export async function changePasswordController(request:FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
 	const user = request.user as jwtUser;
 	const isAdmin = user.role === userRole.admin;
-	const body = (request.body as {user_id?: number, password: string, new_password: string, new_re_password: string});
+	const {user_id, password, new_password, new_re_password} = (request.body as 
+        {
+         user_id?: number, password: string,
+         new_password: string, new_re_password: string
+        });
 	let targetUserId = user.id;
-	if (body.user_id && isAdmin) 
-		targetUserId = body.user_id;
-	if (!body.password)
+	if (user_id && isAdmin) 
+		targetUserId = user_id;
+	if (!password)
 		return sendError(response, 400, "Password must not be empty!");
-	if (body.new_password !== body.new_re_password)
+	if (new_password !== new_re_password)
 		return sendError(response, 400, "Passwords do not match!");
-	if (body.password === body.new_password)
+	if (password === new_password)
 		return sendError(response, 400, "New password cannot be the same as the old password!");
 	const db_user = await userServices.userIdFindInDb(targetUserId) as db_User;
 	if (!db_user?.id)
 		return sendError(response, 400, "There is no such user");
-	if (!isAdmin && !(await authServices.checkPW(db_user.password, body.password)))
+	if (!isAdmin && !(await authServices.checkPW(db_user.password, password)))
 		return sendError(response, 400, "Old password is incorrect!");
-	await userServices.setNewPw(body.new_password, targetUserId);
+	await userServices.setNewPw(new_password, targetUserId);
 	return sendSuccess(response, "Password changed successfully");
 }
 
 export async function blockUserController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
     const user = request.user as jwtUser;
     const isAdmin = user.role === userRole.admin;
-    const body = request.body as { blocked_id: number, user_id?: number };
+    const {blocked_id, user_id} = request.body as { blocked_id: number, user_id?: number };
     let targetUserId = user.id;
 
-    if (body.user_id && isAdmin)
-        targetUserId = body.user_id;
+    if (user_id && isAdmin)
+        targetUserId = user_id;
 
-    if (body.blocked_id === targetUserId) {
+    if (blocked_id === targetUserId) {
         return sendError(response, 400, "You cannot block yourself!");
     }
 
-    const blockedUser = await userServices.userIdFindInDb(body.blocked_id);
+    const blockedUser = await userServices.userIdFindInDb(blocked_id);
     if (!blockedUser) {
         return sendError(response, 400, "There is no such user to block!");
     }
 
-    await userFriendsUtils.blockUser(targetUserId, body.blocked_id);
+    await userFriendsUtils.blockUser(targetUserId, blocked_id);
     return sendSuccess(response, "User blocked successfully");
 }
 
@@ -128,22 +132,22 @@ export async function getBlockedUsersController(request: FastifyRequest, respons
 export async function unblockUserController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
     const user = request.user as jwtUser;
     const isAdmin = user.role === userRole.admin;
-    const body = request.body as { blocked_id: number, user_id?: number };
+    const {blocked_id, user_id} = request.body as { blocked_id: number, user_id?: number };
     let targetUserId = user.id;
 
-    if (body.user_id && isAdmin)
-        targetUserId = body.user_id;
+    if (user_id && isAdmin)
+        targetUserId = user_id;
 
-    if (body.blocked_id === targetUserId) {
+    if (blocked_id === targetUserId) {
         return sendError(response, 400, "You cannot unblock yourself!");
     }
 
-    const blockedUser = await userServices.userIdFindInDb(body.blocked_id);
+    const blockedUser = await userServices.userIdFindInDb(blocked_id);
     if (!blockedUser) {
         return sendError(response, 400, "There is no such user to unblock!");
     }
 
-    const resp = await userFriendsUtils.getBlockedUserAndBlocker(body.blocked_id,targetUserId);
+    const resp = await userFriendsUtils.getBlockedUserAndBlocker(blocked_id,targetUserId);
     if (!resp) {
         return sendError(response, 400, "This user is not blocked!");
     }

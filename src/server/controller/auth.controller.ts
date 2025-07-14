@@ -19,7 +19,6 @@ declare module 'fastify' {
   }
 }
 
-
 export async function loginController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
 	const user = request.body as {username: string, password: string};
 	const db_user = await userServices.userFindInDb(user.username) as db_User;

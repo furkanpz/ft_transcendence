@@ -140,3 +140,47 @@ export const blockUserSchema = {
 		additionalProperties: false
 	}
 };
+
+export const roomsSchema = {
+	body: {
+		type: 'object',
+		required: ['name'],
+		properties: {
+			name: { type: 'string', minLength: 1, maxLength: 100 },
+			isPrivate: { type: 'boolean' }
+		}
+	}
+};
+
+export const joinRoomSchema = {
+	params: {
+		type: 'object',
+		properties: {
+			roomId: { type: 'string' }
+		}
+	}
+};
+
+export const roomHistorySchema = {
+	params: {
+		type: 'object',
+		properties: {
+			roomId: { type: 'string' }
+		}
+	},
+	querystring: {
+		type: 'object',
+		properties: {
+			limit: { type: 'string' }
+		}
+	}
+};
+
+export const deleteRoomSchema = {
+	params: {
+		type: 'object',
+		properties: {
+			roomId: { type: 'string' }
+		}
+	}
+};
