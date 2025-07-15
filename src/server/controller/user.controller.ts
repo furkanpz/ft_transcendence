@@ -66,11 +66,15 @@ export async function friendRequestController(request: FastifyRequest, response:
 
 export async function userProfileController(request: FastifyRequest, response: FastifyReply) {
     const user = request.user as jwtUser;
+
+    const db_User = await userServices.userIdFindInDb(user.id) as db_User;
     const profileData = {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
+        id: db_User.id,
+        username: db_User.username,
+        email: db_User.email,
+        avatar_url: db_User.avatar_url,
+        created_at: db_User.created_at,
+        role: db_User.user_role,
     };
     return sendSuccess(response, "User profile retrieved successfully", profileData);
 }
@@ -132,7 +136,8 @@ export async function getBlockedUsersController(request: FastifyRequest, respons
 export async function unblockUserController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
     const user = request.user as jwtUser;
     const isAdmin = user.role === userRole.admin;
-    const {blocked_id, user_id} = request.body as { blocked_id: number, user_id?: number };
+    const { unBlockId: blocked_id } = request.params as { unBlockId: number };
+    const {user_id} = request.query as {user_id?: number}
     let targetUserId = user.id;
 
     if (user_id && isAdmin)

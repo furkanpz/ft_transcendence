@@ -37,7 +37,7 @@ export default async function userRoutes(server: FastifyInstance) {
 		preHandler: authJwtVerify,
 		handler: userProfileController
 	});
-	server.post("/password",
+	server.put("/password",
 	{
 		preHandler:authJwtVerify,
 		schema: schemas.passwordSchema,
@@ -57,11 +57,10 @@ export default async function userRoutes(server: FastifyInstance) {
 		handler:getBlockedUsersController
 	});
 
-	server.post("/friends/unblock",
+	server.delete("/friends/block/:unBlockId",
 	{
 		preHandler: authJwtVerify,
-		schema: schemas.blockUserSchema,
+		schema: schemas.unblockUserSchema,
 		handler: unblockUserController
-	}
-	)
+	});
 }

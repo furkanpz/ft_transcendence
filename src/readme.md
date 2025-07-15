@@ -59,19 +59,6 @@ Eğer 2fa aktif ise Aşşağıdaki Gibi Response Döner
   GET /api/auth/login/google
 ```
 
-#### PASSWORD UPDATE
-
-```http
-  GET /api/auth/logout
-```
-
-| Parametre | Tip     | Açıklama                       |
-| :-------- | :------- | :-------------------------------- |
-| `access_token`      | `string` | **Gerekli**. Login Sonrası Cookiede Saklanır!|
-
-
-
-
 ## USER ENDPOINTS (JWT REQUIRED)
 
 #### PROFILE
@@ -82,7 +69,7 @@ Eğer 2fa aktif ise Aşşağıdaki Gibi Response Döner
 #### CHANGE PASSWORD
 
 ```http
-  POST /api/user/password
+  PUT /api/user/password
 ```
 | Parametre | Tip     | Açıklama                       |
 | :-------- | :------- | :-------------------------------- |
@@ -94,7 +81,7 @@ Eğer 2fa aktif ise Aşşağıdaki Gibi Response Döner
 #### SET 2FA
 
 ```http
-  POST /api/auth/2fa/set2FA
+  POST /api/auth/2fa
 ```
 | Parametre | Tip     | Açıklama                       |
 | :-------- | :------- | :-------------------------------- |
@@ -108,7 +95,7 @@ Başarılı ise aşşağıdaki gibi response döner ve verify bekler
 #### 2FA VERIFY (FOR SET)
 
 ```http
-  POST /api/auth/2fa/set2FA/verify
+  POST /api/auth/2fa/verify
 ```
 | Parametre | Tip     | Açıklama                       |
 | :-------- | :------- | :-------------------------------- |
@@ -122,15 +109,6 @@ Başarılı ise aşşağıdaki gibi response döner ve verify bekler
 ```
 
 #### FRIENDS DETAILS
-
-```http
-  POST /api/user/friends/details
-```
-| Parametre | Tip     | Açıklama                       |
-| :-------- | :------- | :-------------------------------- |
-| `friends`      | `array[number]` | **Gerekli**. Min  1|
-
-#### LIST FRIENDS
 
 ```http
   POST /api/user/friends/details
@@ -171,12 +149,40 @@ Başarılı ise aşşağıdaki gibi response döner ve verify bekler
 #### UNBLOCK USER
 
 ```http
-  POST /api/user/friends/unblock
+  DELETE /api/user/friends/:uBLockId?user_id=
 ```
 | Parametre | Tip     | Açıklama                       |
 | :-------- | :------- | :-------------------------------- |
 | `blocked_id`      | `number` | **Gerekli**|
 | `user_id`      | `number` | **ADMIN için**. Girilen User Adına İstek Yönetimi|
+
+
+#### GET ROOMS
+
+```http
+  GET /api/chat/rooms
+```
+
+
+#### JOIN ROOM
+
+```http
+  POST /api/chat/rooms/:roomId/join
+```
+| Parametre | Tip     | Açıklama                       |
+| :-------- | :------- | :-------------------------------- |
+| `roomId`      | `string` | **Gerekli**|
+
+
+#### GET ROOM HISTORY
+
+```http
+  GET /rooms/:roomId/history?limit=
+```
+| Parametre | Tip     | Açıklama                       |
+| :-------- | :------- | :-------------------------------- |
+| `roomId`      | `string` | **Gerekli**|
+| `limit`      | `string` | **Gerekli Değil**|
 
 
 ## ADMIN ENDPOINTS (JWT REQUIRED - ROLE REQUIRED)
@@ -191,3 +197,23 @@ Başarılı ise aşşağıdaki gibi response döner ve verify bekler
 | `newRole`      | `number` | **Gerekli**|
 | `request_type`      | `enum string` | **Gerekli**. "USER" - "ADMIN"|
 | `user_id`      | `number` | **ADMIN için**. Girilen User Adına İstek Yönetimi|
+
+
+#### CREATE CHAT ROOM
+
+```http
+  POST /api/chat/rooms
+```
+| Parametre | Tip     | Açıklama                       |
+| :-------- | :------- | :-------------------------------- |
+| `name`      | `string` | **Gerekli** Min-Max 1 - 100 |
+| `isPrivate`      | `boolean` | **Gerekli Değil**.|
+
+#### DELETE CHAT ROOM
+
+```http
+  DELETE /api/chat/rooms/:roomId
+```
+| Parametre | Tip     | Açıklama                       |
+| :-------- | :------- | :-------------------------------- |
+| `roomId`      | `string` | **Gerekli**|

@@ -3,12 +3,12 @@ import * as schemas from '../schemas/schema'
 import { set2FAController,
 	veriyfandSetOTPController,
 	veriyfOTPController
- } from '../controller/email.controller';
+ } from '../controller/2fa.controller';
 import { authJwtVerify } from '../services/auth/jwt.services'
 
-export async function emailRoutes(server : FastifyInstance)
+export async function twoFactorRoutes(server : FastifyInstance)
 {
-	server.post("/set2FA",
+	server.post("/2fa",
 	{
 		schema: 	schemas.twoFSchema,
 		preHandler: authJwtVerify,
@@ -20,7 +20,7 @@ export async function emailRoutes(server : FastifyInstance)
 			}
 		}
 	});
-	server.post("/set2FA/verify",
+	server.post("/2fa/verify",
 	{
 		preHandler:	authJwtVerify,
 		schema:		schemas.twoFSVerifySchema,
@@ -33,7 +33,7 @@ export async function emailRoutes(server : FastifyInstance)
 		}
 	}
 	);
-	server.post("/login", {
+	server.post("/2fa/login", {
 		handler:veriyfOTPController,
 		schema: schemas.twoFloginSchema,
 		config: {

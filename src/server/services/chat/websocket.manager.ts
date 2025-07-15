@@ -1,7 +1,7 @@
 import { WebSocket } from 'ws';
 import { ChatMessage, ChatEvent, WebSocketUser } from '../../types/chat.types';
 import { saveMessage, getChatHistory } from '../chat/chat.services';
-import chatLimiter from './chat.limiter';
+import chatLimiter from '../../helpers/chat.limiter';
 class ChatManager {
     private connectedUsers: Map<number, WebSocketUser> = new Map();
     private rooms: Map<string, Set<number>> = new Map();

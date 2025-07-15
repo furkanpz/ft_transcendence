@@ -141,6 +141,22 @@ export const blockUserSchema = {
 	}
 };
 
+export const unblockUserSchema = {
+	params: {
+		type: 'object',
+		properties: {
+			unBlockId: { type: 'string' }
+		}
+	},
+	querystring: {
+		type: 'object',
+		properties: {
+			user_id: { type: 'string' }
+		}
+	}
+};
+
+
 export const roomsSchema = {
 	body: {
 		type: 'object',

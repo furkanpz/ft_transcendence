@@ -16,7 +16,7 @@ export default async function chatRoutes(server: FastifyInstance) {
         handler: createRoomController
     });
 
-	server.post('/rooms/:roomId/delete', {
+	server.delete('/rooms/:roomId', {
 		preHandler: authJwtVerify,
 		schema: schemas.deleteRoomSchema,
 		handler: deleteRoomController
