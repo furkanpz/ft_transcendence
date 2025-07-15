@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Login</title>
+	<script src="main.js"></script>
+	<style>
+		:root {
+			--color-primary: #222222;
+			--color-secondary: #000000;
+			--color-accent: #1DCD9F;
+		}
+
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: var(--color-secondary);
+		}
+
+		.login-area {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			height: 100dvh;
+			gap: 20px;
+			color: var(--color-accent);
+			background-color: var(--color-primary);
+			border: solid 3px var(--color-accent);
+			border-radius: 10px;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="app">
+		<div id="loginArea" class="login-area">
+			<button id="toggleSignUp" onclick="toggleSignUp()">Sign-up</button>
+			<h1>Login</h1>
+			<input id="email" type="email" placeholder="Email" class="login-input" />
+			<input id="password" type="password" placeholder="Password" class="login-input" />
+			<button id="loginButton" class="login-button" onclick="login()">Login</button>
+		</div>
+	</div>
+</body>
+
+</html>
