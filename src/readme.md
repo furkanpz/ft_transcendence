@@ -53,6 +53,60 @@ Eğer 2fa aktif ise Aşşağıdaki Gibi Response Döner
 | :-------- | :------- | :-------------------------------- |
 | `access_token`      | `string` | **Gerekli**. Login Sonrası Cookiede Saklanır!|
 
+
+#### Account Recovery (STEP 1)
+
+```http
+  POST /api/auth/account_recovery
+```
+
+| Parametre | Tip     | Açıklama                       |
+| :-------- | :------- | :-------------------------------- |
+| `email`      | `string` | **Gerekli**. |
+
+Eğer böyle bir hesap varsa mail adresine link gönderilcek!
+
+#### Account Recovery (STEP 2)
+
+```http
+  GET /api/auth/account_recovery?verify=&email=
+```
+
+| Parametre | Tip     | Açıklama                       |
+| :-------- | :------- | :-------------------------------- |
+| `verify`      | `string` | **Gerekli**. |
+| `email`      | `string` | **Gerekli**. |
+
+Başarılı durumda aşşağıdaki döner
+```example
+  {success: true, message:"STEPTWOAUTHREQ", {email: "test@gmail.com", verifycode: "123456"}}
+```
+#### Account Recovery (STEP 2)
+
+```http
+  GET /api/auth/account_recovery?verify=&email=
+```
+
+| Parametre | Tip     | Açıklama                       |
+| :-------- | :------- | :-------------------------------- |
+| `verify`      | `string` | **Gerekli**. |
+| `email`      | `string` | **Gerekli**. |
+
+#### Account Recovery (STEP 3 - LAST STEP)
+
+```http
+  POST /api/auth/account_recovery/verify
+```
+
+| Parametre | Tip     | Açıklama                       |
+| :-------- | :------- | :-------------------------------- |
+| `verifycode`      | `string` | **Gerekli**. |
+| `email`      | `string` | **Gerekli**. |
+| `new_password`      | `string` | **Gerekli**. |
+| `new_re_password`      | `string` | **Gerekli**. |
+
+Bu Aşama STEP 2 sonrasında 15 Dakika içinde doldurulmalıdır yoksa iptal olur!
+
 #### GOOGLE LOGIN (REMOTE AUTH)
 
 ```http

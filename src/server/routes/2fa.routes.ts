@@ -2,7 +2,9 @@ import { FastifyInstance} from 'fastify';
 import * as schemas from '../schemas/schema'
 import { set2FAController,
 	veriyfandSetOTPController,
-	veriyfOTPController
+	veriyfOTPController,
+	mailAccountRecoveryController,
+	veriyfMailOTPController
  } from '../controller/2fa.controller';
 import { authJwtVerify } from '../services/auth/jwt.services'
 
@@ -13,34 +15,29 @@ export async function twoFactorRoutes(server : FastifyInstance)
 		schema: 	schemas.twoFSchema,
 		preHandler: authJwtVerify,
 		handler: 	set2FAController,
-		config: {
-			rateLimit: {
-				max: 10,
-				timeWindow: '1 minute'
-			}
-		}
+		config: schemas.rateLimiter,
 	});
 	server.post("/2fa/verify",
 	{
 		preHandler:	authJwtVerify,
 		schema:		schemas.twoFSVerifySchema,
 		handler:	veriyfandSetOTPController,
-		config: {
-			rateLimit: {
-				max: 10,
-				timeWindow: '1 minute'
-			}
-		}
+		config: schemas.rateLimiter,
 	}
 	);
 	server.post("/2fa/login", {
 		handler:veriyfOTPController,
 		schema: schemas.twoFloginSchema,
-		config: {
-			rateLimit: {
-				max: 10,
-				timeWindow: '1 minute'
-			}
-		}
+		config: schemas.rateLimiter,
 	});
+	server.get("/account_recovery", {
+		schema: schemas.recoveryPageSchema,
+		config: schemas.rateLimiter,
+		handler:mailAccountRecoveryController
+	})
+	server.post("/account_recovery/verify", {
+		schema: schemas.recoveryStepTwoPageSchema,
+		config: schemas.rateLimiter,
+		handler:veriyfMailOTPController
+	})
 };

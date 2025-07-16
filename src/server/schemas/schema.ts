@@ -200,3 +200,43 @@ export const deleteRoomSchema = {
 		}
 	}
 };
+
+export const account_recovery = {
+	body: {
+		required: ['email'],
+		type: 'object',
+		properties: {
+			email: emailKeySchema,
+		}
+	}
+}
+
+export const recoveryPageSchema = {
+	querystring: {
+		required: ["verify", "email"],
+		type: 'object',
+		properties: {
+			email: emailKeySchema,
+			verify: { type: 'string' },
+		}
+	}
+}
+export const rateLimiter = {
+		rateLimit: {
+			max: 10,
+			timeWindow: '1 minute'
+		}
+	};
+
+export const recoveryStepTwoPageSchema = {
+	body: {
+		type: 'object',
+		required: ['email', 'verifycode', 'new_password', 'new_re_password'],
+		properties: {
+			email: emailKeySchema,
+			verifycode: {type: 'string'},
+			new_password:	passwordKeySchema,
+			new_re_password:passwordKeySchema
+		}
+	}
+}

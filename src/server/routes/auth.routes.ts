@@ -4,6 +4,7 @@ import {loginController,
 	logoutController,
 	registerController,
 	googleAuthController,
+	accountRecoveryController
 } from '../controller/auth.controller'
 import { authJwtVerify } from '../services/auth/jwt.services'
 
@@ -13,12 +14,7 @@ export default async function AuthRoutes(server:FastifyInstance) {
 	{
 		schema: schemas.loginSchema,
 		handler: loginController,
-		config: {
-			rateLimit: {
-				max: 10,
-				timeWindow: '1 minute'
-			}
-		}
+		config: schemas.rateLimiter
 	});
 	server.get("/logout", 
 	{
@@ -29,16 +25,16 @@ export default async function AuthRoutes(server:FastifyInstance) {
 	{
 		schema: schemas.registerSchema,
 		handler: registerController,
-		config: {
-			rateLimit: {
-				max: 10,
-				timeWindow: '1 minute'
-			}
-		}
+		config: schemas.rateLimiter
 	});
-	server.get('/login/google/callback',
+	server.get("/login/google/callback",
 	{
 		handler: googleAuthController
 	});
 
+	server.post("/account_recovery", {
+		schema: schemas.account_recovery,
+		config: schemas.rateLimiter,
+		handler:accountRecoveryController
+	})
 }

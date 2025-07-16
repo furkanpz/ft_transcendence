@@ -1,8 +1,8 @@
 import * as userServices from '../services/user/user.services'
 import * as authServices from '../services/auth/auth.services'
 import { createJWT } from '../services/auth/jwt.services';
-import send2FA from '../services/mail/email.services';
-import { generateOTP } from '../services/auth/2fa.services';
+import send2FA, {sendRecovery, sendRecovery_2} from '../services/mail/email.services';
+import { generateOTP, generateOTP_2 } from '../services/auth/2fa.services';
 import {setTemp2FA} from '../services/user/user.services'
 
 import { sendSuccess, sendError } from '../helpers/response';
@@ -124,4 +124,16 @@ export async function googleAuthController(request: FastifyRequest, response: Fa
     
         userServices.setIsOnline(true, db_user.id);
         return response.redirect('/');
+}
+
+
+export async function accountRecoveryController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
+	const {email} = request.body as {email: string};
+	const id = await userServices.getUserWithEmail(email) as number | undefined;
+	if (!id)
+		return (sendSuccess(response, "If there is such a user, a verification email has been sent"));
+	const OTP = generateOTP_2();
+	await setTemp2FA(id, OTP.otp, OTP.secret);
+	await sendRecovery_2(email, OTP.otp)
+	return (sendSuccess(response, "If there is such a user, a verification email has been sent"));
 }

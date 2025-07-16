@@ -78,7 +78,6 @@ export async function getTemp2FAVerified(user_id: number) : Promise<boolean> {
 	return !!twofactorstatus?.is_verified;
 }
 
-
 export async function get2FAOTP(user_id: number): Promise<twoFactor | null> {
 	const db = await getDb();
 
@@ -88,14 +87,50 @@ export async function get2FAOTP(user_id: number): Promise<twoFactor | null> {
 		   AND twof_expiry > CURRENT_TIMESTAMP 
 		   AND is_verified = FALSE
 		 ORDER BY twof_expiry DESC LIMIT 1`,
-		user_id
+		[user_id]
 	);
 
 	return db_otp ?? null;
 }
 
+
 export async function setNewPw(new_pw: string, user_id: number): Promise<void> {
 	const db = await getDb();
 	const hashed_pw = await bcrypt.hash(new_pw, S_R);
 	await db.run("UPDATE ft_users SET password = ? WHERE id = ?",hashed_pw, user_id);
+}
+
+export async function getUserWithEmail(email: string): Promise<number | undefined> {
+	const db = await getDb();
+	const user = await db.get("SELECT id FROM ft_users WHERE email = ?", email);
+	return (user);
+}
+
+export async function setTemp2FAForRecovery(user_id: number, otp: string) {
+	const db = await getDb();
+	const expiry = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+	const stmt = `
+		UPDATE ft_twof
+		SET twof_expiry = ?, is_verified = 1
+		WHERE user_id = ? AND twof_code = ?
+	`;
+	await db.run(stmt, [expiry, user_id, otp]);
+}
+
+export async function getLatestValidVerifiedOTPByUser(user_id: number, twof_code: string) {
+	const db = await getDb();
+	const stmt = `
+		SELECT * FROM ft_twof
+		WHERE user_id = ?
+		  AND twof_code = ?
+		  AND is_verified = 1
+		  AND twof_expiry > CURRENT_TIMESTAMP
+		ORDER BY twof_expiry DESC
+		LIMIT 1
+	`;
+	const row = await db.get(stmt, [user_id, twof_code]);
+	if (row)
+		return true;
+	else
+		return false;
 }
