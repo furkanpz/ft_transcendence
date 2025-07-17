@@ -1,6 +1,6 @@
 function getProfileInfo()
 {
-	fetch("http://192.168.1.182:3000/api/users/profile", {
+	fetch("http://.1.182:3000/api/users/profile", {
 		method: "GET",
 		credentials: "include"
 	})

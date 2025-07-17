@@ -20,7 +20,7 @@ export function login()
 {
     const email = document.getElementById("email") as HTMLInputElement;
     const password = document.getElementById("password") as HTMLInputElement;
-    fetch(`http://192.168.1.182:3000/api/auth/sign-in`, {
+    fetch(`http://${process.env.FETCH_IP}:3000/api/auth/sign-in`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -53,7 +53,7 @@ export function signUp()
         alert("Passwords do not match!");
         return;
     }
-    fetch(`http://192.168.1.182:3000/api/auth/sign-up`, {
+    fetch(`http://${process.env.FETCH_IP}:3000/api/auth/sign-up`, {
         method: "POST",
         credentials: "include",
         headers: {
