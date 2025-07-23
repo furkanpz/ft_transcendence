@@ -111,4 +111,6 @@ export async function mailAccountRecoveryController(request: FastifyRequest, res
 	}
 	else
 		return (sendError(response, 401, "Incorrect Recovery Link"));
+	return (sendError(response, 401, "Incorrect Recovery Link"));
+
 }

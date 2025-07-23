@@ -20,7 +20,7 @@ export function login()
 {
     const email = document.getElementById("email") as HTMLInputElement;
     const password = document.getElementById("password") as HTMLInputElement;
-    fetch(`http://${process.env.FETCH_IP}:3000/api/auth/sign-in`, {
+    fetch(`http://localhost:3000/api/auth/sign-in`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -53,7 +53,7 @@ export function signUp()
         alert("Passwords do not match!");
         return;
     }
-    fetch(`http://${process.env.FETCH_IP}:3000/api/auth/sign-up`, {
+    fetch(`http://localhost:3000/api/auth/sign-up`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -133,3 +133,18 @@ export function toggleSignUp()
             app.innerHTML = SignUpPage();
     }
 }
+
+export function loadLoginPage()
+{
+    const app = document.getElementById("app");
+    if (app)
+    {
+        app.innerHTML = LoginPage();
+    }
+}
+
+// main.ts'in en altına ekle
+(window as any).loadLoginPage = loadLoginPage;
+(window as any).login = login;
+(window as any).signUp = signUp;
+(window as any).toggleSignUp = toggleSignUp;

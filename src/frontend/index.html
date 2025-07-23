@@ -80,7 +80,7 @@
         height: 4ch;
       }
       .login-area {
-        display: none;
+        /* display: none; */
         flex-direction: column;
         align-items: center;
         margin-top: 5px;
@@ -99,8 +99,8 @@
         width: 50px;
       }
     </style>
-    <script src="entry.page.js"></script>"
-    <script src="main.js"></script>
+    <script type="module" src="out/entry.page.js"></script>
+    <script type="module" src="out/main.js"></script>
   </head>
   <body>
     <div id="app" class="app">
@@ -109,7 +109,7 @@
         <button id="playButton" class="login-button">
           Play
         </button>
-        <button id="loginButton" class="login-button">
+        <button id="loginButton" class="login-button" onclick="loadLoginPage()">
           Login
         </button>
       </div>

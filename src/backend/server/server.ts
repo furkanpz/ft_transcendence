@@ -33,7 +33,7 @@ async function main() {
   });
 
   await server.register(fastifyStatic, {
-    root: path.join(__dirname, '../frontend'),
+    root: path.join(__dirname, '../../../frontend'),
 
     prefix: '/',
     decorateReply: false
