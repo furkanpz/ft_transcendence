@@ -1,0 +1,9 @@
+services:
+  backend:
+    container_name: backend
+    build: ./src/
+    ports:
+      - 3000:3000
+    volumes:
+      - ./src/frontend:/frontend:ro
+    

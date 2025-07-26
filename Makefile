@@ -1,19 +1,12 @@
+all: build up
 
-
-
-
-
-all : build run
-
-fclean: stop 
-	@docker rmi -f trans
-
-re: stop build run
-
-stop:
-	@docker rm -f $$(docker ps -aq) || echo "No containers to stop"
+re: down build up
 
 build:
-	@docker build -t trans ./src
-run :
-	@docker run -p 3000:3000 trans
+	docker compose build -f
+
+up:
+	docker compose up
+
+down:
+	docker compose down
