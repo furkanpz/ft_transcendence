@@ -3,7 +3,7 @@ all: build up
 re: down build up
 
 build:
-	docker compose build -f
+	docker compose build
 
 up:
 	docker compose up
