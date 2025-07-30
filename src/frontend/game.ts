@@ -52,6 +52,7 @@ interface Player {
     dim: Vector2;
     style: string | CanvasGradient | CanvasPattern;
     speed: number;
+    score: number;
 }
 
 interface Pong {
@@ -67,8 +68,8 @@ const WIDTH = 800;
 const PLAYER_HEIGHT = 100;
 const PLAYER_WIDTH = 15;
 const PLAYER_GAP = 10;
-const PLAYER_SPEED = 200;
-const BALL_SPEED = 
+const PLAYER_SPEED = 400;
+const BALL_SPEED = 600;
 
 const canvas = document.createElement("canvas") as HTMLCanvasElement;
 canvas.width = WIDTH;
@@ -94,7 +95,7 @@ let ball: Ball = {
     pos: new Vector2(WIDTH / 2, HEIGHT / 2),
     dir: new Vector2(1, 1).norm(),
     radius: 25,
-    speed: 100,
+    speed: BALL_SPEED,
     style: "red"
 }
 
@@ -102,14 +103,16 @@ let player1: Player = {
     pos: new Vector2(PLAYER_GAP, HEIGHT / 2),
     dim: new Vector2(PLAYER_WIDTH, PLAYER_HEIGHT),
     speed: PLAYER_SPEED,
-    style: "blue"
+    style: "blue",
+    score: 0,
 }
 
 let player2: Player = {
     pos: new Vector2(WIDTH - PLAYER_WIDTH - PLAYER_GAP, HEIGHT / 2),
     dim: new Vector2(PLAYER_WIDTH, PLAYER_HEIGHT),
     speed: PLAYER_SPEED,
-    style: "green"
+    style: "green",
+    score: 0,
 }
 
 let game: Pong = {
@@ -150,31 +153,75 @@ function updatePlayer1(deltaTime: number) {
     }
 }
 
-function updatePlayer2(deltaTime: number) {
-    if (pressedKeys.has("ArrowUp")) {
-        if (game.player2.pos.y <= 0)
-            game.player2.pos.y = 0;
-        else
-            game.player2.pos = game.player2.pos.sub(Vector2.J().mul(game.player2.speed * deltaTime));
+function updatePlayer2(deltaTime: number, isAI: boolean) {
+    if (!isAI) {
+        if (pressedKeys.has("ArrowUp")) {
+            if (game.player2.pos.y <= 0)
+                game.player2.pos.y = 0;
+            else
+                game.player2.pos = game.player2.pos.sub(Vector2.J().mul(game.player2.speed * deltaTime));
+        }
+        if (pressedKeys.has("ArrowDown")) {
 
+            if (game.player2.pos.y >= HEIGHT - PLAYER_HEIGHT)
+                game.player2.pos.y = HEIGHT - PLAYER_HEIGHT;
+            else
+                game.player2.pos = game.player2.pos.add(Vector2.J().mul(game.player2.speed * deltaTime));
+        }
     }
-    if (pressedKeys.has("ArrowDown")) {
+    else {
+        if (game.ball.pos.y < game.player2.pos.y) {
+            if (game.player2.pos.y <= 0)
+                game.player2.pos.y = 0;
+            else
+                game.player2.pos = game.player2.pos.sub(Vector2.J().mul(game.player2.speed * deltaTime));
+        }
+        if (game.ball.pos.y > game.player2.pos.y) {
 
-        if (game.player2.pos.y >= HEIGHT - PLAYER_HEIGHT)
-            game.player2.pos.y = HEIGHT - PLAYER_HEIGHT;
-        else
-            game.player2.pos = game.player2.pos.add(Vector2.J().mul(game.player2.speed * deltaTime));
+            if (game.player2.pos.y >= HEIGHT - PLAYER_HEIGHT)
+                game.player2.pos.y = HEIGHT - PLAYER_HEIGHT;
+            else
+                game.player2.pos = game.player2.pos.add(Vector2.J().mul(game.player2.speed * deltaTime));
+        }
     }
 }
 
+function isCircleRectColliding(ball: Ball, player1: Player): boolean {
+    // En yakın noktayı bul (dikdörtgene kenetlenmiş)
+    const closestX = Math.max(player1.pos.x, Math.min(ball.pos.x, player1.pos.x + player1.dim.x));
+    const closestY = Math.max(player1.pos.y, Math.min(ball.pos.y, player1.pos.y + player1.dim.y));
+
+    // Daire merkezinden bu en yakın noktaya uzaklık
+    const dx = ball.pos.x - closestX;
+    const dy = ball.pos.y - closestY;
+
+    return (dx * dx + dy * dy) <= (ball.radius * ball.radius);
+}
+
 function updateBall(deltaTime: number) {
+
     if (game.ball.pos.x + game.ball.radius > WIDTH) {
-        game.ball.pos.x = WIDTH - game.ball.radius;
-        game.ball.dir.x *= -1;
+        game.player1.score++;
+        ball.pos = new Vector2(WIDTH / 2, HEIGHT / 2);
+        ball.dir = Vector2.I();
+        console.log(game.player1.score + " | " + game.player2.score)
     }
-    else if (game.ball.pos.x - game.ball.radius < 0) {
-        game.ball.pos.x = game.ball.radius;
-        game.ball.dir.x *= -1;
+
+    if (game.ball.pos.x - game.ball.radius < 0) {
+        game.player2.score++;
+        ball.pos = new Vector2(WIDTH / 2, HEIGHT / 2);
+        ball.dir = Vector2.I().mul(-1);
+        console.log(game.player1.score + " | " + game.player2.score)
+    }
+
+    if (isCircleRectColliding(game.ball, game.player1)) {
+        const newDir = game.ball.pos.sub(game.player1.pos.add(game.player1.dim.div(2)).add(Vector2.I().mul(-25))).norm();
+        game.ball.dir = newDir;
+    }
+
+    if (isCircleRectColliding(game.ball, game.player2)) {
+        const newDir = game.ball.pos.sub(game.player2.pos.add(game.player2.dim.div(2)).add(Vector2.I().mul(25))).norm();
+        game.ball.dir = newDir;
     }
 
     if (game.ball.pos.y + game.ball.radius > HEIGHT) {
@@ -190,13 +237,31 @@ function updateBall(deltaTime: number) {
 
 function update(deltaTime: number) {
     updatePlayer1(deltaTime);
-    updatePlayer2(deltaTime);
+    updatePlayer2(deltaTime, true);
     updateBall(deltaTime);
 }
 
+function drawBackground(ctx: CanvasRenderingContext2D)
+{
+    // Background
+    ctx.fillStyle = "#303030";
+    ctx.fillRect(0, 0, 1200, 900);
+    // CenterLine
+    ctx.strokeStyle = "#606060";
+    ctx.beginPath();
+    ctx.lineWidth = 10;
+    ctx.moveTo(WIDTH / 2, 0);
+    ctx.lineTo(WIDTH / 2, HEIGHT);
+    ctx.stroke();
+    // Scores
+    ctx.fillStyle = "white"
+    ctx.font = "50px Ariel"
+    ctx.fillText(game.player1.score.toString(), WIDTH / 4, HEIGHT / 2);
+    ctx.fillText(game.player2.score.toString(), 3 * WIDTH / 4, HEIGHT / 2);
+}
+
 function render(pong: Pong) {
-    pong.ctx.fillStyle = "#303030";
-    pong.ctx.fillRect(0, 0, 1200, 900);
+    drawBackground(pong.ctx);
     drawBall(pong.ctx, game.ball);
     drawPlayer(pong.ctx, game.player1);
     drawPlayer(pong.ctx, game.player2);
