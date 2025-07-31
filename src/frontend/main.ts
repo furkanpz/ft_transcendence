@@ -77,13 +77,17 @@ export function signUp()
 export function LoginPage()
 {
     return `
-        <div id="loginArea" class="login-area">
-			<button id="toggleSignUp" onclick="toggleSignUp()">Sign-up</button>
-			<h1>Login</h1>
-			<input id="email" type="email" placeholder="Email" class="login-input" />
-			<input id="password" type="password" placeholder="Password" class="login-input" />
-			<button id="loginButton" class="login-button" onclick="login()">Login</button>
-		</div>
+        <div class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
+        <form method="post" class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">
+            <input type="text" id="email" placeholder="Email" class="bg-white p-1"></input>
+            <input type="text" id="password" placeholder="Password" class="bg-white p-1"></input>
+            <button type="submit" onclick="login()" class="bg-white text-black py-2 px-4 rounded">Login</button>
+        </form>
+        <div class="flex flex-row w-2xl  justify-between items-center gap-4">
+        <button id="toggleSignUp" class="underline cursor-pointer" onclick="toggleSignUp()">Forgot password?</button>
+        <button id="toggleSignUp" class="underline cursor-pointer" onclick="toggleSignUp()">Don't have an account? Sign Up</button>
+        </div>
+        </div>
     `;
 }
 
