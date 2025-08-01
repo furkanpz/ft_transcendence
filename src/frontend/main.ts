@@ -16,8 +16,10 @@
 //const box = Babylon.MeshBuilder.CreateBox("box", {}, scene);
 //
 //engine.runRenderLoop(() => { scene.render(); })
-export function login()
+export function login(event : Event)
 {
+    event.preventDefault();
+    const app = document.getElementById("app");
     const email = document.getElementById("email") as HTMLInputElement;
     const password = document.getElementById("password") as HTMLInputElement;
     fetch(`http://localhost:3000/api/auth/sign-in`, {
@@ -32,19 +34,29 @@ export function login()
         })
     })
     .then(response => {
-        console.log(response.headers.get("jwt-token"));
+        // console.log(response.headers.get("jwt-token"));
         return response.json()
     })
     .then(data => {
         if (data.success == true)
+        {
             alert("Login Success!");
+            if (app)
+                app.innerHTML = HomePage();
+        }   
         else
+        {
             alert("Login Failed: " + data.message);
+            if (app)
+                app.innerHTML = LoginPage();
+            
+        }
     });
 }
 
-export function signUp()
+export function signUp(event: Event)
 {
+    
     const username = document.getElementById("username") as HTMLInputElement;
     const email = document.getElementById("email") as HTMLInputElement;
     const password = document.getElementById("password") as HTMLInputElement;
@@ -81,7 +93,7 @@ export function LoginPage()
         <form method="post" class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">
             <input type="text" id="email" placeholder="Email" class="bg-white p-1"></input>
             <input type="text" id="password" placeholder="Password" class="bg-white p-1"></input>
-            <button type="submit" onclick="login()" class="bg-white text-black py-2 px-4 rounded">Login</button>
+            <button type="submit" onclick="login(event)" class="bg-white text-black py-2 px-4 rounded">Login</button>
         </form>
         <div class="flex flex-row w-2xl  justify-between items-center gap-4">
         <button id="toggleSignUp" class="underline cursor-pointer" onclick="toggleSignUp()">Forgot password?</button>
@@ -145,6 +157,35 @@ export function loadLoginPage()
     {
         app.innerHTML = LoginPage();
     }
+}
+
+export function HomePage()
+{
+    return `
+    <div class="mx-32">
+
+        <!-- Logo and Title -->
+        
+        <!-- main body-->
+        <div class="mx-32 h-[92vh] text-center items-center flex flex-col justify-center gap-6">
+          <button class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
+            Single Player
+          </button>
+          <button class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
+            Multiplayer
+          </button>
+        </div>
+
+
+      </div>
+    `;
+}
+
+export function loadHomePage()
+{
+    const app = document.getElementById("app");
+    if (app)
+        app.innerHTML = HomePage();
 }
 
 // main.ts'in en altına ekle
