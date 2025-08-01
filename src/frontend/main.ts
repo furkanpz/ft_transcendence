@@ -1,25 +1,6 @@
-//import * as Babylon from "babylonjs"
-
-//const canvas: HTMLCanvasElement = document.getElementById("gameCanvas") as HTMLCanvasElement;
-
-//const engine: Babylon.Engine = new Babylon.Engine(canvas, true, {}, true);
-//
-//const scene = new Babylon.Scene(engine);
-//
-//const camera = new Babylon.ArcRotateCamera("camera", Math.PI / 4, Math.PI / 4, 10, Babylon.Vector3.Zero(), scene, true);
-//
-//camera.setTarget(Babylon.Vector3.Zero());
-//camera.attachControl(canvas);
-//
-//const light = new Babylon.PointLight("light", new Babylon.Vector3(1, 2, 2), scene);
-//
-//const box = Babylon.MeshBuilder.CreateBox("box", {}, scene);
-//
-//engine.runRenderLoop(() => { scene.render(); })
 export function login(event : Event)
 {
     event.preventDefault();
-    const app = document.getElementById("app");
     const email = document.getElementById("email") as HTMLInputElement;
     const password = document.getElementById("password") as HTMLInputElement;
     fetch(`http://localhost:3000/api/auth/sign-in`, {
@@ -33,30 +14,25 @@ export function login(event : Event)
             password: password.value
         })
     })
-    .then(response => {
-        // console.log(response.headers.get("jwt-token"));
-        return response.json()
-    })
+    .then(response => response.json())
     .then(data => {
+        console.log(data);
         if (data.success == true)
         {
             alert("Login Success!");
-            if (app)
-                app.innerHTML = HomePage();
+            loadPage(HomePage);
         }   
         else
         {
             alert("Login Failed: " + data.message);
-            if (app)
-                app.innerHTML = LoginPage();
-            
+            loadPage(LoginPage);
         }
     });
 }
 
 export function signUp(event: Event)
 {
-    
+    event.preventDefault();
     const username = document.getElementById("username") as HTMLInputElement;
     const email = document.getElementById("email") as HTMLInputElement;
     const password = document.getElementById("password") as HTMLInputElement;
@@ -80,40 +56,46 @@ export function signUp(event: Event)
     .then(response => response.json())
     .then(data => {
         if (data.success == true)
+        {
             alert("Sign-up Success! You can now log in.");
+            loadPage(LoginPage);
+        }
         else
             alert("Sign-up Failed: " + data.message);
     });
 }
 
-export function LoginPage()
+export function LoginPage() : string
 {
     return `
-        <div class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
-        <form method="post" class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">
-            <input type="text" id="email" placeholder="Email" class="bg-white p-1"></input>
-            <input type="text" id="password" placeholder="Password" class="bg-white p-1"></input>
-            <button type="submit" onclick="login(event)" class="bg-white text-black py-2 px-4 rounded">Login</button>
-        </form>
-        <div class="flex flex-row w-2xl  justify-between items-center gap-4">
-        <button id="toggleSignUp" class="underline cursor-pointer" onclick="toggleSignUp()">Forgot password?</button>
-        <button id="toggleSignUp" class="underline cursor-pointer" onclick="toggleSignUp()">Don't have an account? Sign Up</button>
-        </div>
+        <div id="loginArea" class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
+            <form method="post" class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">
+                <input type="text" id="email" placeholder="Email" class="bg-white p-1"></input>
+                <input type="password" id="password" placeholder="Password" class="bg-white p-1"></input>
+                <button type="submit" onclick="login(event)" class="bg-white text-black py-2 px-4 rounded">Login</button>
+            </form>
+            <div class="flex flex-row w-2xl  justify-between items-center gap-4">
+                <button id="toggleSignUp" class="underline cursor-pointer" onclick="toggleSignUp()">Forgot password?</button>
+                <button id="toggleSignUp" class="underline cursor-pointer" onclick="toggleSignUp()">Don't have an account? Sign Up</button>
+            </div>
         </div>
     `;
 }
 
-export function SignUpPage()
+export function SignUpPage() : string
 {
     return `
-        <div id="signUpArea" class="login-area">
-            <button id="toggleSignUp" onclick="toggleSignUp()">Login</button>
-            <h1>Sign-up</h1>
-            <input id="username" type="text" placeholder="Username" class="sign-up-input" />
-            <input id="email" type="email" placeholder="Email" class="sign-up-input" />
-            <input id="password" type="password" placeholder="Password" class="sign-up-input" />
-            <input id="confirmPassword" type="password" placeholder="Confirm Password" class="sign-up-input" />
-            <button id="signUpButton" class="sign-up-button" onclick="signUp()">Sign Up</button>
+        <div id="signUpArea" class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
+            <form method="post" class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">
+                <input type="text" id="username" placeholder="Username" class="bg-white p-1"></input>
+                <input type="text" id="email" placeholder="Email" class="bg-white p-1"></input>
+                <input type="password" id="password" placeholder="Password" class="bg-white p-1"></input>
+                <input type="password" id="confirmPassword" placeholder="Confirm Password" class="bg-white p-1"></input>
+                <button type="submit" onclick="signUp(event)" class="bg-white text-black py-2 px-4 rounded">Sign-Up</button>
+            </form>
+            <div class="flex flex-row w-2xl  justify-between items-center gap-4">
+                <button id="toggleSignUp" class="underline cursor-pointer" onclick="toggleSignUp()">Already have an account? Sign In</button>
+            </div>
         </div>
     `;
 }
@@ -129,37 +111,24 @@ export function ProfilePage(userData: { username: string, email: string })
     `;
 }
 
-function loadPage(pageLoader: () => void | void)
+export function loadPage(page: () => string)
 {
     const app = document.getElementById("app");
     if (app)
     {
-        app.innerHTML = LoginPage();
+        app.innerHTML = page();
     }
 }
 
 export function toggleSignUp()
 {
-    const app = document.getElementById("app");
-    if (app)
-    {
-        if (app.innerHTML.includes("signUpArea"))
-            app.innerHTML = LoginPage();
-        else
-            app.innerHTML = SignUpPage();
-    }
+    if (document.getElementById("app")!.innerHTML.includes("signUpArea"))
+        loadPage(LoginPage);
+    else
+        loadPage(SignUpPage);
 }
 
-export function loadLoginPage()
-{
-    const app = document.getElementById("app");
-    if (app)
-    {
-        app.innerHTML = LoginPage();
-    }
-}
-
-export function HomePage()
+export function HomePage() : string
 {
     return `
     <div class="mx-32">
@@ -181,15 +150,9 @@ export function HomePage()
     `;
 }
 
-export function loadHomePage()
-{
-    const app = document.getElementById("app");
-    if (app)
-        app.innerHTML = HomePage();
-}
-
 // main.ts'in en altına ekle
-(window as any).loadLoginPage = loadLoginPage;
 (window as any).login = login;
 (window as any).signUp = signUp;
 (window as any).toggleSignUp = toggleSignUp;
+(window as any).LoginPage = LoginPage;
+(window as any).loadPage = loadPage;
