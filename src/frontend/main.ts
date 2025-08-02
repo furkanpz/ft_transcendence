@@ -1,3 +1,19 @@
+window.addEventListener("popstate", (e) => {
+    const app = document.getElementById("app");
+    if (!app) return;
+    const state = e.state;
+    if (state?.page === "home") {
+        loadPage(HomePage, "home");
+    } else if (state?.page === "login") {
+        loadPage(LoginPage, "login");
+    }
+    else if (state?.page === "signup") {
+        loadPage(SignUpPage, "signup");
+    }
+
+});
+
+
 export function login(event : Event)
 {
     event.preventDefault();
@@ -20,12 +36,12 @@ export function login(event : Event)
         if (data.success == true)
         {
             alert("Login Success!");
-            loadPage(HomePage);
-        }   
+            loadPage(HomePage, "home");
+        }
         else
         {
             alert("Login Failed: " + data.message);
-            loadPage(LoginPage);
+            loadPage(LoginPage, "login");
         }
     });
 }
@@ -111,11 +127,14 @@ export function ProfilePage(userData: { username: string, email: string })
     `;
 }
 
-export function loadPage(page: () => string)
+export function loadPage(page: () => string, pageName: string = "home")
 {
+
     const app = document.getElementById("app");
     if (app)
-    {
+    { 
+        console.log(`Loading page: ${pageName}`);
+        history.pushState({ page: pageName }, `${pageName}`, `/#${pageName}`);
         app.innerHTML = page();
     }
 }
@@ -123,9 +142,9 @@ export function loadPage(page: () => string)
 export function toggleSignUp()
 {
     if (document.getElementById("app")!.innerHTML.includes("signUpArea"))
-        loadPage(LoginPage);
+        loadPage(LoginPage, "login");
     else
-        loadPage(SignUpPage);
+        loadPage(SignUpPage, "signup");
 }
 
 export function HomePage() : string
@@ -150,9 +169,37 @@ export function HomePage() : string
     `;
 }
 
-// main.ts'in en altına ekle
+
+window.addEventListener("DOMContentLoaded", () => {
+    const app = document.getElementById("app");
+    const hash = window.location.hash;
+
+    if (!app) return;
+
+    if (hash === "#login") {
+        history.replaceState({ page: "login" }, "login", "/#login");
+        loadPage(LoginPage, "login");
+    } else if (hash === "#signup") {
+        history.replaceState({ page: "signup" }, "signup", "/#signup");
+        loadPage(SignUpPage, "signup");
+    } else {
+        // Eğer hash yoksa (ilk açılış), anasayfa
+        history.replaceState({ page: "home" }, "home", "/#home");
+        loadPage(HomePage, "home");
+    }
+});
+
+(window as any).loadPage = loadPage;
+(window as any).LoginPage = LoginPage;
+(window as any).loadLoginPage = LoginPage;
+(window as any).loadSignUpPage = SignUpPage;
+(window as any).loadHomePage = HomePage;
 (window as any).login = login;
 (window as any).signUp = signUp;
 (window as any).toggleSignUp = toggleSignUp;
-(window as any).LoginPage = LoginPage;
-(window as any).loadPage = loadPage;
+// main.ts'in en altına ekle
+// (window as any).login = login;
+// (window as any).signUp = signUp;
+// (window as any).toggleSignUp = toggleSignUp;
+// (window as any).LoginPage = LoginPage;
+// (window as any).loadPage = loadPage;
