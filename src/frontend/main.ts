@@ -13,6 +13,44 @@ window.addEventListener("popstate", (e) => {
 
 });
 
+function updateNavUser() {
+    const username = localStorage.getItem("username");
+    const authButton = document.getElementById("authButton");
+    const logoutButton = document.getElementById("logout");
+
+    if (username) {
+        if (authButton)
+        {
+
+            authButton.textContent = username;
+            authButton.onclick = null; // tıklanmasın
+            authButton.classList.remove("hover:text-amber-400");
+            authButton.classList.remove("cursor-pointer");
+        }
+        if (logoutButton)
+        {
+            logoutButton!.classList.remove("hidden");
+            
+            logoutButton!.textContent = "Logout";
+            logoutButton!.onclick = () => {
+                localStorage.removeItem("username");
+                fetch(`http://localhost:3000/api/auth/logout`, {
+                    method: "POST",
+                    credentials: "include"
+                })
+                updateNavUser();
+                loadPage(HomePage, "home");
+            };
+        }
+    } else if (authButton){
+        authButton.textContent = "Login";
+        authButton.onclick = () => loadPage(LoginPage, "login");
+        authButton.classList.add("hover:text-amber-400");
+        authButton.classList.add("cursor-pointer");
+    }
+}
+
+
 
 export function login(event : Event)
 {
@@ -35,7 +73,7 @@ export function login(event : Event)
         console.log(data);
         if (data.success == true)
         {
-            alert("Login Success!");
+            localStorage.setItem("username", email.value);
             loadPage(HomePage, "home");
         }
         else
@@ -134,9 +172,9 @@ export function loadPage(page: () => string, pageName: string = "home")
     const app = document.getElementById("app");
     if (app)
     { 
-        console.log(`Loading page: ${pageName}`);
         history.pushState({ page: pageName }, `${pageName}`, `/#${pageName}`);
         app.innerHTML = page();
+        updateNavUser();
     }
 }
 
@@ -149,13 +187,17 @@ export function HomePage() : string
         <!-- Logo and Title -->
         
         <!-- main body-->
-        <div class="mx-32 h-[92vh] text-center items-center flex flex-col justify-center gap-6">
-          <button class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
-            Single Player
+         <div class="mx-32 h-[92vh] text-center items-center flex flex-col justify-center gap-6">
+            <div class="flex  flex-row w-2xl justify-between gap-6">
+            <button class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">1v1</button>
+            <button class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">Single Player</button>
+            </div>
+            
           </button>
           <button class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
             Multiplayer
           </button>
+        <button id="logout" class="hidden bg-red-500 text-white px-4 py-2 rounded">Logout</button>
         </div>
 
 
