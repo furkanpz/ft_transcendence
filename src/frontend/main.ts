@@ -224,6 +224,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+(window as any).HomePage = HomePage;
 (window as any).loadPage = loadPage;
 (window as any).LoginPage = LoginPage;
 (window as any).loadLoginPage = LoginPage;
