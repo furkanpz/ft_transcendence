@@ -74,11 +74,31 @@ export function signUp(event: Event)
         if (data.success == true)
         {
             alert("Sign-up Success! You can now log in.");
-            loadPage(LoginPage);
+            loadPage(LoginPage, "login");
         }
         else
+        {
             alert("Sign-up Failed: " + data.message);
+        }
     });
+}
+
+export function SignUpPage() : string
+{
+    return `
+    <div id="signUpArea" class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
+    <form method="post" class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">
+    <input type="text" id="username" placeholder="Username" class="bg-white p-1"></input>
+    <input type="text" id="email" placeholder="Email" class="bg-white p-1"></input>
+    <input type="password" id="password" placeholder="Password" class="bg-white p-1"></input>
+    <input type="password" id="confirmPassword" placeholder="Confirm Password" class="bg-white p-1"></input>
+    <button type="submit" onclick="signUp(event)" class="bg-white text-black py-2 px-4 rounded">Sign-Up</button>
+    </form>
+    <div class="flex flex-row w-2xl  justify-between items-center gap-4">
+    <button id="toggleSignUp" class="underline cursor-pointer" onclick="loadPage(LoginPage, 'login')">Already have an account? Sign In</button>
+    </div>
+    </div>
+    `;
 }
 
 export function LoginPage() : string
@@ -91,26 +111,7 @@ export function LoginPage() : string
                 <button type="submit" onclick="login(event)" class="bg-white text-black py-2 px-4 rounded">Login</button>
             </form>
             <div class="flex flex-row w-2xl  justify-between items-center gap-4">
-                <button id="toggleSignUp" class="underline cursor-pointer" onclick="toggleSignUp()">Forgot password?</button>
-                <button id="toggleSignUp" class="underline cursor-pointer" onclick="toggleSignUp()">Don't have an account? Sign Up</button>
-            </div>
-        </div>
-    `;
-}
-
-export function SignUpPage() : string
-{
-    return `
-        <div id="signUpArea" class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
-            <form method="post" class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">
-                <input type="text" id="username" placeholder="Username" class="bg-white p-1"></input>
-                <input type="text" id="email" placeholder="Email" class="bg-white p-1"></input>
-                <input type="password" id="password" placeholder="Password" class="bg-white p-1"></input>
-                <input type="password" id="confirmPassword" placeholder="Confirm Password" class="bg-white p-1"></input>
-                <button type="submit" onclick="signUp(event)" class="bg-white text-black py-2 px-4 rounded">Sign-Up</button>
-            </form>
-            <div class="flex flex-row w-2xl  justify-between items-center gap-4">
-                <button id="toggleSignUp" class="underline cursor-pointer" onclick="toggleSignUp()">Already have an account? Sign In</button>
+                <button id="toggleSignUp" class="underline cursor-pointer" onclick="loadPage(SignUpPage, 'signup')">Don't have an account? Sign Up</button>
             </div>
         </div>
     `;
@@ -139,13 +140,6 @@ export function loadPage(page: () => string, pageName: string = "home")
     }
 }
 
-export function toggleSignUp()
-{
-    if (document.getElementById("app")!.innerHTML.includes("signUpArea"))
-        loadPage(LoginPage, "login");
-    else
-        loadPage(SignUpPage, "signup");
-}
 
 export function HomePage() : string
 {
@@ -195,7 +189,7 @@ window.addEventListener("DOMContentLoaded", () => {
 (window as any).loadHomePage = HomePage;
 (window as any).login = login;
 (window as any).signUp = signUp;
-(window as any).toggleSignUp = toggleSignUp;
+(window as any).SignUpPage = SignUpPage;
 // main.ts'in en altına ekle
 // (window as any).login = login;
 // (window as any).signUp = signUp;
