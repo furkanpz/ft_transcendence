@@ -3,12 +3,12 @@ window.addEventListener("popstate", (e) => {
     if (!app) return;
     const state = e.state;
     if (state?.page === "home") {
-        loadPage(HomePage, "home");
+        app.innerHTML = HomePage();
     } else if (state?.page === "login") {
-        loadPage(LoginPage, "login");
+        app.innerHTML = LoginPage();
     }
     else if (state?.page === "signup") {
-        loadPage(SignUpPage, "signup");
+        app.innerHTML = SignUpPage();
     }
 
 });
@@ -183,7 +183,6 @@ window.addEventListener("DOMContentLoaded", () => {
         history.replaceState({ page: "signup" }, "signup", "/#signup");
         loadPage(SignUpPage, "signup");
     } else {
-        // Eğer hash yoksa (ilk açılış), anasayfa
         history.replaceState({ page: "home" }, "home", "/#home");
         loadPage(HomePage, "home");
     }
