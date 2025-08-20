@@ -191,7 +191,7 @@ export function Lobby() : string
 
               <div class="flex flex-col  h-full w-1/4 text-center">
                 <div class="  w-full my-auto">
-                  <button onclick="alert('naber yavrum')" class="text-lg pt-4 truncate font-semibold">RandomID</button>
+                  <button onclick="alert('naber yavrum')" class="text-lg p-4 bg-blue-500 rounded-2xl text-white ">Join</button>
                 </div>
               </div>
             </div>
