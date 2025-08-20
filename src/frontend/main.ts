@@ -155,6 +155,50 @@ export function LoginPage() : string
     `;
 }
 
+export function Lobby() : string
+{
+    return `
+        <a href="/">
+
+            <div class="flex justify-between items-start px-24 py-2 w-auto text-slate-800 text-lg border-2 p-4 rounded-lg mx-128">
+              
+              <div class="flex flex-col  h-full w-1/4 text-center">
+                <div class="w-full ">
+                  <span class="text-md text-slate-500">ID</span>
+                </div>
+                <div class="  w-full my-auto">
+                  <span class="truncate text-lg font-semibold">RandomID</span>
+                </div>
+              </div>
+
+              <div class="flex flex-col  h-full w-1/4 text-center">
+                <div class="w-full ">
+                  <span class="text-md text-slate-500">Player Count</span>
+                </div>
+                <div class="  w-full my-auto">
+                  <span class="truncate text-lg ">1/2</span>
+                </div>
+              </div>
+
+              <div class="flex flex-col  h-full w-1/4 text-center">
+                <div class="w-full ">
+                  <span class="text-md text-slate-500">Status</span>
+                </div>
+                <div class=" text-xs truncate my-auto">
+                  <span class=" text-lg overflow-hidden whitespace-nowrap">Online</span>
+                </div>
+              </div>
+
+              <div class="flex flex-col  h-full w-1/4 text-center">
+                <div class="  w-full my-auto">
+                  <button onclick="alert('naber yavrum')" class="text-lg pt-4 truncate font-semibold">RandomID</button>
+                </div>
+              </div>
+            </div>
+          </a>
+    `;
+}
+
 export function ProfilePage(userData: { username: string, email: string })
 {
     return `
@@ -171,7 +215,7 @@ export function loadPage(page: () => string, pageName: string = "home")
 
     const app = document.getElementById("app");
     if (app)
-    { 
+    {
         history.pushState({ page: pageName }, `${pageName}`, `/#${pageName}`);
         app.innerHTML = page();
         updateNavUser();
@@ -194,7 +238,7 @@ export function HomePage() : string
             </div>
             
           </button>
-          <button class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
+          <button onclick="loadPage(Lobby, 'lobby')" class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
             Multiplayer
           </button>
         <button id="logout" class="hidden bg-red-500 text-white px-4 py-2 rounded">Logout</button>
@@ -224,6 +268,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+(window as any).Lobby = Lobby;
 (window as any).HomePage = HomePage;
 (window as any).loadPage = loadPage;
 (window as any).LoginPage = LoginPage;
