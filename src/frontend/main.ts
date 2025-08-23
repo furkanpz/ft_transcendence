@@ -122,6 +122,7 @@ interface Pong {
     scored: boolean;
     firstTouch: boolean;
     ballcount: number;
+    isAI: boolean;
 }
 
 function drawMenuBackground(ctx: CanvasRenderingContext2D) {
@@ -129,7 +130,7 @@ function drawMenuBackground(ctx: CanvasRenderingContext2D) {
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 }
 
-export function gameStart() {
+export function gameStart(isAI: boolean) {
 
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     canvas.width = WIDTH;
@@ -169,6 +170,7 @@ export function gameStart() {
         scored: false,
         firstTouch: false,
         ballcount: 0,
+        isAI: isAI,
     };
 
     game.ball.dir = Vector2.I();
@@ -317,8 +319,8 @@ function updatePlayer1(game: Pong, deltaTime: number) {
     }
 }
 
-function updatePlayer2(game: Pong, deltaTime: number, isAI: boolean) {
-    if (!isAI) {
+function updatePlayer2(game: Pong, deltaTime: number) {
+    if (!game.isAI) {
         if (game.pressedKeys.has("ArrowUp")) {
             if (game.player2.pos.y - game.player2.dim.y / 2 <= 0)
                 game.player2.pos.y = game.player2.dim.y / 2;
@@ -485,7 +487,7 @@ function update(game: Pong, deltaTime: number) {
             break;
         case GameState.Playing:
             updatePlayer1(game, deltaTime);
-            updatePlayer2(game, deltaTime, true);
+            updatePlayer2(game, deltaTime, false);
             if (!game.scored)
                 updateBall(game, deltaTime);
             break;
@@ -753,8 +755,8 @@ export function HomePage(): string {
         <!-- main body-->
          <div class="mx-32 h-[92vh] text-center items-center flex flex-col justify-center gap-6">
             <div class="flex  flex-row w-2xl justify-between gap-6">
-            <button onclick="loadPage(Canvas, 'canvas'); gameStart()" class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">1v1</button>
-            <button class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">Single Player</button>
+            <button onclick="loadPage(Canvas, 'canvas'); gameStart(false)" class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">1v1</button>
+            <button onclick="loadPage(Canvas, 'canvas'); gameStart(true)" class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">Single Player</button>
             </div>
             
           </button>
