@@ -1,3 +1,5 @@
+import { transform } from "typescript";
+
 class Vector2 {
     x: number;
     y: number;
@@ -552,9 +554,8 @@ function updateNavUser() {
         if (authButton) {
 
             authButton.textContent = username;
-            authButton.onclick = null; // tıklanmasın
+            authButton.onclick = () => {loadPage(ProfilePage, "profile")};
             authButton.classList.remove("hover:text-amber-400");
-            authButton.classList.remove("cursor-pointer");
         }
         if (logoutButton) {
             logoutButton!.classList.remove("hidden");
@@ -716,22 +717,135 @@ export function Lobby(): string {
     `;
 }
 
-export function ProfilePage(userData: { username: string, email: string }) {
+
+export function changePassword(e: Event)
+{
+    e.preventDefault();
+    const curPassword = document.getElementById("curPassword") as HTMLInputElement;
+    const newPassword = document.getElementById("newPassword") as HTMLInputElement;
+    const newPasswordVerify = document.getElementById("newPasswordVerify") as HTMLInputElement;
+    fetch(`http://localhost:3000/api/user/password`,
+    {
+        method: "Put",
+        credentials: "include",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            password : curPassword.value,
+            new_password: newPassword.value,
+            new_re_password: newPasswordVerify.value
+        })
+        
+
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success)
+        {
+            curPassword.value  = "";
+            newPassword.value = "";
+            newPasswordVerify.value = "";
+            alert("Password has changed");
+        }
+        else
+        {
+            alert(data.message);
+        }
+    })
+}
+
+export function ProfilePage(tab: string = "profile") {
+
+    
+    let body = null;
+    switch (tab) {
+        case "profile":
+            body = `<div class="p-6 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-800 rounded-lg w-full">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Profile Tab</h3>
+                    <form method="post" class="flex flex-col gap-4 w-full mx-auto items-center justify-center">
+                        <img  class="rounded-[100%] w-70 h-70" src="Untitled.png"></img>
+                        <input class="p-2 rounded-md bg-white text-black" value="burası username olacak"></input>
+                        <input class="p-2 rounded-md bg-gray-400 text-black" value="burası email olacak" disabled></input>
+                        <button class="bg-blue-500 rounded-md p-4 text-white cursor-pointer" type="submit">Update</button>
+                    </form>
+                </div>`
+            break;
+        case "match history":
+            body = `<div class="p-6 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-800 rounded-lg w-full">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Profile Tab</h3>
+                    <p class="mb-2">This is some placeholder content the Profile tab's associated content, clicking another tab will toggle the visibility of this one for the next.</p>
+                    <p>Maç geçmişi olacka</p> 
+                </div>`
+            break;
+         case "change password":
+            body = `<div class="p-6 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-800 rounded-lg w-full">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Change Password</h3>
+                    <form  onSubmit="changePassword(event)" class="flex flex-col gap-4 w-1/2 mx-auto">
+                        <input id="curPassword" class="p-2 rounded-md bg-white text-black" placeholder="Current Password" required></input>
+                        <input id="newPassword" class="p-2 rounded-md bg-white text-black" placeholder="New Password" required></input>
+                        <input id="newPasswordVerify" class="p-2 rounded-md bg-white text-black" placeholder="New Password Verify" required></input>
+                        <button class="bg-blue-500 rounded-md p-4 text-white cursor-pointer" type="submit" >Change Password</button>
+                    </form>
+                </div>`
+            break;
+        default:
+            body = `<div class="p-6 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-800 rounded-lg w-full">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Profile Tab</h3>
+                    <p class="mb-2">This is some placeholder content the Profile tab's associated content, clicking another tab will toggle the visibility of this one for the next.</p>
+                    <p>Defaullllllt</p> 
+                </div>`
+            break;
+    }
+
     return `
-        <div id="profileArea" class="profile-area">
-            <h1>Profile</h1>
-            <p>Username: <span id="usernameDisplay">${userData.username}</span></p>
-            <p>Email: <span id="emailDisplay">${userData.email}</span></p>
+        <div id="profileArea" class="mx-32 py-12">
+            
+
+            <div class="md:flex">
+                <ul class="flex-column space-y space-y-4 text-sm font-medium text-gray-500 dark:text-gray-400 md:me-4 mb-4 md:mb-0">
+                    <li>
+                        <button onclick="loadPage(ProfilePage, 'profile')" class="inline-flex items-center cursor-pointer px-4 py-3 rounded-lg hover:text-gray-900 bg-gray-50 hover:bg-gray-100 w-full dark:bg-gray-800 dark:hover:bg-gray-700 dark:hover:text-white">
+                            Profile
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="loadPage(ProfilePage, 'match history')" class="inline-flex items-center cursor-pointer px-4 py-3 rounded-lg hover:text-gray-900 bg-gray-50 hover:bg-gray-100 w-full dark:bg-gray-800 dark:hover:bg-gray-700 dark:hover:text-white">
+                            Match History
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="loadPage(ProfilePage, 'change password')" class="inline-flex items-center px-4 py-3 rounded-lg hover:text-gray-900 bg-gray-50 hover:bg-gray-100 w-full dark:bg-gray-800 dark:hover:bg-gray-700 dark:hover:text-white">
+                            Change Password
+                        </button>
+                    </li>
+
+                </ul>
+
+                ${body}
+                
+                
+            </div>
         </div>
+
+
+
     `;
 }
 
-export function loadPage(page: () => string, pageName: string = "home") {
+export function loadPage(page: (name: string | null) => string, pageName: string = "home") {
 
     const app = document.getElementById("app");
     if (app) {
         history.pushState({ page: pageName }, `${pageName}`, `/#${pageName}`);
-        app.innerHTML = page();
+        if (pageName == "match history")
+            app.innerHTML = page("match history");
+        else if (pageName == "profile")
+            app.innerHTML = page("profile");
+        else if (pageName == "change password")
+            app.innerHTML = page("change password");
+        else
+            app.innerHTML = page(null);
         updateNavUser();
     }
 }
@@ -791,6 +905,7 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 (window as any).Canvas = Canvas;
+(window as any).ProfilePage = ProfilePage;
 (window as any).gameStart = gameStart;
 (window as any).gameLoop = gameLoop;
 (window as any).Lobby = Lobby;
@@ -801,6 +916,7 @@ window.addEventListener("DOMContentLoaded", () => {
 (window as any).loadSignUpPage = SignUpPage;
 (window as any).loadHomePage = HomePage;
 (window as any).login = login;
+(window as any).changePassword = changePassword;
 (window as any).signUp = signUp;
 (window as any).SignUpPage = SignUpPage;
 // main.ts'in en altına ekle
