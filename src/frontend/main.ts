@@ -747,6 +747,14 @@ export function changePassword(e: Event)
             newPassword.value = "";
             newPasswordVerify.value = "";
             alert("Password has changed");
+            localStorage.removeItem("username");
+                fetch(`http://localhost:3000/api/auth/logout`, {
+                    method: "POST",
+                    credentials: "include"
+                })
+                updateNavUser();
+                loadPage(LoginPage, "login");
+            
         }
         else
         {
