@@ -179,6 +179,7 @@ export function gameStart() {
         components: [
             new Button("red", "Start", new Vector2(WIDTH / 2, HEIGHT / 2), new Vector2(200, 100), (game: Pong) => {
                 console.log("Game Started");
+                
                 game.state = GameState.Playing;
             }),
         ],
@@ -199,7 +200,16 @@ export function gameStart() {
     };
 
     const gameOverUI: UI = {
-        components: [],
+        components: [
+            new Button("blue", "Replay",  new Vector2(WIDTH / 2, (HEIGHT / 4) * 3), new Vector2(200, 100), (game: Pong) => {
+                game.lastTime = 0;
+                game.player1.score = 0;
+                game.player2.score = 0;
+                game.player1.pos = new Vector2(PLAYER_GAP, HEIGHT / 2);
+                game.player2.pos = new Vector2(WIDTH - PLAYER_WIDTH - PLAYER_GAP, HEIGHT / 2);
+                game.state = GameState.Playing;
+            })
+        ],
         draw: (game: Pong) => {
             drawMenuBackground(game.ctx);
             game.ctx.fillStyle = "white";
@@ -207,6 +217,8 @@ export function gameStart() {
             game.ctx.textAlign = "center";
             game.ctx.textBaseline = "middle";
             game.ctx.fillText("Game Over", WIDTH / 2, HEIGHT / 2);
+            game.uis.get(GameState.GameOver)?.components.forEach(component => component.draw(game));
+
         },
     };
 
