@@ -5,6 +5,7 @@ import adminRoutes from './admin.routes';
 import { twoFactorRoutes } from './2fa.routes';
 import chatRoutes from './chat.routes';
 import { chatController } from '../controller/chat.controller';
+import { gameController } from '../controller/game.controller';
 
 export default async function setRoutes(server: FastifyInstance) {
 	await server.register(authRoutes, { prefix: '/api/auth' });
@@ -22,6 +23,15 @@ export default async function setRoutes(server: FastifyInstance) {
 			}
 		}
 	}, chatController);
+	fastify.get('/ws/game', {
+		websocket: true,
+		config: {
+			rateLimit: {
+				max: 5,
+				timeWindow: '10 seconds'
+			}
+		}
+	}, gameController);
 });
 
 }
