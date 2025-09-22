@@ -26,8 +26,7 @@ interface Player {
 	name: string;
 	isReady: boolean;
 	team: Team | null;
-	room: GameRoom | null;
-	socket: any;
+	roomId: string | null;
 }
 
 interface RoomSettings {
@@ -49,6 +48,9 @@ interface GameRoom {
 }
 
 interface GameEvent {
-	type: "create" | "join" | "leave" | "team" | "ready" | "start";
+	type: "createRoom" | "roomCreated" | "joinRoom" | "playerJoined"
+		| "leaveRoom" | "playerLeft" | "selectTeam" | "ready" | "start" | "error";
 	data: any;
 }
+
+export { Team, RoomStatus, RoomState, GameState, Player, RoomSettings, GameRoom, GameEvent };

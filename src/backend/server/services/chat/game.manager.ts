@@ -1,8 +1,9 @@
 import {WebSocket} from "ws"
-import "../../types/game.types"
+import { Team, RoomStatus, RoomState, GameState, Player, RoomSettings, GameRoom, GameEvent} from "../../types/game.types"
 class GameManager {
 	gameRooms: Map<string, GameRoom> = new Map();
 	players: Map<number, Player> = new Map();
+	playersocket: Map<number, WebSocket> = new Map();
 
 	addPlayer(userId: number, username: string, socket: WebSocket): boolean {
 		if (this.players.has(userId)) return false;
@@ -12,15 +13,15 @@ class GameManager {
 			name: username,
 			isReady: false,
 			team: null,
-			room: null,
-			socket: socket,
+			roomId: null,
 		};
 
 		this.players.set(userId, player);
-		
+		this.playersocket.set(userId, socket);
+
 		socket.on("close", () => {
-			if (player.room) {
-				this.leaveRoom(userId, player.room.id);
+			if (player.roomId) {
+				this.leaveRoom(userId, player.roomId);
 			}
 			this.players.delete(userId);
 		});
@@ -43,56 +44,56 @@ class GameManager {
 		if (!player) return;
 
 		switch (event.type) {
-			case "create":
+			case "createRoom":
 				const roomSettings: RoomSettings = event.data;
 				try {
 					const room = this.createRoom(userId, roomSettings);
-					player.socket.send(JSON.stringify({ type: "roomCreated", room }));
+					this.broadcastRoom({ type: "roomCreated", data: room }, room.id);
 				} catch (error: any) {
-					player.socket.send(JSON.stringify({ type: "error", message: error.message }));
+					this.playersocket.get(userId)?.send(JSON.stringify({ type: "error", message: error.message }));
 				}
 				break;
-			case "join":
+			case "joinRoom":
 				const { roomId, password } = event.data;
 				const success = this.joinRoom(userId, roomId, password);
 				if (success) {
-					player.socket.send(JSON.stringify({ type: "joinedRoom", roomId }));
+					this.playersocket.get(userId)?.send(JSON.stringify({ type: "joinedRoom", roomId }));
 				} else {
-					player.socket.send(JSON.stringify({ type: "error", message: "Failed to join room" }));
+					this.playersocket.get(userId)?.send(JSON.stringify({ type: "error", message: "Failed to join room" }));
 				}
 				break;
-			case "leave":
-				if (player.room) {
-					const left = this.leaveRoom(userId, player.room.id);
+			case "leaveRoom":
+				if (player.roomId) {
+					const left = this.leaveRoom(userId, player.roomId);
 					if (left) {
-						player.socket.send(JSON.stringify({ type: "leftRoom", roomId: player.room.id }));
+						this.playersocket.get(userId)?.send(JSON.stringify({ type: "leftRoom", roomId: player.roomId }));
 					} else {
-						player.socket.send(JSON.stringify({ type: "error", message: "Failed to leave room" }));
+						this.playersocket.get(userId)?.send(JSON.stringify({ type: "error", message: "Failed to leave room" }));
 					}
 				}
 				break;
-			case "team":
+			case "selectTeam":
 				const { teamId } = event.data;
-				if (player.room) {
-					const joined = this.joinTeam(userId, teamId, player.room.id);
+				if (player.roomId) {
+					const joined = this.joinTeam(userId, teamId, player.roomId);
 					if (joined) {
-						player.socket.send(JSON.stringify({ type: "joinedTeam", teamId }));
+						this.playersocket.get(userId)?.send(JSON.stringify({ type: "joinedTeam", teamId }));
 					} else {
-						player.socket.send(JSON.stringify({ type: "error", message: "Failed to join team" }));
+						this.playersocket.get(userId)?.send(JSON.stringify({ type: "error", message: "Failed to join team" }));
 					}
 				}
 				break;
 			case "ready":
-				if (player.room) {
+				if (player.roomId) {
 					player.isReady = !player.isReady;
-					player.socket.send(JSON.stringify({ type: "readyStatus", isReady: player.isReady }));
+					this.playersocket.get(userId)?.send(JSON.stringify({ type: "readyStatus", isReady: player.isReady }));
 				}
 				break;
 			case "start":
-				if (player.room && player.room.players[0].id === userId) {
-					if (player.room.players.every(p => p.isReady)) {
-						player.room.state.state = RoomStatus.Playing;
-						this.broadcastRoom({type: "start", data : { roomId: player.room.id }});
+				if (player.roomId && this.gameRooms.get(player.roomId)?.players[0].id === userId) {
+					if (this.gameRooms.get(player.roomId)?.players.every(p => p.isReady)) {
+						this.gameRooms.get(player.roomId)!.state.state = RoomStatus.Playing;
+						this.broadcastRoom({type: "start", data : { roomId: player.roomId }}, player.roomId);
 					}
 				}
 				break;
@@ -102,7 +103,7 @@ class GameManager {
 	createRoom(userId: number, roomSettings: RoomSettings): GameRoom {
 		const roomId = this.generateRoomId();
 
-		if (this.players.has(userId)) {
+		if (this.players.get(userId)?.roomId) {
 			throw new Error("You can't create a room while in another room");
 		}
 		const newRoom: GameRoom = {
@@ -120,8 +121,9 @@ class GameManager {
 		};
 		for (let i = 0; i < newRoom.teamCount; i++)
 			newRoom.state.teams = new Array(newRoom.teamCount).fill( { id: i, score: 0, size: newRoom.maxPlayers / newRoom.teamCount, players: [] } );
-		this.players.get(userId)!.room = newRoom;
+		this.players.get(userId)!.roomId = newRoom.id;
 		this.gameRooms.set(roomId, newRoom);
+		console.log(`Room ${roomId} created by user ${userId}`);
 		return newRoom;
 	}
 
@@ -152,7 +154,8 @@ class GameManager {
 		if (room.isPrivate && room.password !== password) return false;
 		if (room.players.length >= room.maxPlayers) return false;
 		room.players.push(this.players.get(userId)!);
-		this.players.get(userId)!.room = room;
+		this.players.get(userId)!.roomId = room.id;
+		console.log(`User ${userId} joined room ${roomId}`);
 		return true;
 	}
 
@@ -160,20 +163,23 @@ class GameManager {
 		const room = this.gameRooms.get(roomId);
 		if (!room) return false;
 		const player = this.players.get(userId);
-		if (!player || player.room !== room) return false;
+		if (!player || player.roomId !== room.id) return false;
 		room.players.splice(room.players.indexOf(player), 1);
-		this.players.delete(userId);
+		this.players.get(userId)!.roomId = null;
+		console.log(`User ${userId} left room ${roomId}`);
 		if (room.players.length === 0) {
+			console.log(`Room ${roomId} deleted (empty)`);
 			this.gameRooms.delete(roomId);
 		}
 		return true;
 	}
 
-	broadcastRoom(event: GameEvent): void {
-		this.gameRooms.forEach(room => {
-			room.players.forEach(player => {
-				player.socket.send(JSON.stringify(event));
-			});
+	broadcastRoom(event: GameEvent, roomId: string): void {
+		const room = this.gameRooms.get(roomId);
+		if (!room) return;
+
+		room.players.forEach(player => {
+			this.playersocket.get(player.id)?.send(JSON.stringify(event));
 		});
 	}
 
