@@ -6,6 +6,7 @@ import { twoFactorRoutes } from './2fa.routes';
 import chatRoutes from './chat.routes';
 import { chatController } from '../controller/chat.controller';
 import { gameController } from '../controller/game.controller';
+import gameRoutes from "./game.routes";
 
 export default async function setRoutes(server: FastifyInstance) {
 	await server.register(authRoutes, { prefix: '/api/auth' });
@@ -13,6 +14,7 @@ export default async function setRoutes(server: FastifyInstance) {
 	await server.register(adminRoutes, { prefix: '/api/admin' });
 	await server.register(twoFactorRoutes, { prefix: '/api/auth'});
 	await server.register(chatRoutes, { prefix: '/api/chat' });
+	await server.register(gameRoutes, { prefix: '/api/game' });
 	await server.register(async function (fastify) {
 	fastify.get('/ws/chat', {
 		websocket: true,

@@ -1,4 +1,11 @@
 import { transform } from "typescript";
+import { GameRoom } from "../backend/server/types/game.types"
+import { HomePage } from "./pages/HomePage";
+import { changePassword, ProfilePage } from "./pages/ProfilePage";
+import { Lobby } from "./pages/LobbyPage";
+import { login, LoginPage } from "./pages/LoginPage";
+import { signUp, SignUpPage } from "./pages/SignUpPage";
+import { updateNavUser } from "./pages/Navbar";
 
 class Vector2 {
     x: number;
@@ -183,7 +190,7 @@ export function gameStart(isAI: boolean) {
         components: [
             new Button("red", "Start", new Vector2(WIDTH / 2, HEIGHT / 2), new Vector2(200, 100), (game: Pong) => {
                 console.log("Game Started");
-                
+
                 game.state = GameState.Playing;
             }),
         ],
@@ -205,7 +212,7 @@ export function gameStart(isAI: boolean) {
 
     const gameOverUI: UI = {
         components: [
-            new Button("blue", "Replay",  new Vector2(WIDTH / 2, (HEIGHT / 4) * 3), new Vector2(200, 100), (game: Pong) => {
+            new Button("blue", "Replay", new Vector2(WIDTH / 2, (HEIGHT / 4) * 3), new Vector2(200, 100), (game: Pong) => {
                 game.lastTime = 0;
                 game.player1.score = 0;
                 game.player2.score = 0;
@@ -429,7 +436,7 @@ async function updateBall(game: Pong, deltaTime: number) {
         const newDir2 = bounceDir.y + ((game.ball.pos.y - game.player1.pos.y) / (game.player1.dim.y / 2));
 
         bounceDir.y = newDir2;
-        
+
         if (game.firstTouch == false) {
             game.firstTouch = true;
             game.ball.speed = BALL_FIRST_HIT_SPEED;
@@ -442,14 +449,14 @@ async function updateBall(game: Pong, deltaTime: number) {
         game.ball.pos.x = (game.player1.pos.x + (game.player1.dim.x / 2)) + game.ball.radius;
         game.ball.dir = bounceDir.norm();
     }
-    
+
     if (isCircleRectColliding(game.ball, game.player2)) {
 
         const bounceDir = new Vector2(-game.ball.dir.x, game.ball.dir.y);
         const newDir2 = bounceDir.y + ((game.ball.pos.y - game.player2.pos.y) / (game.player2.dim.y / 2));
 
         bounceDir.y = newDir2;
-        
+
         if (game.firstTouch == false) {
             game.firstTouch = true;
             game.ball.speed = BALL_FIRST_HIT_SPEED;
@@ -530,6 +537,18 @@ export function gameLoop(game: Pong, currentTime: number) {
 
 //YUKARISI BUGRAYA AIT
 
+export type UserProfileDTO = {
+    success: boolean;
+    message: string;
+    id: number;
+    username: string;
+    email: string;
+    avatar_url: string;
+    role: string;
+    created_at: string;
+};
+
+
 window.addEventListener("popstate", (e) => {
     const app = document.getElementById("app");
     if (!app) return;
@@ -545,315 +564,21 @@ window.addEventListener("popstate", (e) => {
 
 });
 
-function updateNavUser() {
-    const username = localStorage.getItem("username");
-    const authButton = document.getElementById("authButton");
-    const logoutButton = document.getElementById("logout");
-
-    if (username) {
-        if (authButton) {
-
-            authButton.textContent = username;
-            authButton.onclick = () => {loadPage(ProfilePage, "profile")};
-            authButton.classList.remove("hover:text-amber-400");
-        }
-        if (logoutButton) {
-            logoutButton!.classList.remove("hidden");
-
-            logoutButton!.textContent = "Logout";
-            logoutButton!.onclick = () => {
-                localStorage.removeItem("username");
-                fetch(`http://localhost:3000/api/auth/logout`, {
-                    method: "POST",
-                    credentials: "include"
-                })
-                updateNavUser();
-                loadPage(HomePage, "home");
-            };
-        }
-    } else if (authButton) {
-        authButton.textContent = "Login";
-        authButton.onclick = () => loadPage(LoginPage, "login");
-        authButton.classList.add("hover:text-amber-400");
-        authButton.classList.add("cursor-pointer");
-    }
-}
-
-export function login(event: Event) {
-    event.preventDefault();
-    const email = document.getElementById("email") as HTMLInputElement;
-    const password = document.getElementById("password") as HTMLInputElement;
-    fetch(`http://localhost:3000/api/auth/sign-in`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            username: email.value,
-            password: password.value
-        })
-    })
-        .then(response => response.json())
-        .then(data => {
-            console.log(data);
-            if (data.success == true) {
-                localStorage.setItem("username", email.value);
-                loadPage(HomePage, "home");
-            }
-            else {
-                alert("Login Failed: " + data.message);
-                loadPage(LoginPage, "login");
-            }
-        });
-}
-
-export function signUp(event: Event) {
-    event.preventDefault();
-    const username = document.getElementById("username") as HTMLInputElement;
-    const email = document.getElementById("email") as HTMLInputElement;
-    const password = document.getElementById("password") as HTMLInputElement;
-    const confirmPassword = document.getElementById("confirmPassword") as HTMLInputElement;
-    if (password.value !== confirmPassword.value) {
-        alert("Passwords do not match!");
-        return;
-    }
-    fetch(`http://localhost:3000/api/auth/sign-up`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            email: email.value,
-            username: username.value,
-            password: password.value
-        })
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success == true) {
-                alert("Sign-up Success! You can now log in.");
-                loadPage(LoginPage, "login");
-            }
-            else {
-                alert("Sign-up Failed: " + data.message);
-            }
-        });
-}
-
-export function SignUpPage(): string {
-    return `
-    <div id="signUpArea" class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
-    <form method="post" class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">
-    <input type="text" id="username" placeholder="Username" class="bg-white p-1"></input>
-    <input type="text" id="email" placeholder="Email" class="bg-white p-1"></input>
-    <input type="password" id="password" placeholder="Password" class="bg-white p-1"></input>
-    <input type="password" id="confirmPassword" placeholder="Confirm Password" class="bg-white p-1"></input>
-    <button type="submit" onclick="signUp(event)" class="bg-white text-black py-2 px-4 rounded">Sign-Up</button>
-    </form>
-    <div class="flex flex-row w-2xl  justify-between items-center gap-4">
-    <button id="toggleSignUp" class="underline cursor-pointer" onclick="loadPage(LoginPage, 'login')">Already have an account? Sign In</button>
-    </div>
-    </div>
-    `;
-}
-
-export function LoginPage(): string {
-    return `
-        <div id="loginArea" class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
-            <form method="post" class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">
-                <input type="text" id="email" placeholder="Email" class="bg-white p-1"></input>
-                <input type="password" id="password" placeholder="Password" class="bg-white p-1"></input>
-                <button type="submit" onclick="login(event)" class="bg-white text-black py-2 px-4 rounded">Login</button>
-            </form>
-            <div class="flex flex-row w-2xl  justify-between items-center gap-4">
-                <button id="toggleSignUp" class="underline cursor-pointer" onclick="loadPage(SignUpPage, 'signup')">Don't have an account? Sign Up</button>
-            </div>
-        </div>
-    `;
-}
-
-export function Lobby(): string {
-    return `
-        <a href="/">
-
-            <div class="flex justify-between items-start px-24 py-2 w-auto text-slate-800 text-lg border-2 p-4 rounded-lg mx-128">
-              
-              <div class="flex flex-col  h-full w-1/4 text-center">
-                <div class="w-full ">
-                  <span class="text-md text-slate-500">ID</span>
-                </div>
-                <div class="  w-full my-auto">
-                  <span class="truncate text-lg font-semibold">RandomID</span>
-                </div>
-              </div>
-
-              <div class="flex flex-col  h-full w-1/4 text-center">
-                <div class="w-full ">
-                  <span class="text-md text-slate-500">Player Count</span>
-                </div>
-                <div class="  w-full my-auto">
-                  <span class="truncate text-lg ">1/2</span>
-                </div>
-              </div>
-
-              <div class="flex flex-col  h-full w-1/4 text-center">
-                <div class="w-full ">
-                  <span class="text-md text-slate-500">Status</span>
-                </div>
-                <div class=" text-xs truncate my-auto">
-                  <span class=" text-lg overflow-hidden whitespace-nowrap">Online</span>
-                </div>
-              </div>
-
-              <div class="flex flex-col  h-full w-1/4 text-center">
-                <div class="  w-full my-auto">
-                  <button onclick="alert('naber yavrum')" class="text-lg p-4 bg-blue-500 rounded-2xl text-white ">Join</button>
-                </div>
-              </div>
-            </div>
-          </a>
-    `;
-}
 
 
-export function changePassword(e: Event)
-{
-    e.preventDefault();
-    const curPassword = document.getElementById("curPassword") as HTMLInputElement;
-    const newPassword = document.getElementById("newPassword") as HTMLInputElement;
-    const newPasswordVerify = document.getElementById("newPasswordVerify") as HTMLInputElement;
-    fetch(`http://localhost:3000/api/user/password`,
-    {
-        method: "Put",
-        credentials: "include",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            password : curPassword.value,
-            new_password: newPassword.value,
-            new_re_password: newPasswordVerify.value
-        })
-        
-
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success)
-        {
-            curPassword.value  = "";
-            newPassword.value = "";
-            newPasswordVerify.value = "";
-            alert("Password has changed");
-            localStorage.removeItem("username");
-                fetch(`http://localhost:3000/api/auth/logout`, {
-                    method: "POST",
-                    credentials: "include"
-                })
-                updateNavUser();
-                loadPage(LoginPage, "login");
-            
-        }
-        else
-        {
-            alert(data.message);
-        }
-    })
-}
-
-export function ProfilePage(tab: string = "profile") {
-
-    
-    let body = null;
-    switch (tab) {
-        case "profile":
-            body = `<div class="p-6 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-800 rounded-lg w-full">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Profile Tab</h3>
-                    <form method="post" class="flex flex-col gap-4 w-full mx-auto items-center justify-center">
-                        <img  class="rounded-[100%] w-70 h-70" src="Untitled.png"></img>
-                        <input class="p-2 rounded-md bg-white text-black" value="burası username olacak"></input>
-                        <input class="p-2 rounded-md bg-gray-400 text-black" value="burası email olacak" disabled></input>
-                        <button class="bg-blue-500 rounded-md p-4 text-white cursor-pointer" type="submit">Update</button>
-                    </form>
-                </div>`
-            break;
-        case "match history":
-            body = `<div class="p-6 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-800 rounded-lg w-full">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Profile Tab</h3>
-                    <p class="mb-2">This is some placeholder content the Profile tab's associated content, clicking another tab will toggle the visibility of this one for the next.</p>
-                    <p>Maç geçmişi olacka</p> 
-                </div>`
-            break;
-         case "change password":
-            body = `<div class="p-6 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-800 rounded-lg w-full">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Change Password</h3>
-                    <form  onSubmit="changePassword(event)" class="flex flex-col gap-4 w-1/2 mx-auto">
-                        <input id="curPassword" class="p-2 rounded-md bg-white text-black" placeholder="Current Password" required></input>
-                        <input id="newPassword" class="p-2 rounded-md bg-white text-black" placeholder="New Password" required></input>
-                        <input id="newPasswordVerify" class="p-2 rounded-md bg-white text-black" placeholder="New Password Verify" required></input>
-                        <button class="bg-blue-500 rounded-md p-4 text-white cursor-pointer" type="submit" >Change Password</button>
-                    </form>
-                </div>`
-            break;
-        default:
-            body = `<div class="p-6 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-800 rounded-lg w-full">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Profile Tab</h3>
-                    <p class="mb-2">This is some placeholder content the Profile tab's associated content, clicking another tab will toggle the visibility of this one for the next.</p>
-                    <p>Defaullllllt</p> 
-                </div>`
-            break;
-    }
-
-    return `
-        <div id="profileArea" class="mx-32 py-12">
-            
-
-            <div class="md:flex">
-                <ul class="flex-column space-y space-y-4 text-sm font-medium text-gray-500 dark:text-gray-400 md:me-4 mb-4 md:mb-0">
-                    <li>
-                        <button onclick="loadPage(ProfilePage, 'profile')" class="inline-flex items-center cursor-pointer px-4 py-3 rounded-lg hover:text-gray-900 bg-gray-50 hover:bg-gray-100 w-full dark:bg-gray-800 dark:hover:bg-gray-700 dark:hover:text-white">
-                            Profile
-                        </button>
-                    </li>
-                    <li>
-                        <button onclick="loadPage(ProfilePage, 'match history')" class="inline-flex items-center cursor-pointer px-4 py-3 rounded-lg hover:text-gray-900 bg-gray-50 hover:bg-gray-100 w-full dark:bg-gray-800 dark:hover:bg-gray-700 dark:hover:text-white">
-                            Match History
-                        </button>
-                    </li>
-                    <li>
-                        <button onclick="loadPage(ProfilePage, 'change password')" class="inline-flex items-center px-4 py-3 rounded-lg hover:text-gray-900 bg-gray-50 hover:bg-gray-100 w-full dark:bg-gray-800 dark:hover:bg-gray-700 dark:hover:text-white">
-                            Change Password
-                        </button>
-                    </li>
-
-                </ul>
-
-                ${body}
-                
-                
-            </div>
-        </div>
-
-
-
-    `;
-}
-
-export function loadPage(page: (name: string | null) => string, pageName: string = "home") {
+export async function loadPage(page: (name: string | null) => string, pageName: string = "home") {
 
     const app = document.getElementById("app");
     if (app) {
         history.pushState({ page: pageName }, `${pageName}`, `/#${pageName}`);
         if (pageName == "match history")
-            app.innerHTML = page("match history");
+            app.innerHTML = await page("match history");
         else if (pageName == "profile")
-            app.innerHTML = page("profile");
+            app.innerHTML = await page("profile");
         else if (pageName == "change password")
-            app.innerHTML = page("change password");
+            app.innerHTML = await page("change password");
         else
-            app.innerHTML = page(null);
+            app.innerHTML = await page(null);
         updateNavUser();
     }
 }
@@ -868,30 +593,7 @@ export function Canvas() {
     `
 }
 
-export function HomePage(): string {
-    return `
-    <div class="mx-32">
 
-        <!-- Logo and Title -->
-        
-        <!-- main body-->
-         <div class="mx-32 h-[92vh] text-center items-center flex flex-col justify-center gap-6">
-            <div class="flex  flex-row w-2xl justify-between gap-6">
-            <button onclick="loadPage(Canvas, 'canvas'); gameStart(false)" class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">1v1</button>
-            <button onclick="loadPage(Canvas, 'canvas'); gameStart(true)" class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">Single Player</button>
-            </div>
-            
-          </button>
-          <button onclick="loadPage(Lobby, 'lobby')" class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
-            Multiplayer
-          </button>
-        <button id="logout" class="hidden bg-red-500 text-white px-4 py-2 rounded">Logout</button>
-        </div>
-
-
-      </div>
-    `;
-}
 
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -925,6 +627,7 @@ window.addEventListener("DOMContentLoaded", () => {
 (window as any).loadHomePage = HomePage;
 (window as any).login = login;
 (window as any).changePassword = changePassword;
+(window as any).updateNavUser = updateNavUser;
 (window as any).signUp = signUp;
 (window as any).SignUpPage = SignUpPage;
 // main.ts'in en altına ekle

@@ -240,3 +240,12 @@ export const recoveryStepTwoPageSchema = {
 		}
 	}
 }
+
+export const gameRoomSchema = {
+	body: {
+		type: 'object',
+		properties: {
+			
+		}
+	}
+}

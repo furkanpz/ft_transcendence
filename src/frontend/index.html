@@ -1,52 +1,60 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PONG</title>
-    <script type="module" src="main.ts"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  </head>
-  <body>
-    <div class="mx-32">
 
-      <nav class=" px-32 py-6 my-6 flex flex-row w-full bg-blue-500 rounded-xl justify-between">
-        <div>
-          <button onclick="loadPage(HomePage, 'home')" class="font-bold cursor-pointer text-6xl">PONG</button>
-        </div>
-        <div class="flex items-center gap-4">
-          <a href="/entry" class="text-xl text-amber-400 hover:text-amber-600">Entry</a>
-          <a href="/game" class="text-xl text-amber-400 hover:text-amber-600">Game</a>
-          <a href="/about" class="text-xl text-amber-400 hover:text-amber-600">About</a>
-        </div>
-        
-        <div class="flex items-center">
-          <button id="authButton" onclick="loadPage(LoginPage, 'login')" class="cursor-pointer text-2xl font-semibold text-white hover:text-amber-400">Login</button>
-        </div>
-        
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PONG</title>
+  <script type="module" src="main.ts"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+
+<body>
+  <div class="mx-32">
+
+    <nav class=" px-32 py-6 my-6 flex flex-row w-full bg-blue-500 rounded-xl justify-between">
+      <div>
+        <button onclick="loadPage(HomePage, 'home')" class="font-bold cursor-pointer text-6xl">PONG</button>
       </div>
+      <div class="flex items-center gap-4">
+        <a href="/entry" class="text-xl text-amber-400 hover:text-amber-600">Entry</a>
+        <a href="/game" class="text-xl text-amber-400 hover:text-amber-600">Game</a>
+        <a href="/about" class="text-xl text-amber-400 hover:text-amber-600">About</a>
+      </div>
+
+      <div class="flex items-center">
+        <button id="authButton" onclick="loadPage(LoginPage, 'login')"
+          class="cursor-pointer text-2xl font-semibold text-white hover:text-amber-400">Login</button>
+      </div>
+
     </nav>
   </div>
-    <div id="app" class="app">
-      <div class="mx-32">
 
-        <!-- Logo and Title -->
-        
-        <!-- main body-->
-        <div class="mx-32 h-[92vh] text-center items-center flex flex-col justify-center gap-6">
-            <div class="flex  flex-row w-2xl justify-between gap-6">
-            <button class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">1v1</button>
-            <button class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">Single Player</button>
-            </div>
-            
-          </button>
-          <button onclick="loadPage(Lobby, 'lobby')" class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
-            Multiplayer
-          </button>
-        <button id="logout" class="hidden">Logout</button>
+  <div id="app" class="app">
+    <div class="mx-32">
+
+      <!-- Logo and Title -->
+
+      <!-- main body-->
+      <div class="mx-32 h-[92vh] text-center items-center flex flex-col justify-center gap-6">
+        <div class="flex  flex-row w-2xl justify-between gap-6">
+          <button
+            class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">1v1</button>
+          <button
+            class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">Single
+            Player</button>
         </div>
 
-
+        </button>
+        <button onclick="loadPage(Lobby, 'lobby')"
+          class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
+          Multiplayer
+        </button>
+        <button id="logout" class="hidden">Logout</button>
       </div>
-  </body>
+
+
+    </div>
+</body>
+
 </html>
