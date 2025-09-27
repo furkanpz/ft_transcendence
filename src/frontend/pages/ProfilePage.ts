@@ -46,7 +46,7 @@ export function changePassword(e: Event)
     })
 }
 
-export function ProfilePage(tab: string = "profile") {
+export async function ProfilePage(tab: string | null = "profile") : Promise<string> {
 
     
     let body = null;

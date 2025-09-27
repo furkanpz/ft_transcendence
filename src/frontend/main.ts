@@ -2,7 +2,7 @@ import { transform } from "typescript";
 import { signUp, SignUpPage } from "./pages/SignUpPage";
 import { changePassword, ProfilePage } from "./pages/ProfilePage";
 import { login, LoginPage } from "./pages/LoginPage";
-import { connectSocket, Lobby } from "./pages/LobbyPage";
+import { Lobby } from "./pages/LobbyPage";
 
 class Vector2 {
     x: number;
@@ -534,17 +534,17 @@ export function gameLoop(game: Pong, currentTime: number) {
 
 //YUKARISI BUGRAYA AIT
 
-window.addEventListener("popstate", (e) => {
+window.addEventListener("popstate", async (e) => {
     const app = document.getElementById("app");
     if (!app) return;
     const state = e.state;
     if (state?.page === "home") {
-        app.innerHTML = HomePage();
+        app.innerHTML = await HomePage();
     } else if (state?.page === "login") {
-        app.innerHTML = LoginPage();
+        app.innerHTML = await LoginPage();
     }
     else if (state?.page === "signup") {
-        app.innerHTML = SignUpPage();
+        app.innerHTML = await SignUpPage();
     }
 
 });
@@ -588,19 +588,19 @@ export function updateNavUser() {
 
 
 
-export function loadPage(page: (name: string | null) => string, pageName: string = "home") {
+export async function loadPage(page: (name: string | null) => Promise<string>, pageName: string = "home") {
 
     const app = document.getElementById("app");
     if (app) {
         history.pushState({ page: pageName }, `${pageName}`, `/#${pageName}`);
         if (pageName == "match history")
-            app.innerHTML = page("match history");
+            app.innerHTML = await page("match history");
         else if (pageName == "profile")
-            app.innerHTML = page("profile");
+            app.innerHTML = await page("profile");
         else if (pageName == "change password")
-            app.innerHTML = page("change password");
+            app.innerHTML = await page("change password");
         else
-            app.innerHTML = page(null);
+            app.innerHTML = await page(null);
         updateNavUser();
     }
 }
@@ -615,7 +615,7 @@ export function Canvas() {
     `
 }
 
-export function HomePage(): string {
+export async function HomePage(): Promise<string> {
     return `
     <div class="mx-32">
 
@@ -674,7 +674,6 @@ window.addEventListener("DOMContentLoaded", () => {
 (window as any).changePassword = changePassword;
 (window as any).signUp = signUp;
 (window as any).SignUpPage = SignUpPage;
-(window as any).connectSocket = connectSocket;
 // main.ts'in en altına ekle
 // (window as any).login = login;
 // (window as any).signUp = signUp;
