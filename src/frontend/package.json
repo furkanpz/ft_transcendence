@@ -13,7 +13,8 @@
   "description": "",
   "dependencies": {
     "@tailwindcss/cli": "^4.1.11",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",

@@ -1,5 +1,4 @@
-import { loadPage } from "../main";
-import { HomePage } from "./HomePage";
+import { HomePage, loadPage } from "../main";
 
 export function login(event: Event) {
     event.preventDefault();
@@ -20,6 +19,7 @@ export function login(event: Event) {
         .then(data => {
             console.log(data);
             if (data.success == true) {
+                localStorage.setItem("username", email.value);
                 loadPage(HomePage, "home");
             }
             else {
@@ -30,8 +30,7 @@ export function login(event: Event) {
 }
 
 
-
-export async function LoginPage(): Promise<string> {
+export function LoginPage(): string {
     return `
         <div id="loginArea" class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
             <form method="post" class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">

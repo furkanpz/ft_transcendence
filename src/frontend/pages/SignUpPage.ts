@@ -35,7 +35,7 @@ export function signUp(event: Event) {
         });
 }
 
-export async function SignUpPage(): Promise<string> {
+export function SignUpPage(): string {
     return `
     <div id="signUpArea" class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
     <form method="post" class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">
