@@ -1,7 +1,10 @@
-export function HomePage(): string {
+import { Canvas, gameStart, loadPage } from "../main";
+import { Lobby } from "./LobbyPage";
+
+export async function HomePage(): Promise<string> {
+  
     return `
     <div class="mx-32">
-
         <!-- Logo and Title -->
         
         <!-- main body-->
@@ -12,13 +15,30 @@ export function HomePage(): string {
             </div>
             
           </button>
-          <button onclick="loadPage(Lobby, 'lobby')" class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
-            Multiplayer
-          </button>
+              <button  onclick="loadPage(Lobby, 'lobby')" class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
+              Multiplayer
+              </button>
+
         <button id="logout" class="hidden bg-red-500 text-white px-4 cursor-pointer py-2 rounded">Logout</button>
         </div>
 
 
       </div>
     `;
+}
+
+export function setupHomePage() {
+  document.getElementById("btn-1v1")?.addEventListener("click", () => {
+    loadPage(Canvas, "canvas");
+    gameStart(false);
+  });
+
+  document.getElementById("btn-single")?.addEventListener("click", () => {
+    loadPage(Canvas, "canvas");
+    gameStart(true);
+  });
+
+  document.getElementById("btn-multi")?.addEventListener("click", () => {
+    loadPage(Lobby, "lobby");
+  });
 }

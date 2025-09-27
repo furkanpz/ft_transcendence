@@ -31,7 +31,7 @@ export function login(event: Event) {
 
 
 
-export function LoginPage(): string {
+export async function LoginPage(): Promise<string> {
     return `
         <div id="loginArea" class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
             <form method="post" class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">

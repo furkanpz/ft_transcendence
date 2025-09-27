@@ -44,7 +44,7 @@ export async function changePassword(e: Event) {
         })
 }
 
-export function ProfilePage(tab: string = "profile") {
+export async function ProfilePage(tab: Promise<string> | any = "profile") {
 
 
     let body = null;

@@ -1,4 +1,4 @@
-import { transform } from "typescript";
+// import { transform } from "typescript";
 import { GameRoom } from "../backend/server/types/game.types"
 import { HomePage } from "./pages/HomePage";
 import { changePassword, ProfilePage } from "./pages/ProfilePage";
@@ -496,7 +496,7 @@ function update(game: Pong, deltaTime: number) {
             break;
         case GameState.Playing:
             updatePlayer1(game, deltaTime);
-            updatePlayer2(game, deltaTime, false);
+            updatePlayer2(game, deltaTime);
             if (!game.scored)
                 updateBall(game, deltaTime);
             break;
@@ -549,24 +549,24 @@ export type UserProfileDTO = {
 };
 
 
-window.addEventListener("popstate", (e) => {
+window.addEventListener("popstate", async (e) => {
     const app = document.getElementById("app");
     if (!app) return;
     const state = e.state;
     if (state?.page === "home") {
-        app.innerHTML = HomePage();
+        app.innerHTML = await HomePage();
     } else if (state?.page === "login") {
-        app.innerHTML = LoginPage();
+        app.innerHTML = await LoginPage();
     }
     else if (state?.page === "signup") {
-        app.innerHTML = SignUpPage();
+        app.innerHTML = await SignUpPage();
     }
 
 });
 
 
 
-export async function loadPage(page: (name: string | null) => string, pageName: string = "home") {
+export async function loadPage(page: (name: string | null) => Promise<string>, pageName: string = "home") {
 
     const app = document.getElementById("app");
     if (app) {
@@ -583,7 +583,7 @@ export async function loadPage(page: (name: string | null) => string, pageName: 
     }
 }
 
-export function Canvas() {
+export async function Canvas() : Promise<string> {
     return `
     <div class="items-center justify-center flex text-center border-2">
     <canvas id="canvas" class="border-2 border-amber-500">
