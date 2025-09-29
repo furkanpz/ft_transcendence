@@ -1,6 +1,7 @@
-import { HomePage, loadPage } from "../main";
+import { loadPage } from "../main";
+import { HomePage } from "./HomePage";
 
-export function login(event: Event) {
+export async function login(event: Event) {
     event.preventDefault();
     const email = document.getElementById("email") as HTMLInputElement;
     const password = document.getElementById("password") as HTMLInputElement;
@@ -19,7 +20,6 @@ export function login(event: Event) {
         .then(data => {
             console.log(data);
             if (data.success == true) {
-                localStorage.setItem("username", email.value);
                 loadPage(HomePage, "home");
             }
             else {
@@ -28,6 +28,7 @@ export function login(event: Event) {
             }
         });
 }
+
 
 
 export async function LoginPage(): Promise<string> {

@@ -1,74 +1,126 @@
+import { GameRoom } from "../../backend/server/types/game.types";
+import { loadPage } from "../main";
+import { HomePage } from "./HomePage";
+
+
 export async function Lobby(): Promise<string> {
-    const response = await fetch("http://localhost:3000/api/game/rooms", {credentials: "include", method: "GET"});
-    if (!response.ok) return "Some kind of connection error";
 
-    const data = await response.json();
 
-    if (!data.success || data.rooms.length === 0) {
-        return `<div class="flex justify-center">
-            <button onclick="createRoom()" 
-                class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition">
-                Create Room
-            </button>
-        </div>`;
+
+
+  //BURADAN ASAGISI VAROLAN ROOMLARI GETIRMEYE YARIYOR
+  try {
+    const response = await fetch("http://localhost:3000/api/game/rooms", {
+      credentials: "include",
+      method: "GET"
+    });
+
+    if (!response.ok) {
+      alert("Error");
+      loadPage(HomePage, "home");
+      return "";
     }
 
-    const roomsHtml = data.rooms.map((room: any) => {
-        const playerCount = room.players.length + '/' + room.teamCount;
-        const status = room.state.state === "Waiting" ? "Waiting" : "In Progress";
-        const isPrivate = room.isPrivate ? "Private" : "Public";
-
-        return `
-        <div class="flex items-center justify-between border-2 rounded-xl p-6 bg-white shadow-md mb-4">
-            <div class="flex flex-col w-1/4 text-center">
-                <span class="text-sm text-slate-500">ID</span>
-                <span class="truncate text-lg font-semibold">${room.id}</span>
-            </div>
-            <div class="flex flex-col w-1/4 text-center">
-                <span class="text-sm text-slate-500">Player Count</span>
-                <span class="text-lg">${playerCount}</span>
-            </div>
-            <div class="flex flex-col w-1/4 text-center">
-                <span class="text-sm text-slate-500">Status</span>
-                <span class="text-lg font-medium text-green-600">${status}</span>
-            </div>
-            <div class="flex flex-col w-1/4 text-center">
-                <span class="text-sm text-slate-500">Type</span>
-                <span class="text-lg">${isPrivate}</span>
-            </div>
-            <div class="w-1/4 flex justify-center">
-                <button onclick="joinRoom(${room.id})" 
-                    class="px-6 py-3 bg-blue-500 hover:bg-blue-600 rounded-xl text-white font-semibold shadow-md transition">
-                    Join
-                </button>
-            </div>
-        </div>`;
-    }).join("");
+    const rooms = await response.json();
 
     return `
-    <div class="mx-32 my-8 space-y-6">
         <div class="flex justify-center">
-            <button onclick="createRoom()" 
-                class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition">
-                Create Room
-            </button>
+        <div id="waitingPopup" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center">
+        <div class="bg-white p-6 rounded-lg w-1/3 text-center">
+        <h2 class="text-2xl font-semibold text-gray-700">Waiting for Players...</h2>
+        <p class="mt-2 text-gray-500">Please wait while the room is being prepared.</p>
+        <button onclick="BURADA ODA KAPATILACAK" class="mt-4 px-6 py-2 bg-blue-500 text-white rounded-md">Close</button>
         </div>
-        ${roomsHtml}
-    </div>
-    `;
+        </div>
+        </div>
+        <div> 
+          <div class="text-center">
+          <button onclick="window.createRoom()" 
+                class="px-6 py-3 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition">
+                 Create Room
+                 </button>
+                 </div>
+            ${rooms.rooms.map((element: GameRoom) => `
+              <div class="flex justify-between items-start ...">
+                <div class="flex flex-col h-full w-1/4 text-center">
+                  <div class="w-full ">
+                    <span class="text-md text-slate-500">ID</span>
+                  </div>
+                  <div class="w-full my-auto">
+                    <span class="truncate text-lg font-semibold">${element.id}</span>
+                  </div>
+                </div>
+                <div class="flex flex-col h-full w-1/4 text-center">
+                  <div class="w-full ">
+                    <span class="text-md text-slate-500">Player Count</span>
+                  </div>
+                <div class="w-full my-auto">
+                  <span class="truncate text-lg">${element.players.length}/2</span>
+                </div>
+              </div>
+                <div class="flex flex-col h-full w-1/4 text-center">
+                <div class="w-full ">
+                <span class="text-md text-slate-500">Status</span>
+                </div>
+                <div class="text-xs truncate my-auto">
+                <span class="text-lg overflow-hidden whitespace-nowrap">${element.state.state}</span>
+                </div>
+                </div>
+                <div class="flex flex-col h-full w-1/4 text-center">
+                <div class="w-full my-auto">
+                <button onclick="joinRoom('${(element.id)}');" class="text-lg p-4 bg-blue-500 cursor-pointer rounded-2xl text-white">Join</button>
+                </div>
+                </div>
+                </div>
+                `).join("")}
+                </div>
+        `;
+  } catch (err) {
+    console.error(err);
+    alert("Sunucuya bağlanırken hata oluştu");
+    loadPage(HomePage, "home");
+    return "";
+  }
+
 }
 
-// Script olarak sayfaya ekle
 window.createRoom = () => {
-    const ws = new WebSocket('ws://localhost:3000/ws/game');
-    ws.onopen = () => {
-        ws.send(JSON.stringify({type: 'createRoom', data: {maxPlayer: 2, isPrivate: false, password: null, teamCount: 2}}));
-    };
+  const ws = new WebSocket('ws://localhost:3000/ws/game');
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ type: 'createRoom', data: { maxPlayer: 2, isPrivate: false, password: null, teamCount: 2 } }));
+  };
+  ws.onmessage = (event) => {
+    const response = JSON.parse(event.data);
+    console.log("resposne --- ", response)
+    if (response.type == "connected")
+    {
+
+      if (response.data.message === "Connected to game server") {
+        document.getElementById("waitingPopup")?.classList.remove("hidden");
+      }
+      else {
+        alert("hata");
+      }
+    }
+    else if (response.type == "joinedRoom")
+    {
+      document.getElementById("waitingPopup")?.classList.add("hidden");
+    }
+  };
+}
+window.joinRoom = (roomId: string) => {
+  const ws = new WebSocket('ws://localhost:3000/ws/game');
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ type: 'joinRoom', data: { roomId, password: null } }));
+  };
+  ws.onmessage = (event) => {
+    const response = JSON.parse(event.data);
+    console.log(response.type, " - ", response.data);
+  }
 };
 
-window.joinRoom = (roomId: number) => {
-    const ws = new WebSocket('ws://localhost:3000/ws/game');
-    ws.onopen = () => {
-        ws.send(JSON.stringify({type: 'joinRoom', data: {roomId, password: null}}));
-    };
-};
+window.leaveRoom = (roomId: string, ws: WebSocket) => {
+  const ws = new WebSocket('ws://localhost:3000/ws/game');
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ type: 'leaveRoom', data: { roomId } }));
+  };

@@ -1,8 +1,11 @@
-import { transform } from "typescript";
-import { signUp, SignUpPage } from "./pages/SignUpPage";
+// import { transform } from "typescript";
+import { GameRoom } from "../backend/server/types/game.types"
+import { HomePage } from "./pages/HomePage";
 import { changePassword, ProfilePage } from "./pages/ProfilePage";
-import { login, LoginPage } from "./pages/LoginPage";
 import { Lobby } from "./pages/LobbyPage";
+import { login, LoginPage } from "./pages/LoginPage";
+import { signUp, SignUpPage } from "./pages/SignUpPage";
+import { updateNavUser } from "./pages/Navbar";
 
 class Vector2 {
     x: number;
@@ -187,7 +190,7 @@ export function gameStart(isAI: boolean) {
         components: [
             new Button("red", "Start", new Vector2(WIDTH / 2, HEIGHT / 2), new Vector2(200, 100), (game: Pong) => {
                 console.log("Game Started");
-                
+
                 game.state = GameState.Playing;
             }),
         ],
@@ -209,7 +212,7 @@ export function gameStart(isAI: boolean) {
 
     const gameOverUI: UI = {
         components: [
-            new Button("blue", "Replay",  new Vector2(WIDTH / 2, (HEIGHT / 4) * 3), new Vector2(200, 100), (game: Pong) => {
+            new Button("blue", "Replay", new Vector2(WIDTH / 2, (HEIGHT / 4) * 3), new Vector2(200, 100), (game: Pong) => {
                 game.lastTime = 0;
                 game.player1.score = 0;
                 game.player2.score = 0;
@@ -433,7 +436,7 @@ async function updateBall(game: Pong, deltaTime: number) {
         const newDir2 = bounceDir.y + ((game.ball.pos.y - game.player1.pos.y) / (game.player1.dim.y / 2));
 
         bounceDir.y = newDir2;
-        
+
         if (game.firstTouch == false) {
             game.firstTouch = true;
             game.ball.speed = BALL_FIRST_HIT_SPEED;
@@ -446,14 +449,14 @@ async function updateBall(game: Pong, deltaTime: number) {
         game.ball.pos.x = (game.player1.pos.x + (game.player1.dim.x / 2)) + game.ball.radius;
         game.ball.dir = bounceDir.norm();
     }
-    
+
     if (isCircleRectColliding(game.ball, game.player2)) {
 
         const bounceDir = new Vector2(-game.ball.dir.x, game.ball.dir.y);
         const newDir2 = bounceDir.y + ((game.ball.pos.y - game.player2.pos.y) / (game.player2.dim.y / 2));
 
         bounceDir.y = newDir2;
-        
+
         if (game.firstTouch == false) {
             game.firstTouch = true;
             game.ball.speed = BALL_FIRST_HIT_SPEED;
@@ -534,6 +537,18 @@ export function gameLoop(game: Pong, currentTime: number) {
 
 //YUKARISI BUGRAYA AIT
 
+export type UserProfileDTO = {
+    success: boolean;
+    message: string;
+    id: number;
+    username: string;
+    email: string;
+    avatar_url: string;
+    role: string;
+    created_at: string;
+};
+
+
 window.addEventListener("popstate", async (e) => {
     const app = document.getElementById("app");
     if (!app) return;
@@ -548,45 +563,6 @@ window.addEventListener("popstate", async (e) => {
     }
 
 });
-
-export function updateNavUser() {
-    const username = localStorage.getItem("username");
-    const authButton = document.getElementById("authButton");
-    const logoutButton = document.getElementById("logout");
-
-    if (username) {
-        if (authButton) {
-
-            authButton.textContent = username;
-            authButton.onclick = () => {loadPage(ProfilePage, "profile")};
-            authButton.classList.remove("hover:text-amber-400");
-        }
-        if (logoutButton) {
-            logoutButton.classList.remove("hidden");
-
-            logoutButton.textContent = "Logout";
-            logoutButton.onclick = () => {
-                localStorage.removeItem("username");
-                fetch(`http://localhost:3000/api/auth/logout`, {
-                    method: "POST",
-                    credentials: "include"
-                })
-                updateNavUser();
-                loadPage(HomePage, "home");
-            };
-        }
-    } else if (authButton) {
-        authButton.textContent = "Login";
-        authButton.onclick = () => loadPage(LoginPage, "login");
-        authButton.classList.add("hover:text-amber-400");
-        authButton.classList.add("cursor-pointer");
-    }
-}
-
-
-
-
-
 
 export async function loadPage(page: (name: string | null) => Promise<string>, pageName: string = "home") {
 
@@ -605,7 +581,7 @@ export async function loadPage(page: (name: string | null) => Promise<string>, p
     }
 }
 
-export function Canvas() {
+export async function Canvas() : Promise<string>     {
     return `
     <div class="items-center justify-center flex text-center border-2">
     <canvas id="canvas" class="border-2 border-amber-500">
@@ -615,30 +591,7 @@ export function Canvas() {
     `
 }
 
-export async function HomePage(): Promise<string> {
-    return `
-    <div class="mx-32">
 
-        <!-- Logo and Title -->
-        
-        <!-- main body-->
-         <div class="mx-32 h-[92vh] text-center items-center flex flex-col justify-center gap-6">
-            <div class="flex  flex-row w-2xl justify-between gap-6">
-            <button onclick="loadPage(Canvas, 'canvas'); gameStart(false)" class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">1v1</button>
-            <button onclick="loadPage(Canvas, 'canvas'); gameStart(true)" class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">Single Player</button>
-            </div>
-            
-          </button>
-          <button onclick="loadPage(Lobby, 'lobby')" class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
-            Multiplayer
-          </button>
-        <button id="logout" class="hidden bg-red-500 text-white px-4 py-2 rounded">Logout</button>
-        </div>
-
-
-      </div>
-    `;
-}
 
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -672,6 +625,7 @@ window.addEventListener("DOMContentLoaded", () => {
 (window as any).loadHomePage = HomePage;
 (window as any).login = login;
 (window as any).changePassword = changePassword;
+(window as any).updateNavUser = updateNavUser;
 (window as any).signUp = signUp;
 (window as any).SignUpPage = SignUpPage;
 // main.ts'in en altına ekle

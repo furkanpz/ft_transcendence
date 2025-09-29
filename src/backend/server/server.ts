@@ -10,7 +10,7 @@ import cors from '@fastify/cors';
 import fastifyWebsocket from '@fastify/websocket';
 import rateLimit from '@fastify/rate-limit';
 const server = Fastify({
-  logger: true,
+  logger: false,
   ajv: {
     customOptions: {
       removeAdditional: false

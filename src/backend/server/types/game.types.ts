@@ -30,7 +30,7 @@ interface Player {
 }
 
 interface RoomSettings {
-	maxPlayers: number;
+	maxPlayer: number;
 	isPrivate: boolean;
 	password: string | null;
 	teamCount: number;
@@ -39,7 +39,7 @@ interface RoomSettings {
 interface GameRoom {
 	id: string;
 	players: Player[]; // always index 0 owner of room
-	maxPlayers: number;
+	maxPlayer: number;
 	teamCount: number;
 	isPrivate: boolean;
 	password: string | null;

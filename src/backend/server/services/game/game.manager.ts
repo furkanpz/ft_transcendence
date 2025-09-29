@@ -27,13 +27,11 @@ class GameManager {
 		});
 
 		socket.on("message", async (data: string) => {
-			// Handle incoming messages related to game actions here
 			try {
 				const message: GameEvent = JSON.parse(data);
 				await this.handleMessage(userId, message);
 			} catch (error) {
 				console.error("Error parsing message:", error);
-				// Optionally send an error message back to the client
 			}
 		});
 		return true;
@@ -43,62 +41,49 @@ class GameManager {
 		const player = this.players.get(userId);
 		if (!player) return;
 
-		switch (event.type) {
-			case "createRoom":
-				const roomSettings: RoomSettings = event.data;
-				try {
+		console.warn(`Received event from user ${userId}:`, event);
+
+		try {
+			switch (event.type) {
+				case "createRoom":
+					const roomSettings: RoomSettings = event.data;
 					const room = this.createRoom(userId, roomSettings);
 					this.broadcastRoom({ type: "roomCreated", data: room }, room.id);
-				} catch (error: any) {
-					this.playersocket.get(userId)?.send(JSON.stringify({ type: "error", message: error.message }));
-				}
-				break;
-			case "joinRoom":
-				const { roomId, password } = event.data;
-				const success = this.joinRoom(userId, roomId, password);
-				if (success) {
-					this.playersocket.get(userId)?.send(JSON.stringify({ type: "joinedRoom", roomId }));
-				} else {
-					this.playersocket.get(userId)?.send(JSON.stringify({ type: "error", message: "Failed to join room" }));
-				}
-				break;
-			case "leaveRoom":
-				if (player.roomId) {
-					const left = this.leaveRoom(userId, player.roomId);
-					if (left) {
-						this.playersocket.get(userId)?.send(JSON.stringify({ type: "leftRoom", roomId: player.roomId }));
-					} else {
-						this.playersocket.get(userId)?.send(JSON.stringify({ type: "error", message: "Failed to leave room" }));
+					break;
+				case "joinRoom":
+					const { roomId, password } = event.data;
+					this.joinRoom(userId, roomId, password);
+					this.broadcastRoom({ type: "playerJoined", data: { userId, username: player.name } }, roomId);
+					break;
+				case "leaveRoom":
+					this.leaveRoom(userId, player.roomId!);
+					this.playersocket.get(userId)?.send(JSON.stringify({ type: "leftRoom", roomId: player.roomId! }));
+					break;
+				case "selectTeam":
+					const { teamId } = event.data;
+					this.joinTeam(userId, teamId, player.roomId!);
+					this.playersocket.get(userId)?.send(JSON.stringify({ type: "joinedTeam", teamId }));
+					break;
+				case "ready":
+					if (player.roomId) {
+						player.isReady = !player.isReady;
+						this.playersocket.get(userId)?.send(JSON.stringify({ type: "readyStatus", isReady: player.isReady }));
 					}
-				}
-				break;
-			case "selectTeam":
-				const { teamId } = event.data;
-				if (player.roomId) {
-					const joined = this.joinTeam(userId, teamId, player.roomId);
-					if (joined) {
-						this.playersocket.get(userId)?.send(JSON.stringify({ type: "joinedTeam", teamId }));
-					} else {
-						this.playersocket.get(userId)?.send(JSON.stringify({ type: "error", message: "Failed to join team" }));
+					break;
+				case "start":
+					if (player.roomId && this.gameRooms.get(player.roomId)?.players[0].id === userId) {
+						if (this.gameRooms.get(player.roomId)?.players.every(p => p.isReady)) {
+							this.gameRooms.get(player.roomId)!.state.state = RoomStatus.Playing;
+							this.broadcastRoom({type: "start", data : { roomId: player.roomId }}, player.roomId);
+						}
 					}
-				}
-				break;
-			case "ready":
-				if (player.roomId) {
-					player.isReady = !player.isReady;
-					this.playersocket.get(userId)?.send(JSON.stringify({ type: "readyStatus", isReady: player.isReady }));
-				}
-				break;
-			case "start":
-				if (player.roomId && this.gameRooms.get(player.roomId)?.players[0].id === userId) {
-					if (this.gameRooms.get(player.roomId)?.players.every(p => p.isReady)) {
-						this.gameRooms.get(player.roomId)!.state.state = RoomStatus.Playing;
-						this.broadcastRoom({type: "start", data : { roomId: player.roomId }}, player.roomId);
-					}
-				}
-				break;
-		}
+					break;
+			}
+	} catch (error: any) {
+		console.error("Error handling message:", error);
+		this.playersocket.get(userId)?.send(JSON.stringify({ type: "error", data: error.message }));
 	}
+}
 
 	createRoom(userId: number, roomSettings: RoomSettings): GameRoom {
 		const roomId = this.generateRoomId();
@@ -109,7 +94,7 @@ class GameManager {
 		const newRoom: GameRoom = {
 			id: roomId,
 			players: [this.players.get(userId)!],
-			maxPlayers: roomSettings.maxPlayers,
+			maxPlayer: roomSettings.maxPlayer,
 			isPrivate: roomSettings.isPrivate,
 			password: roomSettings.password,
 			teamCount: roomSettings.teamCount,
@@ -120,22 +105,22 @@ class GameManager {
 			gameState: null,
 		};
 		for (let i = 0; i < newRoom.teamCount; i++)
-			newRoom.state.teams = new Array(newRoom.teamCount).fill( { id: i, score: 0, size: newRoom.maxPlayers / newRoom.teamCount, players: [] } );
+			newRoom.state.teams = new Array(newRoom.teamCount).fill( { id: i, score: 0, size: newRoom.maxPlayer / newRoom.teamCount, players: [] } );
 		this.players.get(userId)!.roomId = newRoom.id;
 		this.gameRooms.set(roomId, newRoom);
 		console.log(`Room ${roomId} created by user ${userId}`);
 		return newRoom;
 	}
 
-	joinTeam(userId: number, teamId: number, roomId: string): boolean {
+	joinTeam(userId: number, teamId: number, roomId: string) {
 		const room = this.gameRooms.get(roomId);
-		if (!room) return false;
+		if (!room) throw new Error("Room not found");
 		const plyr = room.players.find(p => p.id === userId);
-		if (!plyr) return false;
-		if (!room.state.teams) return false;
+		if (!plyr) throw new Error("Player not found");
+		if (!room.state.teams) throw new Error("Teams not initialized");
 		const team = room.state.teams.find(t => t.id === teamId);
-		if (!team) return false;
-		if (team.players.length >= team.size) return false;
+		if (!team) throw new Error("Team not found");
+		if (team.players.length >= team.size) throw new Error("Team is full");
 		if (plyr.team) {
 			const oldTeam = room.state.teams.find(t => t.id === plyr.team!.id);
 			if (oldTeam) {
@@ -144,26 +129,24 @@ class GameManager {
 		}
 		plyr.team = team;
 		team.players.push(plyr);
-		return true;
 	}
 
-	joinRoom(userId: number, roomId: string, password?: string): boolean {
+	joinRoom(userId: number, roomId: string, password?: string) {
 		const room = this.gameRooms.get(roomId);
-		if (!room) return false;
-		if (this.players.has(userId)) return false;
-		if (room.isPrivate && room.password !== password) return false;
-		if (room.players.length >= room.maxPlayers) return false;
+		if (!room) throw new Error("Room not found");
+		if (this.players.get(userId)?.roomId) throw new Error("You are already in a room");
+		if (room.isPrivate && room.password !== password) throw new Error("Invalid room password");
+		if (room.players.length >= room.maxPlayer) throw new Error("Room is full");
 		room.players.push(this.players.get(userId)!);
 		this.players.get(userId)!.roomId = room.id;
 		console.log(`User ${userId} joined room ${roomId}`);
-		return true;
 	}
 
-	leaveRoom(userId: number, roomId: string): boolean {
+	leaveRoom(userId: number, roomId: string) {
 		const room = this.gameRooms.get(roomId);
-		if (!room) return false;
+		if (!room) throw new Error("Room not found");
 		const player = this.players.get(userId);
-		if (!player || player.roomId !== room.id) return false;
+		if (!player || player.roomId !== room.id) throw new Error("You are not in this room");
 		room.players.splice(room.players.indexOf(player), 1);
 		this.players.get(userId)!.roomId = null;
 		console.log(`User ${userId} left room ${roomId}`);
@@ -171,7 +154,6 @@ class GameManager {
 			console.log(`Room ${roomId} deleted (empty)`);
 			this.gameRooms.delete(roomId);
 		}
-		return true;
 	}
 
 	broadcastRoom(event: GameEvent, roomId: string): void {
