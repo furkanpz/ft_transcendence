@@ -1,3 +1,5 @@
+import { HOME_PAGE, PROFILE_PAGE, PAGES} from "./pages";
+
 interface Page {
 	title: string;
 	onUnload: () => void;
@@ -7,63 +9,19 @@ interface Page {
 };
 
 class GlobalState {
-	private static instance: GlobalState;
+	private static currentPage: Page = HOME_PAGE;
 	private gameSocket?: WebSocket;
 	
 	private constructor() {}
 
-	public static getInstance(): GlobalState {
-		if (!GlobalState.instance) {
-			GlobalState.instance = new GlobalState();
-		}
-		return GlobalState.instance;
+	public static getcurrentPage(): Page {
+		return GlobalState.currentPage;
+	}
+
+	public static setcurrentPage(page: Page): void {
+		GlobalState.currentPage = page;
 	}
 }
-
-export const HOME_PAGE: Page = {
-	title: "Home",
-	render: () => {
-		const app = document.getElementById("app");
-		if (app) {
-			app.innerHTML = "<h1>Welcome to the Home Page</h1><button id=profileBtn onclick='loadPage(PROFILE_PAGE)'>Go to Profile</button>";
-		}
-	},
-	onPreLoad: () => {
-		console.log("Preparing to load Home page");
-	},
-	onLoad: () => {
-		console.log("Home page loaded");
-	},
-	onUnload: () => {
-		console.log("Home page unloaded");
-	}
-};
-
-export const PROFILE_PAGE: Page = {
-	title: "Profile",
-	render: () => {
-		const app = document.getElementById("app");
-		if (app) {
-			app.innerHTML = "<h1>User Profile</h1><button id=homeBtn onclick='loadPage(HOME_PAGE)'>Go to Home</button>";
-		}
-	},
-	onPreLoad: () => {
-		console.log("Preparing to load Profile page");
-	},
-	onLoad: () => {
-		console.log("Profile page loaded");
-	},
-	onUnload: () => {
-		console.log("Profile page unloaded");
-	}
-};
-
-const PAGES: { [key: string]: Page } = {
-	"home": HOME_PAGE,
-	"profile": PROFILE_PAGE
-};
-
-let currentPage: Page;
 
 function getPagePath(page: Page): string {
 	for (const [key, value] of Object.entries(PAGES)) {
@@ -79,12 +37,10 @@ function getPage(path: string): Page {
 	return PAGES[key] || HOME_PAGE;
 }
 
-export function loadPage(page: Page)
+function loadPage(page: Page)
 {
-	if (currentPage) {
-		currentPage.onUnload();
-	}
-	currentPage = page;
+	GlobalState.getcurrentPage().onUnload();
+	GlobalState.setcurrentPage(page);
 	page.onPreLoad();
 	document.title = page.title;
 	const path = getPagePath(page);
@@ -94,9 +50,7 @@ export function loadPage(page: Page)
 }
 
 window.onpopstate = function(event) {
-	if (currentPage) {
-		currentPage.onUnload();
-	}
+	GlobalState.getcurrentPage().onUnload();
 	const path = window.location.pathname.slice(1).toLowerCase();
 	if (path === "profile") {
 		loadPage(PROFILE_PAGE);
@@ -109,7 +63,7 @@ function init() {
 	const path = window.location.pathname;
 	const initialPage = getPage(path);
 
-	currentPage = initialPage;
+	GlobalState.setcurrentPage(initialPage);
 	document.title = initialPage.title;
 	initialPage.onPreLoad();
 	initialPage.render();
@@ -119,6 +73,8 @@ function init() {
 }
 
 init();
+
+export { Page, GlobalState, loadPage, getPagePath, getPage };
 
 (window as any).loadPage = loadPage;
 (window as any).PROFILE_PAGE = PROFILE_PAGE;
