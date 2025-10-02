@@ -5,9 +5,6 @@ import { HomePage } from "./HomePage";
 
 export async function Lobby(): Promise<string> {
 
-
-
-
   //BURADAN ASAGISI VAROLAN ROOMLARI GETIRMEYE YARIYOR
   try {
     const response = await fetch("http://localhost:3000/api/game/rooms", {
@@ -83,44 +80,3 @@ export async function Lobby(): Promise<string> {
   }
 
 }
-
-window.createRoom = () => {
-  const ws = new WebSocket('ws://localhost:3000/ws/game');
-  ws.onopen = () => {
-    ws.send(JSON.stringify({ type: 'createRoom', data: { maxPlayer: 2, isPrivate: false, password: null, teamCount: 2 } }));
-  };
-  ws.onmessage = (event) => {
-    const response = JSON.parse(event.data);
-    console.log("resposne --- ", response)
-    if (response.type == "connected")
-    {
-
-      if (response.data.message === "Connected to game server") {
-        document.getElementById("waitingPopup")?.classList.remove("hidden");
-      }
-      else {
-        alert("hata");
-      }
-    }
-    else if (response.type == "joinedRoom")
-    {
-      document.getElementById("waitingPopup")?.classList.add("hidden");
-    }
-  };
-}
-window.joinRoom = (roomId: string) => {
-  const ws = new WebSocket('ws://localhost:3000/ws/game');
-  ws.onopen = () => {
-    ws.send(JSON.stringify({ type: 'joinRoom', data: { roomId, password: null } }));
-  };
-  ws.onmessage = (event) => {
-    const response = JSON.parse(event.data);
-    console.log(response.type, " - ", response.data);
-  }
-};
-
-window.leaveRoom = (roomId: string, ws: WebSocket) => {
-  const ws = new WebSocket('ws://localhost:3000/ws/game');
-  ws.onopen = () => {
-    ws.send(JSON.stringify({ type: 'leaveRoom', data: { roomId } }));
-  };

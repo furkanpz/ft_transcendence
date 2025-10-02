@@ -1,4 +1,6 @@
 import { loadPage } from "../main";
+import { GlobalState } from "../Page";
+import { HOME_PAGE } from "../pages";
 import { HomePage } from "./HomePage";
 
 export async function login(event: Event) {
@@ -20,7 +22,7 @@ export async function login(event: Event) {
         .then(data => {
             console.log(data);
             if (data.success == true) {
-                loadPage(HomePage, "home");
+                GlobalState.setPage(HOME_PAGE);
             }
             else {
                 alert("Login Failed: " + data.message);

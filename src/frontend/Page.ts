@@ -1,16 +1,18 @@
-import { HOME_PAGE, PROFILE_PAGE, PAGES} from "./pages";
+import { HOME_PAGE, PROFILE_PAGE, PAGES, LOGIN_PAGE, SIGNUP_PAGE, signUp, login, AI_GAME_PAGE} from "./pages";
 
 interface Page {
 	title: string;
-	onUnload: () => void;
-	onPreLoad: () => void;
-	render: () => void;
-	onLoad: () => void;
+	onUnload: () => Promise<void>;
+	onPreLoad: () => Promise<void>;
+	render: () => Promise<void>;
+	onLoad: () => Promise<void>;
 };
 
 class GlobalState {
 	private static currentPage: Page = HOME_PAGE;
-	private gameSocket?: WebSocket;
+	private static gameAnimationFrameId: number | null = null;
+	private static gameSocket?: WebSocket;
+	private static username: string = "null";
 	
 	private constructor() {}
 
@@ -21,47 +23,54 @@ class GlobalState {
 	public static setcurrentPage(page: Page): void {
 		GlobalState.currentPage = page;
 	}
-}
 
-function getPagePath(page: Page): string {
-	for (const [key, value] of Object.entries(PAGES)) {
-		if (value === page) {
-			return "/" + key;
-		}
+	public static getAnimationFrameId(): number | null {
+		return GlobalState.gameAnimationFrameId;
 	}
-	return "/home";
-}
 
-function getPage(path: string): Page {
-	const key = path.slice(1).toLowerCase();
-	return PAGES[key] || HOME_PAGE;
-}
+	public static setAnimationFrameId(id: number | null): void {
+		GlobalState.gameAnimationFrameId = id;
+	}
 
-function loadPage(page: Page)
-{
-	GlobalState.getcurrentPage().onUnload();
-	GlobalState.setcurrentPage(page);
-	page.onPreLoad();
-	document.title = page.title;
-	const path = getPagePath(page);
-	window.history.pushState({ pageKey: path }, page.title, path);
-	page.render();
-	page.onLoad();
+	public static async setPage(page: Page): Promise<void> {
+		await GlobalState.getcurrentPage().onUnload();
+		GlobalState.setcurrentPage(page);
+		await page.onPreLoad();
+		document.title = page.title;
+		const path = GlobalState.getPagePath(page);
+		window.history.pushState({ pageKey: path }, page.title, path);
+		await page.render();
+		page.onLoad();
+	}
+
+	public static getPagePath(page: Page): string {
+		for (const [key, value] of Object.entries(PAGES)) {
+			if (value === page) {
+				return "/" + key;
+			}
+		}
+		return "/home";
+	}
+
+	public static getPage(path: string): Page {
+		const key = path.slice(1).toLowerCase();
+		return PAGES[key] || HOME_PAGE;
+	}
 }
 
 window.onpopstate = function(event) {
 	GlobalState.getcurrentPage().onUnload();
 	const path = window.location.pathname.slice(1).toLowerCase();
 	if (path === "profile") {
-		loadPage(PROFILE_PAGE);
+		GlobalState.setPage(PROFILE_PAGE);
 	} else {
-		loadPage(HOME_PAGE);
+		GlobalState.setPage(HOME_PAGE);
 	}
 };
 
 function init() {
 	const path = window.location.pathname;
-	const initialPage = getPage(path);
+	const initialPage = GlobalState.getPage(path);
 
 	GlobalState.setcurrentPage(initialPage);
 	document.title = initialPage.title;
@@ -74,8 +83,13 @@ function init() {
 
 init();
 
-export { Page, GlobalState, loadPage, getPagePath, getPage };
+export { Page, GlobalState };
 
-(window as any).loadPage = loadPage;
+(window as any).GlobalState = GlobalState;
 (window as any).PROFILE_PAGE = PROFILE_PAGE;
 (window as any).HOME_PAGE = HOME_PAGE;
+(window as any).LOGIN_PAGE = LOGIN_PAGE;
+(window as any).SIGNUP_PAGE = SIGNUP_PAGE;
+(window as any).AI_GAME_PAGE = AI_GAME_PAGE;
+(window as any).signUp = signUp;
+(window as any).login = login;
