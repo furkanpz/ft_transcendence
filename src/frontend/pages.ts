@@ -1,5 +1,6 @@
 import { gameStart } from "./game";
-import { Page, GlobalState } from "./Page";
+import { loadPage } from "./main";
+import { Page, GlobalState, FETCH_ADDRESS } from "./Page";
 
 const HOME_PAGE: Page = {
 	title: "Home",
@@ -9,26 +10,70 @@ const HOME_PAGE: Page = {
 			app.innerHTML = `
 			<div class="mx-32">
 				<!-- Logo and Title -->
-				<nav class="px-32 py-2 flex flex-row w-full bg-blue-500 rounded-b-xl justify-between">
+				<nav id="nav" class="px-32 py-2 flex flex-row w-full bg-blue-500 rounded-b-xl justify-between">
 					<div>
 						<button onclick="GlobalState.setPage(HOME_PAGE)" class="font-bold cursor-pointer text-6xl">PONG</button>
 					</div>
 					<div class="flex items-center">
-						<button id="authButton" onclick="GlobalState.setPage(LOGIN_PAGE)"
-						class="cursor-pointer text-2xl font-semibold text-white hover:text-amber-400">Login</button>
+					${
+						window.localStorage.getItem("isAuthenticated") === "1" ? `<button id="authButton" onclick="GlobalState.setPage(LOGIN_PAGE)"
+						class="cursor-pointer text-2xl font-semibold text-white hover:text-amber-400">Profil</button>` : `<button id="authButton" onclick="GlobalState.setPage(LOGIN_PAGE)"
+						class="cursor-pointer text-2xl font-semibold text-white hover:text-amber-400">Login</button>`
+					}
+						
 					</div>
 				</nav>
-				<!-- main body-->
+
+				<!-- main body -->
 				<div class="mx-32 h-[92vh] text-center items-center flex flex-col justify-center gap-6">
-					<div class="flex  flex-row w-2xl justify-between gap-6">
-					<button onclick="" class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">1v1</button>
-					<button onclick="GlobalState.setPage(AI_GAME_PAGE)" class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">Single Player</button>
-				</div>
-				<button id="multiplayer-btn" onclick=" " class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">Multiplayer</button>
-				<button id="logout" class="hidden bg-red-500 text-white px-4 cursor-pointer py-2 rounded">Logout</button>
+					<div class="flex flex-row w-2xl justify-between gap-6">
+						<button onclick="GlobalState.setPage(PVP_GAME_PAGE)" 
+							class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
+							1v1
+						</button>
+						<button onclick="GlobalState.setPage(AI_GAME_PAGE)" 
+							class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
+							Single Player
+						</button>
+					</div>
+
+					${
+						window.localStorage.getItem("isAuthenticated") === "1"
+							? `
+								<button id="multiplayer-btn"
+									class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
+									Multiplayer
+								</button>
+								
+								<button id="friends-btn"
+									class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
+									Friends
+								</button>
+								<button id="logout"
+									class="bg-red-500 text-white px-4 cursor-pointer py-2 rounded">
+									Logout
+								</button>
+							  `
+							: ""
+					}
 				</div>
 			</div>
 			`;
+			const multiplayerBtn = document.getElementById("multiplayer-btn");
+			if (multiplayerBtn) {
+				multiplayerBtn.addEventListener("click", () => {
+					console.log("multiplayer clicked");
+				});
+			}
+
+			const logoutBtn = document.getElementById("logout");
+			if (logoutBtn) {
+				logoutBtn.addEventListener("click", async () => {
+					await fetch(`${FETCH_ADDRESS}/auth/logout`, {credentials: "include"});
+					window.localStorage.removeItem("isAuthenticated");
+					window.location.reload();
+				});
+			}
 		}
 	},
 	onPreLoad: async () => {
@@ -41,6 +86,7 @@ const HOME_PAGE: Page = {
 		console.log("Home page unloaded");
 	}
 };
+
 
 const PROFILE_PAGE: Page = {
 	title: "Profile",
@@ -65,7 +111,7 @@ async function login(event: Event) {
 	event.preventDefault();
 	const email = document.getElementById("email") as HTMLInputElement;
 	const password = document.getElementById("password") as HTMLInputElement;
-	fetch(`http://localhost:3000/api/auth/sign-in`, {
+	fetch(`${FETCH_ADDRESS}/auth/sign-in`, {
 		method: "POST",
 		credentials: "include",
 		headers: {
@@ -80,6 +126,7 @@ async function login(event: Event) {
 		.then(data => {
 			console.log(data);
 			if (data.success == true) {
+				window.localStorage.setItem("isAuthenticated", "1");
 				GlobalState.setPage(HOME_PAGE);
 			}
 			else {
@@ -97,7 +144,7 @@ const LOGIN_PAGE: Page = {
 			app.innerHTML = `
 				<div id="loginArea" class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
 					<button id="backButton" onclick="GlobalState.setPage(HOME_PAGE)">Back to Home</button>
-					<form method="post" class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">
+					<form method="post"  class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">
 						<input type="text" id="email" placeholder="Email" class="bg-white p-1"></input>
 						<input type="password" id="password" placeholder="Password" class="bg-white p-1"></input>
 						<button type="submit" onclick="login(event)" class="bg-white text-black py-2 px-4 rounded">Login</button>
@@ -130,7 +177,7 @@ async function signUp(event: Event) {
 		alert("Passwords do not match!");
 		return;
 	}
-	await fetch(`http://localhost:3000/api/auth/sign-up`, {
+	await fetch(`${FETCH_ADDRESS}/auth/sign-up`, {
 		method: "POST",
 		credentials: "include",
 		headers: {
@@ -187,6 +234,40 @@ const SIGNUP_PAGE: Page = {
 	}
 };
 
+
+const PVP_GAME_PAGE: Page = {
+	title: "1V1 Game",
+	render: async () => {
+		const app = document.getElementById("app");
+		if (app) {
+			app.innerHTML = `
+				<h1 class="text-4xl font-bold">AI Game</h1>
+				<p class="mt-4">Welcome to the 1v1 Game Page!</p>
+				<canvas id="canvas" width="800" height="600" class="border border-black mt-4"></canvas>
+			`;
+		}
+	},
+	onPreLoad: async () => {
+		window.onclick = (event) => {
+			console.log(event.target);
+		};
+		console.log("Preparing to load 1v1 Game page");
+	},
+	onLoad: async () => {
+		gameStart(true);
+		console.log("1v1 Game page loaded");
+	},
+	onUnload: async () => {
+		window.onclick = null;
+		if (GlobalState.getAnimationFrameId() !== null) {
+			cancelAnimationFrame(GlobalState.getAnimationFrameId()!);
+			GlobalState.setAnimationFrameId(null);
+		}
+		console.log("1v1 Game page unloaded");
+	}
+};
+
+
 const AI_GAME_PAGE: Page = {
 	title: "AI Game",
 	render: async () => {
@@ -226,4 +307,4 @@ const PAGES: { [key: string]: Page } = {
 	"signup": SIGNUP_PAGE
 };
 
-export { HOME_PAGE, PROFILE_PAGE, LOGIN_PAGE, SIGNUP_PAGE, AI_GAME_PAGE, PAGES, signUp, login };
+export { HOME_PAGE, PVP_GAME_PAGE, PROFILE_PAGE, LOGIN_PAGE, SIGNUP_PAGE, AI_GAME_PAGE, PAGES, signUp, login };

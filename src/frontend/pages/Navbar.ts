@@ -1,4 +1,5 @@
 import { loadPage, UserProfileDTO } from "../main";
+import { FETCH_ADDRESS } from "../Page";
 import { HomePage } from "./HomePage";
 import { LoginPage } from "./LoginPage";
 import { ProfilePage } from "./ProfilePage";
@@ -7,7 +8,7 @@ export async function updateNavUser() {
     let data: UserProfileDTO | null = null;
     const authButton = document.getElementById("authButton");
     try {
-        const response = await fetch('http://localhost:3000/api/user/profile', {
+        const response = await fetch(`${FETCH_ADDRESS}/user/profile`, {
             method: "GET",
             credentials: "include"
         });
@@ -35,7 +36,7 @@ export async function updateNavUser() {
             multiplayerButton.classList.remove("hidden");
             logoutButton!.textContent = "Logout";
             logoutButton!.onclick = async () => {
-                await fetch(`http://localhost:3000/api/auth/logout`, {
+                await fetch(`${FETCH_ADDRESS}/auth/logout`, {
                     method: "GET",
                     credentials: "include"
                 });

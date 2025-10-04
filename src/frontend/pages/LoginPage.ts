@@ -1,5 +1,5 @@
 import { loadPage } from "../main";
-import { GlobalState } from "../Page";
+import { FETCH_ADDRESS, GlobalState } from "../Page";
 import { HOME_PAGE } from "../pages";
 import { HomePage } from "./HomePage";
 
@@ -7,7 +7,7 @@ export async function login(event: Event) {
     event.preventDefault();
     const email = document.getElementById("email") as HTMLInputElement;
     const password = document.getElementById("password") as HTMLInputElement;
-    fetch(`http://localhost:3000/api/auth/sign-in`, {
+    fetch(`${FETCH_ADDRESS}/auth/sign-in`, {
         method: "POST",
         credentials: "include",
         headers: {

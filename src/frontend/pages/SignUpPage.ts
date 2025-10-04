@@ -1,4 +1,5 @@
 import { loadPage } from "../main";
+import { FETCH_ADDRESS } from "../Page";
 import { LoginPage } from "./LoginPage";
 
 export async function signUp(event: Event) {
@@ -11,7 +12,7 @@ export async function signUp(event: Event) {
         alert("Passwords do not match!");
         return;
     }
-    await fetch(`http://localhost:3000/api/auth/sign-up`, {
+    await fetch(`${FETCH_ADDRESS}/auth/sign-up`, {
         method: "POST",
         credentials: "include",
         headers: {

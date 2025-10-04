@@ -1,13 +1,14 @@
 import { loadPage } from "../main";
 import { LoginPage } from "./LoginPage";
 import { updateNavUser } from "./Navbar";
+import { FETCH_ADDRESS } from "../Page";
 
 export async function changePassword(e: Event) {
     e.preventDefault();
     const curPassword = document.getElementById("curPassword") as HTMLInputElement;
     const newPassword = document.getElementById("newPassword") as HTMLInputElement;
     const newPasswordVerify = document.getElementById("newPasswordVerify") as HTMLInputElement;
-    fetch(`http://localhost:3000/api/user/password`,
+    fetch(`${FETCH_ADDRESS}/user/password`,
         {
             method: "Put",
             credentials: "include",
@@ -30,7 +31,7 @@ export async function changePassword(e: Event) {
                 newPasswordVerify.value = "";
                 alert("Password has changed");
                 localStorage.removeItem("username");
-                fetch(`http://localhost:3000/api/auth/logout`, {
+                fetch(`${FETCH_ADDRESS}/auth/logout`, {
                     method: "POST",
                     credentials: "include"
                 })

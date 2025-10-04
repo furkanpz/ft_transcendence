@@ -1,13 +1,14 @@
 import { GameRoom } from "../../backend/server/types/game.types";
 import { loadPage } from "../main";
 import { HomePage } from "./HomePage";
+import {FETCH_ADDRESS } from "../Page";
 
 
 export async function Lobby(): Promise<string> {
 
   //BURADAN ASAGISI VAROLAN ROOMLARI GETIRMEYE YARIYOR
   try {
-    const response = await fetch("http://localhost:3000/api/game/rooms", {
+    const response = await fetch(`${FETCH_ADDRESS}/game/rooms`, {
       credentials: "include",
       method: "GET"
     });

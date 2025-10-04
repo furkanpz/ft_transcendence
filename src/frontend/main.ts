@@ -6,6 +6,7 @@ import { Lobby } from "./pages/LobbyPage";
 import { login, LoginPage } from "./pages/LoginPage";
 import { signUp, SignUpPage } from "./pages/SignUpPage";
 import { updateNavUser } from "./pages/Navbar";
+import { gameLoop, gameStart } from "./game";
 
 //YUKARISI BUGRAYA AIT
 
