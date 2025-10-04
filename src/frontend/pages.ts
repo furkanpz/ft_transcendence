@@ -291,16 +291,14 @@ const FRIENDS_PAGE: Page = {
 
       <div class="mb-10">
         <h2 class="text-xl font-semibold mb-2">Arkadaşlık İsteği Gönder</h2>
-		<form>
 		<input
             type="text"
             placeholder="Username girin..."
 			id="inp"
             class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"/>
-			<button id="sendBtn" onClick="() => {}" class="px-4 cursor-pointer py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition">
+			<button id="sendBtn" class="px-4 cursor-pointer py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition">
 				Send
 			</button>
-		</form>
       </div>
 
       <div>
@@ -337,18 +335,21 @@ const FRIENDS_PAGE: Page = {
 	const sendButton = document.getElementById("sendBtn");
 	if (sendButton)
 	{
+		
 		sendButton.addEventListener("click", async () => {
-			const id = (document.getElementById("inp") as HTMLInputElement).value;
-			const response = await fetch(`${FETCH_ADDRESS}/friends/request`, {credentials: "include", method: "POST", body: JSON.stringify({
-				friend_id: parseInt(id, 10),
-				user_id: null,
-				request_type: "Pending",
+			const name = (document.getElementById("inp") as HTMLInputElement).value;
+			console.log(name);
+			const response = await fetch(`${FETCH_ADDRESS}/user/friends/request`, {credentials: "include", headers: {
+		"Content-Type": "application/json"
+	}, method: "POST", body: JSON.stringify({
+				username: name,
+				request_type: "Pending"
 			})});
-
+			const data = await response.json();
+			console.log(data);
 			if (!response.ok)
 			{
 				alert("Fail");
-				// GlobalState.setPage(HOME_PAGE);
 			}
 			else
 			{
@@ -362,7 +363,6 @@ const FRIENDS_PAGE: Page = {
 		const response = await fetch(`${FETCH_ADDRESS}/user/profile`, {credentials: "include", method: "GET"});
 		if (!response.ok)
 		{
-			// GlobalState.setPage(HOME_PAGE);
 			console.log("onpreload");
 		}
 	},

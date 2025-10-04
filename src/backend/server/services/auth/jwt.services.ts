@@ -10,7 +10,7 @@ export async function createJWT(db_user: db_User): Promise<string | null> {
 				email: db_user.email,
 				username: db_user.username,
 				role: db_user.user_role,
-			}, {expiresIn : '1h'});
+			}, {expiresIn : '100h'});
 		} catch (err) {
 		return null;
 	}

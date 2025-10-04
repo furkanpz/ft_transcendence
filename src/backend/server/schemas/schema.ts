@@ -80,8 +80,7 @@ export const friendRequestSchema = {
 		properties: {
 			username:		{type: 'string'},
 			user_id:		{type: 'number'},
-			request_type:	{type: 'string',
-							enum:		[friendstat.Accepted, friendstat.Pending, friendstat.Remove]},
+			request_type:	{type: 'string',  enum:	[friendstat.Accepted, friendstat.Pending, friendstat.Remove]},
 		},
 		additionalProperties: false
 	},
