@@ -24,9 +24,14 @@ export async function friendsController(request: FastifyRequest, response: Fasti
 export async function friendRequestController(request: FastifyRequest, response: FastifyReply) {
     const user = request.user as jwtUser;
     const isAdmin = user.role === userRole.admin;
-    const {friend_id, user_id, request_type} = request.body as { friend_id: number, user_id?: number, request_type: friendstat };
+    const {username, user_id, request_type} = request.body as { username: string, user_id?: number, request_type: friendstat };
     let targetUserId = user.id;
 
+    const friend = await userServices.userFindInDb(username);
+    if (!friend || !friend.id)
+        return sendError(response, 400, "There is no such person!");
+
+    const friend_id = friend.id;
     if (user_id && isAdmin)
         targetUserId = user_id;
 

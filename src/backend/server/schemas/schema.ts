@@ -75,10 +75,10 @@ export const registerSchema = {
 
 export const friendRequestSchema = {
 	body: {
-		required: 			['friend_id', "request_type"],
+		required: 			['username', "request_type"],
 		type: 'object',
 		properties: {
-			friend_id:		{type: 'number'},
+			username:		{type: 'string'},
 			user_id:		{type: 'number'},
 			request_type:	{type: 'string',
 							enum:		[friendstat.Accepted, friendstat.Pending, friendstat.Remove]},
