@@ -522,7 +522,7 @@ function render(game: Pong) {
 
 export function gameLoop(game: Pong, currentTime: number) {
     console.log("Game Loop");
-    if (GlobalState.getcurrentPage().title !== "AI Game") {
+    if (GlobalState.getcurrentPage().title !== "AI Game" && GlobalState.getcurrentPage().title !== "1V1 Game") {
         return;
     }
     let deltaTime = Math.min(currentTime - game.lastTime, 100) / 1000;

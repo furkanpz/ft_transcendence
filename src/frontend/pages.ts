@@ -1,9 +1,11 @@
 import { gameStart } from "./game";
 import { loadPage } from "./main";
 import { Page, GlobalState, FETCH_ADDRESS } from "./Page";
+import { HomePage } from "./pages/HomePage";
 
 const HOME_PAGE: Page = {
 	title: "Home",
+	data: null,
 	render: async () => {
 		const app = document.getElementById("app");
 		if (app) {
@@ -40,7 +42,7 @@ const HOME_PAGE: Page = {
 					${
 						window.localStorage.getItem("isAuthenticated") === "1"
 							? `
-								<button id="multiplayer-btn"
+								<button onclick="GlobalState.setPage(LOBBY_PAGE)" id="multiplayer-btn"
 									class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
 									Multiplayer
 								</button>
@@ -66,6 +68,14 @@ const HOME_PAGE: Page = {
 				});
 			}
 
+			const friendsBtn = document.getElementById("friends-btn");
+			if (friendsBtn)
+			{
+				friendsBtn.addEventListener("click", async () => {
+					GlobalState.setPage(FRIENDS_PAGE);
+				})
+			}
+
 			const logoutBtn = document.getElementById("logout");
 			if (logoutBtn) {
 				logoutBtn.addEventListener("click", async () => {
@@ -87,9 +97,9 @@ const HOME_PAGE: Page = {
 	}
 };
 
-
 const PROFILE_PAGE: Page = {
 	title: "Profile",
+	data: null,
 	render: async () => {
 		const app = document.getElementById("app");
 		if (app) {
@@ -138,6 +148,7 @@ async function login(event: Event) {
 
 const LOGIN_PAGE: Page = {
 	title: "Login",
+	data: null,
 	render: async () => {
 		const app = document.getElementById("app");
 		if (app) {
@@ -203,6 +214,7 @@ async function signUp(event: Event) {
 
 const SIGNUP_PAGE: Page = {
 	title: "Sign Up",
+	data: null,
 	render: async () => {
 		const app = document.getElementById("app");
 		if (app) {
@@ -234,14 +246,14 @@ const SIGNUP_PAGE: Page = {
 	}
 };
 
-
 const PVP_GAME_PAGE: Page = {
 	title: "1V1 Game",
+	data: null,
 	render: async () => {
 		const app = document.getElementById("app");
 		if (app) {
 			app.innerHTML = `
-				<h1 class="text-4xl font-bold">AI Game</h1>
+				<h1 class="text-4xl font-bold">1v1 Game</h1>
 				<p class="mt-4">Welcome to the 1v1 Game Page!</p>
 				<canvas id="canvas" width="800" height="600" class="border border-black mt-4"></canvas>
 			`;
@@ -254,7 +266,7 @@ const PVP_GAME_PAGE: Page = {
 		console.log("Preparing to load 1v1 Game page");
 	},
 	onLoad: async () => {
-		gameStart(true);
+		gameStart(false);
 		console.log("1v1 Game page loaded");
 	},
 	onUnload: async () => {
@@ -267,9 +279,100 @@ const PVP_GAME_PAGE: Page = {
 	}
 };
 
+const FRIENDS_PAGE: Page = {
+	title: "Friends",
+	data: null,
+	render: async () => {
+		const app = document.getElementById("app");
+		if (app){
+		
+			app.innerHTML = `<div class="min-h-screen bg-gray-100 p-6">
+      <h1 class="text-3xl font-bold mb-6">Arkadaşlık Sayfası</h1>
+
+      <div class="mb-10">
+        <h2 class="text-xl font-semibold mb-2">Arkadaşlık İsteği Gönder</h2>
+		<form>
+		<input
+            type="text"
+            placeholder="Username girin..."
+			id="inp"
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+			<button id="sendBtn" onClick="() => {}" class="px-4 cursor-pointer py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition">
+				Send
+			</button>
+		</form>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-semibold mb-4">Gelen Arkadaşlık İstekleri</h2>
+        <div class="flex flex-col gap-4">
+            <div
+              class="flex justify-between w-sm items-center bg-white p-4 rounded-md shadow-sm border border-gray-200"
+            >
+              <span class="font-medium">erkoc</span>
+              <div class="flex gap-2">
+                <button class="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition">
+                  ✔
+                </button>
+                <button class="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition">
+                  ✖
+                </button>
+              </div>
+            </div>
+        </div>
+      </div>
+
+	  <div>
+        <h2 class="text-xl font-semibold mb-4 pt-5">Arkadaşların</h2>
+        <div class="flex flex-col gap-4">
+            <div
+              class="flex justify-between w-sm items-center bg-white p-4 rounded-md shadow-sm border border-gray-200"
+            >
+              <span class="font-medium">erkoc</span>
+            </div>
+        </div>
+      </div>
+    </div>`
+		}
+	const sendButton = document.getElementById("sendBtn");
+	if (sendButton)
+	{
+		sendButton.addEventListener("click", async () => {
+			const id = (document.getElementById("inp") as HTMLInputElement).value;
+			const response = await fetch(`${FETCH_ADDRESS}/friends/request`, {credentials: "include", method: "POST", body: JSON.stringify({
+				friend_id: parseInt(id, 10),
+				user_id: null,
+				request_type: "Pending",
+			})});
+
+			if (!response.ok)
+			{
+				alert("Fail");
+				// GlobalState.setPage(HOME_PAGE);
+			}
+			else
+			{
+				alert("Success");
+			}
+
+		})
+	}
+	},
+	onPreLoad: async () => {
+		const response = await fetch(`${FETCH_ADDRESS}/user/profile`, {credentials: "include", method: "GET"});
+		if (!response.ok)
+		{
+			// GlobalState.setPage(HOME_PAGE);
+			console.log("onpreload");
+		}
+	},
+	onLoad: async () => {console.log("Friends page loaded")},
+	onUnload: async () => {console.log("Friends page unloaded")}
+}
 
 const AI_GAME_PAGE: Page = {
 	title: "AI Game",
+	data: null,
 	render: async () => {
 		const app = document.getElementById("app");
 		if (app) {
@@ -300,11 +403,90 @@ const AI_GAME_PAGE: Page = {
 	}
 };
 
+const LOBBY_PAGE: Page = {
+	title: "Lobby",
+	data: null,
+	render: async () => {
+		const app = document.getElementById("app");
+		if (app) {
+			app.innerHTML = `
+				<div class="flex justify-center">
+					<div id="waitingPopup" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center">
+						<div class="bg-white p-6 rounded-lg w-1/3 text-center">
+							<h2 class="text-2xl font-semibold text-gray-700">Waiting for Players...</h2>
+							<p class="mt-2 text-gray-500">Please wait while the room is being prepared.</p>
+							<button onclick="BURADA ODA KAPATILACAK" class="mt-4 px-6 py-2 bg-blue-500 text-white rounded-md">Close</button>
+						</div>
+					</div>
+				</div>
+				<div> 
+					<div class="text-center">
+						<button onclick="window.createRoom()" 
+						class="px-6 py-3 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition">
+							Create Room
+						</button>
+							<div class="flex justify-between items-start ...">
+								<div class="flex flex-col h-full w-1/4 text-center">
+									<div class="w-full ">
+										<span class="text-md text-slate-500">ID</span>
+									</div>
+									<div class="w-full my-auto">
+										<span class="truncate text-lg font-semibold"></span>
+									</div>
+									</div>
+									<div class="flex flex-col h-full w-1/4 text-center">
+										<div class="w-full ">
+											<span class="text-md text-slate-500">Player Count</span>
+										</div>
+									<div class="w-full my-auto">
+									<span class="truncate text-lg"></span>
+									</div>
+								</div>
+									<div class="flex flex-col h-full w-1/4 text-center">
+									<div class="w-full ">
+									<span class="text-md text-slate-500">Status</span>
+									</div>
+									<div class="text-xs truncate my-auto">
+									<span class="text-lg overflow-hidden whitespace-nowrap"></span>
+									</div>
+									</div>
+									<div class="flex flex-col h-full w-1/4 text-center">
+									<div class="w-full my-auto">
+									<button onclick="joinRoom('');" class="text-lg p-4 bg-blue-500 cursor-pointer rounded-2xl text-white">Join</button>
+								</div>
+							</div>
+						</div>
+					</div>
+                </div>
+			`;
+		}
+	},
+	onPreLoad: async () => {
+		console.log("Preparing to load Lobby page")
+	},
+	onLoad: async () => {console.log("Lobby page loaded")},
+	onUnload: async () => {console.log("Lobby page unloaded")}
+}
+
 const PAGES: { [key: string]: Page } = {
 	"home": HOME_PAGE,
 	"profile": PROFILE_PAGE,
 	"login": LOGIN_PAGE,
-	"signup": SIGNUP_PAGE
+	"signup": SIGNUP_PAGE,
+	"ai-game": AI_GAME_PAGE,
+	"1v1-game": PVP_GAME_PAGE,
+	"lobby": LOBBY_PAGE,
 };
 
-export { HOME_PAGE, PVP_GAME_PAGE, PROFILE_PAGE, LOGIN_PAGE, SIGNUP_PAGE, AI_GAME_PAGE, PAGES, signUp, login };
+export {
+	HOME_PAGE,
+	PVP_GAME_PAGE,
+	PROFILE_PAGE,
+	LOGIN_PAGE,
+	FRIENDS_PAGE,
+	SIGNUP_PAGE,
+	AI_GAME_PAGE,
+	LOBBY_PAGE,
+	PAGES,
+	signUp,
+	login };

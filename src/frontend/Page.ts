@@ -1,7 +1,8 @@
-import { HOME_PAGE, PROFILE_PAGE, PAGES, LOGIN_PAGE, SIGNUP_PAGE, signUp, login, AI_GAME_PAGE, PVP_GAME_PAGE} from "./pages";
+import { HOME_PAGE, PROFILE_PAGE, PAGES, LOGIN_PAGE, SIGNUP_PAGE, signUp, login, AI_GAME_PAGE, PVP_GAME_PAGE, FRIENDS_PAGE, LOBBY_PAGE} from "./pages";
 
 interface Page {
 	title: string;
+	data: any;
 	onUnload: () => Promise<void>;
 	onPreLoad: () => Promise<void>;
 	render: () => Promise<void>;
@@ -93,6 +94,8 @@ export { Page, GlobalState };
 (window as any).SIGNUP_PAGE = SIGNUP_PAGE;
 (window as any).AI_GAME_PAGE = AI_GAME_PAGE;
 (window as any).PVP_GAME_PAGE = PVP_GAME_PAGE;
+(window as any).FRIENDS_PAGE = FRIENDS_PAGE;
+(window as any).LOBBY_PAGE = LOBBY_PAGE;
 (window as any).signUp = signUp;
 (window as any).login = login;
 export const FETCH_ADDRESS = "http://10.11.2.10:3000/api"
