@@ -28,7 +28,7 @@ async function main() {
   await server.register(fastifyWebsocket);
   await server.register(rateLimit, {
     global: true,
-    max: 200,
+    max: 20000,
     timeWindow: '1 minute'
   });
 

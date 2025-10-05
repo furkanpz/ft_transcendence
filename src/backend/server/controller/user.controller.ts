@@ -25,27 +25,49 @@ export async function friendsController(request: FastifyRequest, response: Fasti
     const user_friends_request: {friend_id: number, username: string, avatar_url?: string}[] = [];
     const user_friends_pending: {friend_id: number, username: string, avatar_url?: string}[] = [];
 
-    await accepted.forEach(async (id) => {
+    const acceptedPromises = accepted.map(async (id) => {
         const user = await userServices.userIdFindInDb(id);
-        if (user)
-        {
-            user_friends.push({friend_id: id, username: user.username , avatar_url: user.avatar_url, is_online: user.is_online!})
+        if (user) {
+            return {
+                friend_id: id,
+                username: user.username,
+                avatar_url: user.avatar_url,
+                is_online: user.is_online!
+            };
         }
+        return null;
     });
-    pending.forEach(async (id) => {
+    const acceptedResults = await Promise.all(acceptedPromises);
+    user_friends.push(...acceptedResults.filter(Boolean) as any);
+
+    const requestPromises = pending.map(async (id) => {
         const user = await userServices.userIdFindInDb(id);
-        if (user)
-        {
-            user_friends_request.push({friend_id: id, username: user.username , avatar_url: user.avatar_url})
+        if (user) {
+            return {
+                friend_id: id,
+                username: user.username,
+                avatar_url: user.avatar_url,
+            };
         }
-    });
-    pending_2.forEach(async (id) => {
+        return null;
+    })
+    const requestResults = await Promise.all(requestPromises);
+    user_friends_request.push(...requestResults.filter(Boolean) as any);
+
+    const pendingPromises = pending_2.map(async (id) => {
         const user = await userServices.userIdFindInDb(id);
-        if (user)
-        {
-            user_friends_pending.push({friend_id: id, username: user.username , avatar_url: user.avatar_url})
+        if (user) {
+            return {
+                friend_id: id,
+                username: user.username,
+                avatar_url: user.avatar_url,
+            };
         }
-    });
+        return null;
+    })
+    const pendingResults = await Promise.all(pendingPromises);
+    user_friends_pending.push(...pendingResults.filter(Boolean) as any);
+
     return sendSuccess(response, "Friends retrieved successfully", { user_friends, user_friends_request, user_friends_pending });
 }
 
@@ -70,10 +92,17 @@ export async function friendRequestController(request: FastifyRequest, response:
         return sendError(response, 400, msg);
     }
 
-    const friend_db = await userServices.userIdFindInDb(friend_id);
-    if (!friend_db)
-        return sendError(response, 400, "There is no such person!");
-
+    let blockStats = await userFriendsUtils.getblockStatus(user.id, friend_id);
+    if (blockStats)
+    {
+        return sendError(response, 400, "Friend couldn't be added!");
+    }
+    else
+    {
+        blockStats = await userFriendsUtils.getblockStatus(friend_id, user.id);
+        if (blockStats)
+            return sendError(response, 400, "Friend couldn't be added!");
+    }
     const requestSuccess = await userFriendsUtils.addFriend(targetUserId, friend_id, request_type);
     if (!requestSuccess) {
         const msg = request_type === friendstat.Remove
@@ -162,7 +191,21 @@ export async function blockUserController(request: FastifyRequest, response: Fas
 export async function getBlockedUsersController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
     const user = request.user as jwtUser;
 
-    const blockedUsers = await userFriendsUtils.getBlockedUsers(user.id);
+    const blockedUsersid = await userFriendsUtils.getBlockedUsers(user.id);
+    const blockedUsers: {user_id: number, username: string, avatar_url: string}[] = [];
+    const blockuserPromises = blockedUsersid.map(async (id) =>{
+        const user = await userServices.userIdFindInDb(id);
+        if (user) {
+            return {
+                user_id: user.id,
+                username: user.username,
+                avatar_url: user.avatar_url
+            };
+        }
+        return null;
+    });
+    const blockuserResults = await Promise.all(blockuserPromises);
+    blockedUsers.push(...blockuserResults.filter(Boolean) as any);
     return sendSuccess(response, "Blocked users retrieved successfully", { blockedUsers });
 }
 
@@ -185,9 +228,11 @@ export async function unblockUserController(request: FastifyRequest, response: F
         return sendError(response, 400, "There is no such user to unblock!");
     }
 
-    const resp = await userFriendsUtils.getBlockedUserAndBlocker(blocked_id,targetUserId);
+    const resp = await userFriendsUtils.getBlockedUserAndBlocker(blocked_id, targetUserId);
     if (!resp) {
         return sendError(response, 400, "This user is not blocked!");
     }
+    else
+        await userFriendsUtils.unblockUser(targetUserId, blocked_id);
     return sendSuccess(response, "User unblocked successfully");
 }

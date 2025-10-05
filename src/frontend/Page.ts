@@ -1,4 +1,7 @@
 import { HOME_PAGE, PROFILE_PAGE, PAGES, LOGIN_PAGE, SIGNUP_PAGE, signUp, login, AI_GAME_PAGE, PVP_GAME_PAGE, FRIENDS_PAGE, LOBBY_PAGE} from "./pages";
+import { BLOCKED_USERS_PAGE } from "./pages/BlockedUsersPage";
+
+export const FETCH_ADDRESS = "http://10.11.7.9:3000/api"
 
 interface Page {
 	title: string;
@@ -52,7 +55,7 @@ class GlobalState {
 		const path = GlobalState.getPagePath(page);
 		window.history.pushState({ pageKey: path }, page.title, path);
 		await page.render();
-		page.onLoad();
+		await page.onLoad();
 	}
 
 	public static getPagePath(page: Page): string {
@@ -106,6 +109,6 @@ export { Page, GlobalState };
 (window as any).PVP_GAME_PAGE = PVP_GAME_PAGE;
 (window as any).FRIENDS_PAGE = FRIENDS_PAGE;
 (window as any).LOBBY_PAGE = LOBBY_PAGE;
+(window as any).BLOCKED_USERS_PAGE = BLOCKED_USERS_PAGE;
 (window as any).signUp = signUp;
 (window as any).login = login;
-export const FETCH_ADDRESS = "http://10.11.7.9:3000/api"

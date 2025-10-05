@@ -1,5 +1,6 @@
 import { GlobalState, Page, FETCH_ADDRESS } from "../Page"
 import { FRIENDS_PAGE } from "./FriendsPage"
+import { WAITING_PAGE } from "./WaitingPage";
 
 export const HOME_PAGE: Page = {
 	title: "Home",
@@ -62,30 +63,15 @@ export const HOME_PAGE: Page = {
 							: ""
 					}
 				</div>
-				<div id="waiting-popup" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
-					<div class="bg-white rounded-lg shadow-lg p-8 text-center w-[300px]">
-						<h2 class="text-2xl font-bold mb-4">Waiting...</h2>
-						<p class="text-gray-600 mb-6">Looking for an opponent</p>
-						<button id="cancel-waiting" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Cancel</button>
-					</div>
-				</div>
+				
 			</div>
 			`;
-			const multiplayerBtn = document.getElementById("1v1Online-btn");
-			const waitingPopup = document.getElementById("waiting-popup");
-			const cancelBtn = document.getElementById("cancel-waiting");
-			if (multiplayerBtn && waitingPopup && cancelBtn) {
-				multiplayerBtn.addEventListener("click", () => {
-					waitingPopup.classList.remove("hidden");
-					waitingPopup.classList.add("flex");
-					
-				});
-
-				cancelBtn.addEventListener("click", () => {
-					waitingPopup.classList.remove("flex");
-					waitingPopup.classList.add("hidden");
-				});
+			const PVPBtn = document.getElementById("1v1Online-btn");
+			if (PVPBtn)
+			{
+				PVPBtn.addEventListener("click", () => {GlobalState.setPage(WAITING_PAGE)})
 			}
+			
 			const friendsBtn = document.getElementById("friends-btn");
 			if (friendsBtn)
 			{

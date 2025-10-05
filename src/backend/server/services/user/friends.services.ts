@@ -101,6 +101,7 @@ export async function getblockStatus(blocker_id: number, blocked_id: number): Pr
 export async function blockUser(blocker_id: number, blocked_id: number): Promise<void> {
 	const db = await getDb();
 	await db.run("INSERT INTO ft_blocks (blocker_id, blocked_id) VALUES (?, ?)", blocker_id, blocked_id);
+  	await db.run("DELETE FROM ft_friendship WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)" , blocker_id, blocked_id, blocked_id, blocker_id);
 }
 
 export async function unblockUser(blocker_id: number, blocked_id: number): Promise<void> {

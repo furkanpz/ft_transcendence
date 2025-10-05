@@ -1,7 +1,10 @@
 import {WebSocket} from "ws"
-import { Team, RoomStatus, RoomState, GameState, Player, RoomSettings, GameRoom, GameEvent} from "../../types/game.types"
+import { RoomStatus, RoomType, Player, GameRoom, GameEvent, GameResult} from "../../types/game.types"
 class GameManager {
-	gameRooms: Map<string, GameRoom> = new Map();
+	classicPlayers: Player[] = new Array();
+	classicRooms: GameRoom[] = new Array();
+	tournamentPlayers: Player[] = new Array();
+	multiplayerPlayers: Player[] = new Array();
 	players: Map<number, Player> = new Map();
 	playersocket: Map<number, WebSocket> = new Map();
 
@@ -11,11 +14,10 @@ class GameManager {
 		const player: Player = {
 			id: userId,
 			name: username,
-			isReady: false,
-			team: null,
 			roomId: null,
+			isWaiting: false
 		};
-
+ 
 		this.players.set(userId, player);
 		this.playersocket.set(userId, socket);
 
@@ -45,101 +47,113 @@ class GameManager {
 
 		try {
 			switch (event.type) {
-				case "createRoom":
-					const roomSettings: RoomSettings = event.data;
-					const room = this.createRoom(userId, roomSettings);
-					this.broadcastRoom({ type: "roomCreated", data: room }, room.id);
-					break;
-				case "joinRoom":
-					const { roomId, password } = event.data;
-					this.joinRoom(userId, roomId, password);
-					this.broadcastRoom({ type: "playerJoined", data: { userId, username: player.name } }, roomId);
-					break;
-				case "leaveRoom":
-					this.leaveRoom(userId, player.roomId!);
-					this.playersocket.get(userId)?.send(JSON.stringify({ type: "leftRoom", roomId: player.roomId! }));
-					break;
-				case "selectTeam":
-					const { teamId } = event.data;
-					this.joinTeam(userId, teamId, player.roomId!);
-					this.playersocket.get(userId)?.send(JSON.stringify({ type: "joinedTeam", teamId }));
-					break;
-				case "ready":
-					if (player.roomId) {
-						player.isReady = !player.isReady;
-						this.playersocket.get(userId)?.send(JSON.stringify({ type: "readyStatus", isReady: player.isReady }));
+				case "searchGame":
+				{
+					switch (event.roomType)
+					{
+						case "classic":
+							this.classicGameSearch(userId);
+							break;
+						case "tournament":
+							this.tournamentGameSearch(userId);
+							break;
+						case "multiplayer":
+							this.multiplayerGameSearch(userId);
+							break;
 					}
 					break;
+				}
+				case "playerLeft":
 				case "start":
-					if (player.roomId && this.gameRooms.get(player.roomId)?.players[0].id === userId) {
-						if (this.gameRooms.get(player.roomId)?.players.every(p => p.isReady)) {
-							this.gameRooms.get(player.roomId)!.state.state = RoomStatus.Playing;
-							this.broadcastRoom({type: "start", data : { roomId: player.roomId }}, player.roomId);
-						}
-					}
-					break;
+				case "error":
 			}
 	} catch (error: any) {
 		console.error("Error handling message:", error);
 		this.playersocket.get(userId)?.send(JSON.stringify({ type: "error", data: error.message }));
 	}
-}
+	}
 
-	createRoom(userId: number, roomSettings: RoomSettings): GameRoom {
+	classicGameSearch(userId: number) {
+		const player = this.players.get(userId); 
+		if (!player) {
+			console.log("Player not connected");
+			return;
+		}
+		if (!player.isWaiting) {
+			console.log(`Player ${userId} is already playing`);
+		}
+		
+		this.classicPlayers.push(this.players.get(userId));
+		if (this.classicPlayers.length == 2) {
+			this.classicRooms.push(this.createClassicRoom());
+			this.classicPlayers.splice(0, 2).forEach((value) => value.isWaiting = false);
+			return;
+		}
+		this.players.get(userId)!.isWaiting = true;
+		this.playersocket.get(userId).send(JSON.stringify({type: "playerJoined", roomTyoe: RoomType.Classic}));
+	}
+
+	tournamentGameSearch(userId: number) {
+		this.tournamentPlayers.push(this.players.get(userId));
+		if (this.tournamentPlayers.length == 4) {
+			this.tournamentRooms.push(this.createTournamentRoom());
+			this.classicPlayers.splice(0, 4).forEach((value) => value.isWaiting = false);
+			return;
+		}
+		this.players.get(userId)!.isWaiting = true;
+	}
+
+	multiplayerGameSearch(userId: number) {
+		this.classicPlayers.push(this.players.get(userId));
+		if (this.classicPlayers.length == 4) {
+			this.classicRooms.push(this.createClassicRoom());
+			this.classicPlayers.splice(0, 4).forEach((value) => value.isWaiting = false);
+			return;
+		}
+		this.players.get(userId)!.isWaiting = true;
+	}
+
+	createClassicRoom(): GameRoom {
 		const roomId = this.generateRoomId();
 
-		if (this.players.get(userId)?.roomId) {
-			throw new Error("You can't create a room while in another room");
-		}
 		const newRoom: GameRoom = {
 			id: roomId,
-			players: [this.players.get(userId)!],
-			maxPlayer: roomSettings.maxPlayer,
-			isPrivate: roomSettings.isPrivate,
-			password: roomSettings.password,
-			teamCount: roomSettings.teamCount,
-			state: {
-				teams: null,
-				state: RoomStatus.Waiting,
-			},
-			gameState: null,
+			players: this.classicPlayers.slice(0, 1),
+			maxPlayer: 2,
+			roomType: RoomType.Classic
 		};
-		for (let i = 0; i < newRoom.teamCount; i++)
-			newRoom.state.teams = new Array(newRoom.teamCount).fill( { id: i, score: 0, size: newRoom.maxPlayer / newRoom.teamCount, players: [] } );
-		this.players.get(userId)!.roomId = newRoom.id;
-		this.gameRooms.set(roomId, newRoom);
-		console.log(`Room ${roomId} created by user ${userId}`);
+
+		newRoom.players.forEach((value) => value.roomId = newRoom.id);
+		console.log("created Classic game");
 		return newRoom;
 	}
 
-	joinTeam(userId: number, teamId: number, roomId: string) {
-		const room = this.gameRooms.get(roomId);
-		if (!room) throw new Error("Room not found");
-		const plyr = room.players.find(p => p.id === userId);
-		if (!plyr) throw new Error("Player not found");
-		if (!room.state.teams) throw new Error("Teams not initialized");
-		const team = room.state.teams.find(t => t.id === teamId);
-		if (!team) throw new Error("Team not found");
-		if (team.players.length >= team.size) throw new Error("Team is full");
-		if (plyr.team) {
-			const oldTeam = room.state.teams.find(t => t.id === plyr.team!.id);
-			if (oldTeam) {
-				oldTeam.players = oldTeam.players.filter(p => p.id !== userId);
-			}
-		}
-		plyr.team = team;
-		team.players.push(plyr);
+	createTournamentRoom(): GameRoom {
+		const roomId = this.generateRoomId();
+
+		const newRoom: GameRoom = {
+			id: roomId,
+			players: this.tournamentPlayers.slice(0, 3),
+			maxPlayer: 4,
+			roomType: RoomType.Tournament
+		};
+
+		newRoom.players.forEach((value) => value.roomId = newRoom.id);
+		return newRoom;
 	}
 
-	joinRoom(userId: number, roomId: string, password?: string) {
-		const room = this.gameRooms.get(roomId);
-		if (!room) throw new Error("Room not found");
-		if (this.players.get(userId)?.roomId) throw new Error("You are already in a room");
-		if (room.isPrivate && room.password !== password) throw new Error("Invalid room password");
-		if (room.players.length >= room.maxPlayer) throw new Error("Room is full");
-		room.players.push(this.players.get(userId)!);
-		this.players.get(userId)!.roomId = room.id;
-		console.log(`User ${userId} joined room ${roomId}`);
+	createMultiplayerRoom(): GameRoom {
+		const roomId = this.generateRoomId();
+
+		const newRoom: GameRoom = {
+			id: roomId,
+			players: this.multiplayerPlayers.slice(0, 3),
+			maxPlayer: 4,
+			roomType: RoomType.Multiplayer
+		};
+
+		newRoom.players.forEach((value) => value.roomId = newRoom.id);
+		return newRoom;
 	}
 
 	leaveRoom(userId: number, roomId: string) {
