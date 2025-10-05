@@ -16,9 +16,37 @@ export async function friendsController(request: FastifyRequest, response: Fasti
     const friends = await userFriendsUtils.getFriends(user.id);
     if (!friends)
         return sendSuccess(response, "No friends found", { accepted: null, pending: null });
+    const pending2 = await userFriendsUtils.getFriendPending(user.id);
+    const pending_2 = pending2.map(friend => friend.user_id);
     const accepted = friends.filter(friend => friend.stat === friendstat.Accepted).map(friend => friend.friend_id);
     const pending = friends.filter(friend => friend.stat === friendstat.Pending).map(friend => friend.friend_id);
-    return sendSuccess(response, "Friends retrieved successfully", { accepted, pending });
+
+    const user_friends: {friend_id: number, username: string, avatar_url?: string, is_online: boolean}[] = [];
+    const user_friends_request: {friend_id: number, username: string, avatar_url?: string}[] = [];
+    const user_friends_pending: {friend_id: number, username: string, avatar_url?: string}[] = [];
+
+    await accepted.forEach(async (id) => {
+        const user = await userServices.userIdFindInDb(id);
+        if (user)
+        {
+            user_friends.push({friend_id: id, username: user.username , avatar_url: user.avatar_url, is_online: user.is_online!})
+        }
+    });
+    pending.forEach(async (id) => {
+        const user = await userServices.userIdFindInDb(id);
+        if (user)
+        {
+            user_friends_request.push({friend_id: id, username: user.username , avatar_url: user.avatar_url})
+        }
+    });
+    pending_2.forEach(async (id) => {
+        const user = await userServices.userIdFindInDb(id);
+        if (user)
+        {
+            user_friends_pending.push({friend_id: id, username: user.username , avatar_url: user.avatar_url})
+        }
+    });
+    return sendSuccess(response, "Friends retrieved successfully", { user_friends, user_friends_request, user_friends_pending });
 }
 
 export async function friendRequestController(request: FastifyRequest, response: FastifyReply) {

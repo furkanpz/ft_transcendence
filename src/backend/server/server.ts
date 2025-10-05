@@ -21,7 +21,7 @@ export default server;
 
 async function main() {
   await server.register(cors, {
-    origin: ['http://localhost:3000', "http://localhost:5173", 'http://10.11.2.10:5173'],
+    origin: ['http://localhost:3000', "http://localhost:5173", 'http://10.11.7.9:5173'],
     credentials: true,
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   });

@@ -12,11 +12,21 @@ interface Page {
 class GlobalState {
 	private static currentPage: Page = HOME_PAGE;
 	private static gameAnimationFrameId: number | null = null;
-	private static gameSocket?: WebSocket;
+	private static gameSocket: WebSocket | null;
 	private static username: string = "null";
 	public static isAuthenticated : boolean = false;
 	
 	private constructor() {}
+
+	public static getSocket(): WebSocket | null
+	{
+		return GlobalState.gameSocket;
+	}
+
+	public static setSocket(socket: WebSocket | null): void
+	{
+		GlobalState.gameSocket = socket;
+	}
 
 	public static getcurrentPage(): Page {
 		return GlobalState.currentPage;
@@ -98,4 +108,4 @@ export { Page, GlobalState };
 (window as any).LOBBY_PAGE = LOBBY_PAGE;
 (window as any).signUp = signUp;
 (window as any).login = login;
-export const FETCH_ADDRESS = "http://10.11.2.10:3000/api"
+export const FETCH_ADDRESS = "http://10.11.7.9:3000/api"

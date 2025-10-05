@@ -7,6 +7,13 @@ export async function getFriends(user_id: number): Promise<u_friendship[]> {
 	return (friends);
 }
 
+export async function getFriendPending(friend_id: number): Promise<u_friendship[]> {
+	const db = await getDb();
+	const friends = await db.all("SELECT user_id, stat FROM ft_friendship WHERE friend_id = ? AND stat = 'Pending'", friend_id);
+	return (friends);
+}
+
+
 
 export async function getFriend(user_id: number, friend_id: number): Promise<u_friendship> {
 	const db = await getDb();

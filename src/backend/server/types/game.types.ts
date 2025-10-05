@@ -53,4 +53,13 @@ interface GameEvent {
 	data: any;
 }
 
-export { Team, RoomStatus, RoomState, GameState, Player, RoomSettings, GameRoom, GameEvent };
+interface GameResult {
+	player1_id: number;
+	player2_id: number;
+	winner_id: number;
+	loser_id: number;
+	p1_score: number;
+	p2_score: number;
+}
+
+export { Team, RoomStatus, RoomState, GameState, Player, RoomSettings, GameRoom, GameEvent, GameResult };

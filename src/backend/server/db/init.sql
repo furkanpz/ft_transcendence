@@ -66,3 +66,13 @@ CREATE TABLE IF NOT EXISTS ft_chat_participants (
     FOREIGN KEY (room_id) REFERENCES ft_chat_rooms(id),
     FOREIGN KEY (user_id) REFERENCES ft_users(id)
 );
+
+CREATE TABLE IF NOT EXISTS ft_match_history (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    player1_id  INTEGER NOT NULL,
+    player2_id  INTEGER NOT NULL,
+    winner_id   INTEGER NOT NULL,
+    loser_id    INTEGER NOT NULL,
+    p1_score    INTEGER NOT NULL,
+    p2_score    INTEGER NOT NULL
+)
