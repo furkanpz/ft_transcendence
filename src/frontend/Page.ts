@@ -1,7 +1,9 @@
 import { HOME_PAGE, PROFILE_PAGE, PAGES, LOGIN_PAGE, SIGNUP_PAGE, signUp, login, AI_GAME_PAGE, PVP_GAME_PAGE, FRIENDS_PAGE, LOBBY_PAGE} from "./pages";
 import { BLOCKED_USERS_PAGE } from "./pages/BlockedUsersPage";
 
-export const FETCH_ADDRESS = "http://10.11.7.9:3000/api"
+// websocket için de kullanıyorum o yüzden sadece adres ve portu yazdım
+const FETCH_ADDRESS = "http://localhost:3000/api/"
+const WS_ADDRESS = "ws://localhost:3000/ws"
 
 interface Page {
 	title: string;
@@ -98,7 +100,7 @@ function init() {
 
 init();
 
-export { Page, GlobalState };
+export { Page, GlobalState, FETCH_ADDRESS, WS_ADDRESS };
 
 (window as any).GlobalState = GlobalState;
 (window as any).PROFILE_PAGE = PROFILE_PAGE;

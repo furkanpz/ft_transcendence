@@ -4,13 +4,6 @@ import { jwtUser, userRole } from '../types/user.types';
 import { gameManager } from '../services/game/game.manager';
 import server from '../server';
 
-export async function getGameRoomsController(request: FastifyRequest, response: FastifyReply) {
-	const user = request.user as jwtUser;
-
-	const rooms = gameManager.getRooms();
-	return sendSuccess(response, 'Rooms retrieved successfully', { rooms });
-}
-
 export async function gameController(connection: any, req: any) {
 	const token = req.cookies.access_token;
 	if (!token) {

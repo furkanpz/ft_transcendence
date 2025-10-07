@@ -5,5 +5,5 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./src/frontend:/frontend:ro
+      - ./src/frontend:/frontend:rw
     

@@ -1,10 +1,15 @@
-import {WebSocket} from "ws"
-import { RoomStatus, RoomType, Player, GameRoom, GameEvent, GameResult} from "../../types/game.types"
+import { WebSocket } from "ws"
+import { RoomType, Player, GameRoom, GameEvent, GameResult} from "../../types/game.types"
 class GameManager {
-	classicPlayers: Player[] = new Array();
-	classicRooms: GameRoom[] = new Array();
-	tournamentPlayers: Player[] = new Array();
-	multiplayerPlayers: Player[] = new Array();
+	
+	classicQueue: Player[] = new Array();
+	tournamentQueue: Player[] = new Array();
+	multiplayerQueue: Player[] = new Array();
+
+	classicRooms: Map<string, GameRoom> = new Map();
+	tournamentRooms: Map<string, GameRoom> = new Map();
+	multiplayerRooms: Map<string, GameRoom> = new Map();
+	
 	players: Map<number, Player> = new Map();
 	playersocket: Map<number, WebSocket> = new Map();
 
@@ -22,10 +27,12 @@ class GameManager {
 		this.playersocket.set(userId, socket);
 
 		socket.on("close", () => {
-			if (player.roomId) {
-				this.leaveRoom(userId, player.roomId);
-			}
+			this.leaveQueue(userId, this.classicQueue);
+			this.leaveQueue(userId, this.tournamentQueue);
+			this.leaveQueue(userId, this.multiplayerQueue);
 			this.players.delete(userId);
+			this.playersocket.delete(userId);
+			console.log(`Player ${userId} disconnected and removed from queues`);
 		});
 
 		socket.on("message", async (data: string) => {
@@ -63,8 +70,6 @@ class GameManager {
 					}
 					break;
 				}
-				case "playerLeft":
-				case "start":
 				case "error":
 			}
 	} catch (error: any) {
@@ -83,33 +88,56 @@ class GameManager {
 			console.log(`Player ${userId} is already playing`);
 		}
 		
-		this.classicPlayers.push(this.players.get(userId));
-		if (this.classicPlayers.length == 2) {
-			this.classicRooms.push(this.createClassicRoom());
-			this.classicPlayers.splice(0, 2).forEach((value) => value.isWaiting = false);
+		this.classicQueue.push(player);
+		if (this.classicQueue.length == 2) {
+			const room = this.createClassicRoom();
+			this.classicRooms.set(room.id, room);
+			this.classicQueue.splice(0, 2).forEach((value) => value.isWaiting = false);
+			this.broadcastRoom({ type: "start", roomType: RoomType.Classic }, room.id);
 			return;
 		}
-		this.players.get(userId)!.isWaiting = true;
-		this.playersocket.get(userId).send(JSON.stringify({type: "playerJoined", roomTyoe: RoomType.Classic}));
+		player.isWaiting = true;
+		this.playersocket.get(userId)!.send(JSON.stringify({type: "playerJoined", roomType: RoomType.Classic}));
 	}
 
 	tournamentGameSearch(userId: number) {
-		this.tournamentPlayers.push(this.players.get(userId));
-		if (this.tournamentPlayers.length == 4) {
-			this.tournamentRooms.push(this.createTournamentRoom());
-			this.classicPlayers.splice(0, 4).forEach((value) => value.isWaiting = false);
+		const player = this.players.get(userId);
+		if (!player) {
+			console.log("Player not connected");
+			return;
+		}
+		if (!player.isWaiting) {
+			console.log(`Player ${userId} is already playing`);
+		}
+
+		this.tournamentQueue.push(player);
+		if (this.tournamentQueue.length == 4) {
+			const room = this.createTournamentRoom();
+			this.tournamentRooms.set(room.id, room);
+			this.tournamentQueue.splice(0, 4).forEach((value) => value.isWaiting = false);
 			return;
 		}
 		this.players.get(userId)!.isWaiting = true;
 	}
 
 	multiplayerGameSearch(userId: number) {
-		this.classicPlayers.push(this.players.get(userId));
-		if (this.classicPlayers.length == 4) {
-			this.classicRooms.push(this.createClassicRoom());
-			this.classicPlayers.splice(0, 4).forEach((value) => value.isWaiting = false);
+		const player = this.players.get(userId);
+		if (!player) {
+			console.log("Player not connected");
 			return;
 		}
+		if (!player.isWaiting) {
+			console.log(`Player ${userId} is already playing`);
+		}
+
+		this.multiplayerQueue.push(player);
+		if (this.multiplayerQueue.length == 4) {
+			const room = this.createMultiplayerRoom();
+			this.multiplayerRooms.set(room.id, room);
+			this.multiplayerQueue.splice(0, 4).forEach((value) => value.isWaiting = false);
+			return;
+		}
+		player.isWaiting = true;
 		this.players.get(userId)!.isWaiting = true;
 	}
 
@@ -118,7 +146,7 @@ class GameManager {
 
 		const newRoom: GameRoom = {
 			id: roomId,
-			players: this.classicPlayers.slice(0, 1),
+			players: this.classicQueue.slice(0, 1),
 			maxPlayer: 2,
 			roomType: RoomType.Classic
 		};
@@ -133,12 +161,13 @@ class GameManager {
 
 		const newRoom: GameRoom = {
 			id: roomId,
-			players: this.tournamentPlayers.slice(0, 3),
+			players: this.tournamentQueue.slice(0, 3),
 			maxPlayer: 4,
 			roomType: RoomType.Tournament
 		};
 
 		newRoom.players.forEach((value) => value.roomId = newRoom.id);
+		console.log("created Tournament game");
 		return newRoom;
 	}
 
@@ -147,44 +176,45 @@ class GameManager {
 
 		const newRoom: GameRoom = {
 			id: roomId,
-			players: this.multiplayerPlayers.slice(0, 3),
+			players: this.multiplayerQueue.slice(0, 3),
 			maxPlayer: 4,
 			roomType: RoomType.Multiplayer
 		};
 
 		newRoom.players.forEach((value) => value.roomId = newRoom.id);
+		console.log("created Multiplayer game");
 		return newRoom;
 	}
 
-	leaveRoom(userId: number, roomId: string) {
-		const room = this.gameRooms.get(roomId);
-		if (!room) throw new Error("Room not found");
+	leaveQueue(userId: number, queue: Player[]): void {
 		const player = this.players.get(userId);
-		if (!player || player.roomId !== room.id) throw new Error("You are not in this room");
-		room.players.splice(room.players.indexOf(player), 1);
-		this.players.get(userId)!.roomId = null;
-		console.log(`User ${userId} left room ${roomId}`);
-		if (room.players.length === 0) {
-			console.log(`Room ${roomId} deleted (empty)`);
-			this.gameRooms.delete(roomId);
+		if (!player) {
+			console.log("Player not waiting");
+			return;
+		}
+		player.isWaiting = false;
+		const index = queue.indexOf(player);
+		if (index > -1) {
+			queue.splice(index, 1);
 		}
 	}
 
-	broadcastRoom(event: GameEvent, roomId: string): void {
-		const room = this.gameRooms.get(roomId);
-		if (!room) return;
+	broadcastQueue(event: GameEvent, queue: Player[]): void {
+		queue.forEach(player => {
+			this.playersocket.get(player.id)?.send(JSON.stringify(event));
+		});
+	}
 
+	broadcastRoom(event: GameEvent, roomId: string): void {
+		const room = this.classicRooms.get(roomId) || this.tournamentRooms.get(roomId) || this.multiplayerRooms.get(roomId);
+		if (!room) return;
 		room.players.forEach(player => {
 			this.playersocket.get(player.id)?.send(JSON.stringify(event));
 		});
 	}
 
 	private generateRoomId(): string {
-		return Math.random().toString(36).substr(2, 9);
-	}
-
-	getRooms(): GameRoom[] {
-		return Array.from(this.gameRooms.values());
+		return Math.random().toString(36).slice(2, 9);
 	}
 }
 

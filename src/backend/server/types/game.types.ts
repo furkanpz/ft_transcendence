@@ -19,7 +19,7 @@ interface GameRoom {
 }
 
 interface GameEvent {
-	type: "searchGame" | "playerJoined" | "playerLeft" | "start" | "error";
+	type: "searchGame" | "start" | "playerJoined" | "error";
 	roomType: RoomType;
 }
 

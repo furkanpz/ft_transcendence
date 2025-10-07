@@ -1,4 +1,4 @@
-import { Page, GlobalState, FETCH_ADDRESS } from "../Page"
+import { Page, GlobalState, WS_ADDRESS } from "../Page"
 import { HOME_PAGE } from "./HomePage";
 
 export const WAITING_PAGE: Page = {
@@ -26,7 +26,7 @@ export const WAITING_PAGE: Page = {
 		} 
 	},
 	onPreLoad: async () => {
-        const socket = new WebSocket("ws://10.11.7.9:3000/ws/game");
+        const socket = new WebSocket(`${WS_ADDRESS}/game`);
         GlobalState.setSocket(socket);
         socket.onopen = () => {
             socket.send(JSON.stringify({type: "searchGame", roomType: "classic"}));
