@@ -97,7 +97,7 @@ class GameManager {
 			return;
 		}
 		player.isWaiting = true;
-		this.playersocket.get(userId)!.send(JSON.stringify({type: "playerJoined", roomType: RoomType.Classic}));
+		this.broadcastQueue({type: "playerJoined", roomType: RoomType.Classic}, this.classicQueue);
 	}
 
 	tournamentGameSearch(userId: number) {
