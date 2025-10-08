@@ -1,6 +1,7 @@
 import { GlobalState, Page, FETCH_ADDRESS } from "../Page"
 import { FRIENDS_PAGE } from "./FriendsPage"
 import { WAITING_PAGE } from "./WaitingPage";
+import { CHAT_PAGE } from "./ChatPage"
 
 export const HOME_PAGE: Page = {
 	title: "Home",
@@ -55,6 +56,12 @@ export const HOME_PAGE: Page = {
 									class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
 									Friends
 								</button>
+
+								<button id="social-btn"
+                					class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-orange-700 transition duration-300 ease-in-out">
+                					Social
+            					</button>
+
 								<button id="logout"
 									class="bg-red-500 text-white px-4 cursor-pointer py-2 rounded">
 									Logout
@@ -78,6 +85,13 @@ export const HOME_PAGE: Page = {
 				friendsBtn.addEventListener("click", async () => {
 					GlobalState.setPage(FRIENDS_PAGE);
 				})
+			}
+
+			const socialBtn = document.getElementById("social-btn");
+			if (socialBtn) {
+				socialBtn.addEventListener("click", async () => {
+					GlobalState.setPage(CHAT_PAGE);
+				});
 			}
 
 			const logoutBtn = document.getElementById("logout");
