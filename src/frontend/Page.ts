@@ -2,7 +2,7 @@ import { HOME_PAGE, PROFILE_PAGE, PAGES, LOGIN_PAGE, SIGNUP_PAGE, signUp, login,
 import { BLOCKED_USERS_PAGE } from "./pages/BlockedUsersPage";
 
 // websocket için de kullanıyorum o yüzden sadece adres ve portu yazdım
-const FETCH_ADDRESS = "http://localhost:3000/api/"
+const FETCH_ADDRESS = "http://localhost:3000/api"
 const WS_ADDRESS = "ws://localhost:3000/ws"
 
 interface Page {
