@@ -8,6 +8,7 @@ let chatHistory: any[] = [];
 let activeChatUser: string | null = null;
 let userChats: { [key: string]: any[] } = {};
 let unreadCounts: { [key: string]: number } = {};
+let userRoomIds: { [key: string]: string } = {};
 
 export async function sendChatMessage(event: Event) {
     event.preventDefault();
@@ -26,24 +27,49 @@ export async function sendChatMessage(event: Event) {
             return;
         }
         
-        const messageData = {
-            type: 'private_message',
-            to: activeChatUser,
-            message: message,
-            from: getCurrentUsername(),
-            timestamp: new Date().toISOString(),
-            offline: !onlineUsers.includes(activeChatUser)
-        };
-        
+        const roomId = userRoomIds[activeChatUser];
         const socket = GlobalState.getSocket();
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify(messageData));
-        } else {
-            await sendOfflineMessage(messageData);
+        
+        if (!roomId) {
+            addSystemMessage('Oda hazırlanıyor, lütfen bekleyin...');
+            
+            const createdRoomId = await createOrJoinPrivateRoom(activeChatUser);
+            if (!createdRoomId) {
+                addSystemMessage('Oda oluşturulamadı. Lütfen tekrar deneyin.');
+                return;
+            }
         }
         
-        addMessageToActiveChat('Siz', message, 'sent');
-        messageInput.value = '';
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+            addSystemMessage('WebSocket bağlantısı yok. Sayfa yenileniyor...');
+            
+            connectWebSocket();
+            
+            addMessageToActiveChat('Siz', message, 'sent');
+            messageInput.value = '';
+            return;
+        }
+        
+        const finalRoomId = userRoomIds[activeChatUser];
+        if (!finalRoomId) {
+            addSystemMessage('Oda ID bulunamadı. Lütfen kullanıcıyı tekrar seçin.');
+            return;
+        }
+        
+        try {
+            socket.send(JSON.stringify({
+                type: 'message',
+                data: {
+                    message: message,
+                    room_id: finalRoomId
+                }
+            }));
+            
+            addMessageToActiveChat('Siz', message, 'sent');
+            messageInput.value = '';
+        } catch (error) {
+            addSystemMessage('Mesaj gönderilemedi. Lütfen tekrar deneyin.');
+        }
     }
 }
 
@@ -170,16 +196,88 @@ function showProfileModal(profile: any) {
     document.body.appendChild(modal);
 }
 
-export function startChatWith(username: string) {
+async function createOrJoinPrivateRoom(username: string): Promise<string | null> {
+    try {
+        const roomsResponse = await fetch(`${FETCH_ADDRESS}/chat/rooms`, {
+            credentials: 'include'
+        });
+        
+        if (roomsResponse.ok) {
+            const roomsData = await roomsResponse.json();
+            const rooms = roomsData.rooms || roomsData.data?.rooms || roomsData || [];
+            
+            for (const room of rooms) {
+                if (room.is_private && room.name === `private_${username}`) {
+                    userRoomIds[username] = room.id;
+                    
+                    const socket = GlobalState.getSocket();
+                    if (socket && socket.readyState === WebSocket.OPEN) {
+                        socket.send(JSON.stringify({
+                            type: 'join_room',
+                            data: { room_id: room.id }
+                        }));
+                    }
+                    
+                    return room.id;
+                }
+            }
+        }
+        
+        const createResponse = await fetch(`${FETCH_ADDRESS}/chat/rooms`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: `private_${username}`,
+                isPrivate: true
+            })
+        });
+        
+        if (createResponse.ok) {
+            const createData = await createResponse.json();
+            
+            const roomId = createData.room?.id || createData.data?.room?.id || createData.id;
+            
+            if (roomId) {
+                userRoomIds[username] = roomId;
+                
+                const socket = GlobalState.getSocket();
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({
+                        type: 'join_room',
+                        data: { room_id: roomId }
+                    }));
+                }
+                
+                return roomId;
+            }
+        } else {
+            const tempRoomId = `temp_${username}_${Date.now()}`;
+            userRoomIds[username] = tempRoomId;
+            return tempRoomId;
+        }
+        
+        return null;
+    } catch (error) {
+        return null;
+    }
+}
+
+export async function startChatWith(username: string) {
     activeChatUser = username;
     
     updateChatHeader();
-    
     updateChatsList();
-    
     updateUserInfoPanel();
     
+    const roomId = await createOrJoinPrivateRoom(username);
+    
+    if (!roomId) {
+        addSystemMessage('Oda oluşturulamadı. Lütfen tekrar deneyin.');
+    }
+    
     loadChatMessages(username);
+    await loadRoomHistory(username);
     
     unreadCounts[username] = 0;
     updateChatsList();
@@ -589,6 +687,33 @@ function loadChatMessages(username: string) {
     }
 }
 
+async function loadRoomHistory(username: string) {
+    const roomId = userRoomIds[username];
+    if (!roomId) return;
+    
+    try {
+        const response = await fetch(`${FETCH_ADDRESS}/chat/rooms/${roomId}/history?limit=50`, {
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const messages = data.messages || data || [];
+            
+            userChats[username] = messages.map((msg: any) => ({
+                sender: msg.username === getCurrentUsername() ? 'Siz' : msg.username,
+                message: msg.message,
+                type: msg.username === getCurrentUsername() ? 'sent' : 'received',
+                timestamp: new Date(msg.timestamp),
+                messageType: msg.message_type || 'text'
+            }));
+            
+            loadChatMessages(username);
+        }
+    } catch (error) {
+    }
+}
+
 function addSystemMessage(message: string) {
     const chatMessages = document.getElementById("chatMessages");
     if (chatMessages) {
@@ -636,13 +761,11 @@ async function sendOfflineMessage(messageData: any) {
             addSystemMessage('Mesaj gönderilemedi. Room oluşturulamadı.');
         }
     } catch (error) {
-        console.error('Offline message error:', error);
         addSystemMessage('Mesaj gönderme hatası.');
     }
 }
 
 async function loadFriendsList() {
-
     try {
         const response = await fetch(`${FETCH_ADDRESS}/user/friends`, {
             credentials: 'include'
@@ -668,15 +791,14 @@ async function loadFriendsList() {
             });
         }
     } catch (error) {
-        console.error('Error loading friends:', error);
     }
 }
 
 async function loadAllUsers() {
     const endpoints = [
-        `${FETCH_ADDRESS}/user/friends`,     // Arkadaş listesi
-        `${FETCH_ADDRESS}/chat/rooms`,       // Sohbet odaları
-        `${FETCH_ADDRESS}/user/profile`      // Profil bilgisi
+        `${FETCH_ADDRESS}/user/friends`,
+        `${FETCH_ADDRESS}/chat/rooms`,
+        `${FETCH_ADDRESS}/user/profile`
     ];
     
     for (const endpoint of endpoints) {
@@ -698,9 +820,21 @@ async function loadAllUsers() {
                     }
                 } else if (endpoint.includes('/rooms')) {
                     if (data.rooms && Array.isArray(data.rooms)) {
-                        allUsers = data.rooms.map((r: any) => r.participants || []).flat().filter((u: any) => u !== getCurrentUsername());
+                        const participants: string[] = [];
+                        data.rooms.forEach((r: any) => {
+                            if (r.participants && Array.isArray(r.participants)) {
+                                participants.push(...r.participants);
+                            }
+                        });
+                        allUsers = participants.filter((u: any) => u !== getCurrentUsername());
                     } else if (Array.isArray(data)) {
-                        allUsers = data.map((r: any) => r.participants || []).flat().filter((u: any) => u !== getCurrentUsername());
+                        const participants: string[] = [];
+                        data.forEach((r: any) => {
+                            if (r.participants && Array.isArray(r.participants)) {
+                                participants.push(...r.participants);
+                            }
+                        });
+                        allUsers = participants.filter((u: any) => u !== getCurrentUsername());
                     }
                 } else if (endpoint.includes('/profile')) {
                     if (data.username) {
@@ -718,7 +852,6 @@ async function loadAllUsers() {
         }
     }
     
-
 }
 
 async function loadExistingChats() {
@@ -730,52 +863,43 @@ async function loadExistingChats() {
         if (response.ok) {
             const data = await response.json();
             const rooms = data.rooms || data || [];
+            
             for (const room of rooms) {
-                if (room.participants && Array.isArray(room.participants)) {
-                    const otherUsers = room.participants.filter((user: string) => user !== getCurrentUsername());
+                if (room.is_private && room.name.startsWith('private_')) {
+                    const username = room.name.replace('private_', '');
                     
-                    for (const otherUser of otherUsers) {
-                        if (!userChats[otherUser]) {
-                            userChats[otherUser] = [];
-                        }
+                    userRoomIds[username] = room.id;
+                    
+                    try {
+                        const historyResponse = await fetch(`${FETCH_ADDRESS}/chat/rooms/${room.id}/history?limit=50`, {
+                            credentials: 'include'
+                        });
                         
-                        try {
-                            const historyResponse = await fetch(`${FETCH_ADDRESS}/chat/rooms/${room.id}/history`, {
-                                credentials: 'include'
-                            });
+                        if (historyResponse.ok) {
+                            const historyData = await historyResponse.json();
+                            const messages = historyData.messages || historyData || [];
                             
-                            if (historyResponse.ok) {
-                                const historyData = await historyResponse.json();
-                                const messages = historyData.messages || historyData || [];
-                                
-                                messages.forEach((msg: any) => {
-                                    userChats[otherUser].push({
-                                        sender: msg.sender === getCurrentUsername() ? 'Siz' : msg.sender,
-                                        message: msg.content || msg.message,
-                                        type: msg.sender === getCurrentUsername() ? 'sent' : 'received',
-                                        timestamp: new Date(msg.timestamp || msg.createdAt),
-                                        messageType: 'text'
-                                    });
-                                });
-                            }
-                        } catch (historyError) {
+                            userChats[username] = messages.map((msg: any) => ({
+                                sender: msg.username === getCurrentUsername() ? 'Siz' : msg.username,
+                                message: msg.message,
+                                type: msg.username === getCurrentUsername() ? 'sent' : 'received',
+                                timestamp: new Date(msg.timestamp),
+                                messageType: msg.message_type || 'text'
+                            }));
                         }
-                        
-                        // AllUsers listesine ekle
-                        if (!allUsers.includes(otherUser)) {
-                            allUsers.push(otherUser);
-                        }
+                    } catch (historyError) {
+                    }
+                    
+                    if (!allUsers.includes(username)) {
+                        allUsers.push(username);
                     }
                 }
             }
             
-        } else {
+            updateChatsList();
         }
     } catch (error) {
-        console.error('Failed to load existing chats:', error);
     }
-    
-
 }
 
 function connectWebSocket() {
@@ -783,7 +907,6 @@ function connectWebSocket() {
         const socket = new WebSocket(`${WS_ADDRESS}/chat`);
         
         socket.onopen = () => {
-
             GlobalState.setSocket(socket);
             addSystemMessage('Chat bağlantısı kuruldu');
             
@@ -795,26 +918,64 @@ function connectWebSocket() {
             const data = JSON.parse(event.data);
             
             switch(data.type) {
-                case 'private_message':
-                    if (!blockedUsers.includes(data.from)) {
-                        if (activeChatUser === data.from) {
-                            addMessageToActiveChat(data.from, data.message, 'received');
-                        } else {
-                            unreadCounts[data.from] = (unreadCounts[data.from] || 0) + 1;
-                            if (!userChats[data.from]) {
-                                userChats[data.from] = [];
+                case 'message':
+                    const msgData = data.data;
+                    const senderUsername = msgData.username;
+                    
+                    if (senderUsername !== getCurrentUsername()) {
+                        for (const [user, roomId] of Object.entries(userRoomIds)) {
+                            if (roomId === msgData.room_id) {
+                                if (!blockedUsers.includes(user)) {
+                                    if (activeChatUser === user) {
+                                        addMessageToActiveChat(senderUsername, msgData.message, 'received');
+                                    } else {
+                                        unreadCounts[user] = (unreadCounts[user] || 0) + 1;
+                                        if (!userChats[user]) {
+                                            userChats[user] = [];
+                                        }
+                                        userChats[user].push({
+                                            sender: senderUsername,
+                                            message: msgData.message,
+                                            type: 'received',
+                                            timestamp: new Date(msgData.timestamp),
+                                            messageType: 'text'
+                                        });
+                                        
+                                        updateChatsList();
+                                    }
+                                }
+                                break;
                             }
-                            userChats[data.from].push({
-                                sender: data.from,
-                                message: data.message,
-                                type: 'received',
-                                timestamp: new Date(),
-                                messageType: 'text'
-                            });
-                            
-                            updateChatsList();
                         }
                     }
+                    break;
+                
+                case 'chat_history':
+                    const historyData = data.data;
+                    const roomMessages = historyData.messages || [];
+                    
+                    for (const [user, roomId] of Object.entries(userRoomIds)) {
+                        if (roomId === historyData.room_id) {
+                            userChats[user] = roomMessages.map((msg: any) => ({
+                                sender: msg.username === getCurrentUsername() ? 'Siz' : msg.username,
+                                message: msg.message,
+                                type: msg.username === getCurrentUsername() ? 'sent' : 'received',
+                                timestamp: new Date(msg.timestamp),
+                                messageType: msg.message_type || 'text'
+                            }));
+                            
+                            if (activeChatUser === user) {
+                                loadChatMessages(user);
+                            }
+                            break;
+                        }
+                    }
+                    break;
+                
+                case 'user_joined':
+                    break;
+                
+                case 'user_left':
                     break;
                     
                 case 'game_invite':
@@ -844,7 +1005,6 @@ function connectWebSocket() {
                 case 'user_joined':
                     if (!onlineUsers.includes(data.username)) {
                         onlineUsers.push(data.username);
-                        // Yeni kullanıcıyı allUsers listesine de ekle
                         if (!allUsers.includes(data.username)) {
                             allUsers.push(data.username);
                         }
@@ -862,21 +1022,22 @@ function connectWebSocket() {
                         updateChatHeader();
                     }
                     break;
+                
+                case 'error':
+                    addSystemMessage(`Hata: ${data.data?.message || 'Bilinmeyen hata'}`);
+                    break;
             }
         };
 
         socket.onclose = () => {
-
             addSystemMessage('Bağlantı kesildi');
         };
 
         socket.onerror = (error) => {
-            console.error('WebSocket error:', error);
             addSystemMessage('Bağlantı hatası');
         };
 
     } catch (error) {
-        console.error('Failed to connect WebSocket:', error);
         addSystemMessage('WebSocket bağlantısı kurulamadı');
     }
 }
@@ -967,11 +1128,8 @@ export const CHAT_PAGE: Page = {
         }
     },
     onPreLoad: async () => {
-
     },
     onLoad: async () => {
-
-        
         try {
             const response = await fetch(`${FETCH_ADDRESS}/user/friends/block`, {
                 credentials: 'include'
@@ -981,7 +1139,6 @@ export const CHAT_PAGE: Page = {
                 blockedUsers = data.blockedUsers || data || [];
             }
         } catch (error) {
-            console.error('Failed to load blocked users:', error);
         }
         
         await loadFriendsList();
@@ -990,7 +1147,6 @@ export const CHAT_PAGE: Page = {
         
         connectWebSocket();
         updateChatsList();
-        
 
         const messageInput = document.getElementById("messageInput");
         if (messageInput) {
@@ -1002,9 +1158,7 @@ export const CHAT_PAGE: Page = {
             });
         }
     },
-    onUnload: async () => {
-
-        const socket = GlobalState.getSocket();
+    onUnload: async () => {        const socket = GlobalState.getSocket();
         if (socket) {
             socket.close();
             GlobalState.setSocket(null);
