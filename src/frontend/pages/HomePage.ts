@@ -1,12 +1,15 @@
 import { GlobalState, Page, FETCH_ADDRESS } from "../Page"
-import { FRIENDS_PAGE } from "./FriendsPage"
-import { WAITING_PAGE } from "./WaitingPage";
-import { CHAT_PAGE } from "./ChatPage"
+import { FRIENDS_PAGE } from "./FriendsPage";
+import { LOGIN_PAGE } from "./LoginPage";
+import { SIGNUP_PAGE } from "./SignUpPage";
+import { MATCHMAKING_PAGE } from "./MatchmakingPage";
+import { CHAT_PAGE } from "./ChatPage";
+import { PROFILE_PAGE } from "./ProfilePage";
 
-export const HOME_PAGE: Page = {
-	title: "Home",
-	data: null,
-	render: async () => {
+class HomePage implements Page {
+	title: string = "Home";
+	data: any = null;
+	async render() : Promise<void> {
 		const app = document.getElementById("app");
 		if (app) {
 			app.innerHTML = `
@@ -29,11 +32,11 @@ export const HOME_PAGE: Page = {
 				<!-- main body -->
 				<div class="mx-32 h-[92vh] text-center items-center flex flex-col justify-center gap-6">
 					<div class="flex flex-row w-2xl justify-between gap-6">
-						<button onclick="GlobalState.setPage(PVP_GAME_PAGE)" 
+						<button onclick="GlobalState.setPage(MATCHMAKING_PAGE)" 
 							class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
 							1v1
 						</button>
-						<button onclick="GlobalState.setPage(AI_GAME_PAGE)" 
+						<button onclick="GlobalState.setPage(MATCHMAKING_PAGE)" 
 							class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
 							Single Player
 						</button>
@@ -47,7 +50,7 @@ export const HOME_PAGE: Page = {
 									1V1 Online
 								</button>
 
-								<button onclick="GlobalState.setPage(LOBBY_PAGE)" id="tournament-btn"
+								<button onclick="GlobalState.setPage(HOME_PAGE)" id="tournament-btn"
 									class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
 									Tournament
 								</button>
@@ -76,7 +79,7 @@ export const HOME_PAGE: Page = {
 			const PVPBtn = document.getElementById("1v1Online-btn");
 			if (PVPBtn)
 			{
-				PVPBtn.addEventListener("click", () => {GlobalState.setPage(WAITING_PAGE)})
+				PVPBtn.addEventListener("click", () => {GlobalState.setPage(MATCHMAKING_PAGE)})
 			}
 			
 			const friendsBtn = document.getElementById("friends-btn");
@@ -103,14 +106,21 @@ export const HOME_PAGE: Page = {
 				});
 			}
 		}
-	},
-	onPreLoad: async () => {
+	}
+
+	async onPreLoad(): Promise<void> {
 		console.log("Preparing to load Home page");
-	},
-	onLoad: async () => {
+	}
+
+	async onLoad() : Promise<void> {
 		console.log("Home page loaded");
-	},
-	onUnload: async () => {
+	}
+
+	async onUnload(): Promise<void> {
 		console.log("Home page unloaded");
 	}
 };
+
+const HOME_PAGE = new HomePage();
+
+export { HomePage, HOME_PAGE };

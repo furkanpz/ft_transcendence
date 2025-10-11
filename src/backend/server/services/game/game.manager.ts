@@ -1,5 +1,6 @@
 import { WebSocket } from "ws"
 import { RoomType, Player, GameRoom, GameEvent, GameResult} from "../../types/game.types"
+
 class GameManager {
 	
 	classicQueue: Player[] = new Array();

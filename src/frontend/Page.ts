@@ -1,5 +1,8 @@
-import { HOME_PAGE, PROFILE_PAGE, PAGES, LOGIN_PAGE, SIGNUP_PAGE, signUp, login, AI_GAME_PAGE, PVP_GAME_PAGE, FRIENDS_PAGE, LOBBY_PAGE} from "./pages";
-import { BLOCKED_USERS_PAGE } from "./pages/BlockedUsersPage";
+import { HOME_PAGE, PROFILE_PAGE, PAGES, SIGNUP_PAGE, AI_GAME_PAGE, PVP_GAME_PAGE, FRIENDS_PAGE, LOGIN_PAGE, LoginPage, SignUpPage, FriendsPage} from "./pages";
+import { BLOCKED_USERS_PAGE, BlockedUsersPage } from "./pages/BlockedUsersPage";
+import { CHAT_PAGE, ChatPage } from "./pages/ChatPage";
+import { MATCHMAKING_PAGE } from "./pages/MatchmakingPage";
+import { ProfilePage } from "./pages/ProfilePage";
 
 // websocket için de kullanıyorum o yüzden sadece adres ve portu yazdım
 const FETCH_ADDRESS = "http://localhost:3000/api"
@@ -110,7 +113,13 @@ export { Page, GlobalState, FETCH_ADDRESS, WS_ADDRESS };
 (window as any).AI_GAME_PAGE = AI_GAME_PAGE;
 (window as any).PVP_GAME_PAGE = PVP_GAME_PAGE;
 (window as any).FRIENDS_PAGE = FRIENDS_PAGE;
-(window as any).LOBBY_PAGE = LOBBY_PAGE;
 (window as any).BLOCKED_USERS_PAGE = BLOCKED_USERS_PAGE;
-(window as any).signUp = signUp;
-(window as any).login = login;
+(window as any).MATCHMAKING_PAGE = MATCHMAKING_PAGE;
+(window as any).CHAT_PAGE = CHAT_PAGE;
+
+(window as any).SignUpPage = SignUpPage;
+(window as any).LoginPage = LoginPage;
+(window as any).FriendsPage = FriendsPage;
+(window as any).ChatPage = ChatPage;
+(window as any).ProfiPage = ProfilePage;
+(window as any).BlockedUsersPage = BlockedUsersPage

@@ -1,13 +1,12 @@
 import { GlobalState, Page, FETCH_ADDRESS} from "../Page"
-import { HOME_PAGE } from "./HomePage";
+import { HOME_PAGE } from "../pages"
 
-export const FRIENDS_PAGE: Page = {
-	title: "Friends",
-	data: null,
-	
-	
-	render: async () => {
-		let pendingRequests = FRIENDS_PAGE.data?.user_friends_pending || [];
+class FriendsPage implements Page {
+	title: string = "Friends"
+	data: any = null
+
+	async render() : Promise<void> {
+		let pendingRequests = this.data?.user_friends_pending || [];
 		if (pendingRequests.length === 0)
 		{
 		
@@ -18,19 +17,19 @@ export const FRIENDS_PAGE: Page = {
 				});
 				if (response.ok) {
 					const data = await response.json();
-					FRIENDS_PAGE.data = data;
+					this.data = data;
 				} else {
 					console.warn("Arkadaş verileri alınamadı");
-					FRIENDS_PAGE.data = { user_friends_pending: [] };
+					this.data = { user_friends_pending: [] };
 				}
 			} catch (err) {
 				console.error("Fetch hatası:", err);
-				FRIENDS_PAGE.data = { user_friends_pending: [] };
+				this.data = { user_friends_pending: [] };
 			}
-			pendingRequests = FRIENDS_PAGE.data?.user_friends_pending || [];
+			pendingRequests = this.data?.user_friends_pending || [];
 		
 		}
-		let myFriends = FRIENDS_PAGE.data?.user_friends || [];
+		let myFriends = this.data?.user_friends || [];
 		const friendsHTML = myFriends.length > 0
 		? myFriends.map((req: any) => `<div class="flex flex-col gap-4">
             <div
@@ -168,8 +167,9 @@ export const FRIENDS_PAGE: Page = {
 
 		})
 	}
-	},
-	onPreLoad: async () => {
+	}
+
+	async onPreLoad(): Promise<void> {
 		console.log("preload");
 		const response = await fetch(`${FETCH_ADDRESS}/user/profile`, {credentials: "include", method: "GET"});
 		if (!response.ok)
@@ -192,7 +192,12 @@ export const FRIENDS_PAGE: Page = {
 			console.error("Fetch hatası:", err);
 			FRIENDS_PAGE.data = { user_friends_pending: [] };
 		}
-	},
-	onLoad: async () => {console.log("onload")},
-	onUnload: async () => {console.log("Friends page unloaded")}
+	}
+
+	async onLoad() : Promise<void> {console.log("onload")}
+	async onUnload() : Promise<void> {console.log("Friends page unloaded")}
 }
+
+const FRIENDS_PAGE = new FriendsPage();
+
+export { FRIENDS_PAGE, FriendsPage };

@@ -1,12 +1,12 @@
 import { gameStart } from "./game";
-import { loadPage } from "./main";
-import { Page, GlobalState, FETCH_ADDRESS } from "./Page";
-import { HOME_PAGE } from "./pages/HomePage";
-import { LOGIN_PAGE, login } from "./pages/LoginPage"
-import { SIGNUP_PAGE, signUp } from "./pages/SignUpPage"
+import { Page, GlobalState } from "./Page";
+import { HOME_PAGE, HomePage } from "./pages/HomePage";
+import { LOGIN_PAGE, LoginPage } from "./pages/LoginPage"
+import { SIGNUP_PAGE, SignUpPage } from "./pages/SignUpPage"
 import { PROFILE_PAGE } from "./pages/ProfilePage"
-import { FRIENDS_PAGE } from "./pages/FriendsPage"
-import { LOBBY_PAGE } from "./pages/LobbyPage";
+import { FRIENDS_PAGE, FriendsPage } from "./pages/FriendsPage"
+import { CHAT_PAGE } from "./pages/ChatPage"
+import { MATCHMAKING_PAGE } from "./pages/MatchmakingPage";
 
 const PVP_GAME_PAGE: Page = {
 	title: "1V1 Game",
@@ -81,19 +81,23 @@ const PAGES: { [key: string]: Page } = {
 	"signup": SIGNUP_PAGE,
 	"ai-game": AI_GAME_PAGE,
 	"1v1-game": PVP_GAME_PAGE,
-	"lobby": LOBBY_PAGE,
 	"friends": FRIENDS_PAGE
 };
 
+export { HOME_PAGE,
+		 PVP_GAME_PAGE,
+		 PROFILE_PAGE,
+		 FRIENDS_PAGE,
+		 CHAT_PAGE,
+		 SIGNUP_PAGE,
+		 AI_GAME_PAGE,
+		 PAGES,
+		 LOGIN_PAGE
+		 };
+
 export {
-	HOME_PAGE,
-	PVP_GAME_PAGE,
-	PROFILE_PAGE,
-	LOGIN_PAGE,
-	FRIENDS_PAGE,
-	SIGNUP_PAGE,
-	AI_GAME_PAGE,
-	LOBBY_PAGE,
-	PAGES,
-	signUp,
-	login };
+	SignUpPage,
+	LoginPage,
+	HomePage,
+	FriendsPage,
+};
