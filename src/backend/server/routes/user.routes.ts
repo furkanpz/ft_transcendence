@@ -52,13 +52,6 @@ export default async function userRoutes(server: FastifyInstance) {
 		handler:changeUsernameController
 	});
 	
-	server.put("/username",
-	{
-		preHandler:authJwtVerify,
-		schema: schemas.usernameKeySchema,
-		handler:changePasswordController
-	});
-	
 	server.post("/friends/block",
 	{
 		preHandler: authJwtVerify,
