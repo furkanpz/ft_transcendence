@@ -53,7 +53,6 @@ async function main() {
     secret: process.env.JWT_SECRET || 'default_secret',
     cookie: {
       cookieName: 'access_token',
-      signed: true
     }
   });
 
