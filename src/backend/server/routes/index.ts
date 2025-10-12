@@ -25,7 +25,7 @@ export default async function setRoutes(server: FastifyInstance) {
 	}, chatController);
 	});
 	await server.register(async function (fastify) {
-	fastify.get('/ws/game', {
+	fastify.get('/ws/game/:roomId', {
 		websocket: true,
 		config: {
 			rateLimit: {

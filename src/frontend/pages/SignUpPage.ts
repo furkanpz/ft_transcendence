@@ -1,4 +1,4 @@
-import { GlobalState, Page, FETCH_ADDRESS } from "../Page"
+import { GlobalState, Page, FETCH_ADDRESS } from "../main"
 import { LOGIN_PAGE } from "./LoginPage"
 
 class SignUpPage implements Page {

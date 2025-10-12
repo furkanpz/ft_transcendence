@@ -1,5 +1,5 @@
 import { gameStart } from "./game";
-import { Page, GlobalState } from "./Page";
+import { Page, GlobalState } from "./main";
 import { HOME_PAGE, HomePage } from "./pages/HomePage";
 import { LOGIN_PAGE, LoginPage } from "./pages/LoginPage"
 import { SIGNUP_PAGE, SignUpPage } from "./pages/SignUpPage"

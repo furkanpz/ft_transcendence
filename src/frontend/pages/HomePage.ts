@@ -1,4 +1,4 @@
-import { GlobalState, Page, FETCH_ADDRESS } from "../Page"
+import { GlobalState, Page, FETCH_ADDRESS } from "../main"
 import { FRIENDS_PAGE } from "./FriendsPage";
 import { LOGIN_PAGE } from "./LoginPage";
 import { SIGNUP_PAGE } from "./SignUpPage";
@@ -21,7 +21,7 @@ class HomePage implements Page {
 					</div>
 					<div class="flex items-center">
 					${
-						window.localStorage.getItem("isAuthenticated") === "1" ? `<button id="authButton" onclick="GlobalState.setPage(LOGIN_PAGE)"
+						window.localStorage.getItem("isAuthenticated") === "1" ? `<button id="authButton" onclick="GlobalState.setPage(PROFILE_PAGE)"
 						class="cursor-pointer text-2xl font-semibold text-white hover:text-amber-400">Profil</button>` : `<button id="authButton" onclick="GlobalState.setPage(LOGIN_PAGE)"
 						class="cursor-pointer text-2xl font-semibold text-white hover:text-amber-400">Login</button>`
 					}

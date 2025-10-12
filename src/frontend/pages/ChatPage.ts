@@ -1,18 +1,16 @@
-import { GlobalState, Page, FETCH_ADDRESS, WS_ADDRESS } from "../Page"
+import { GlobalState, Page, FETCH_ADDRESS, WS_ADDRESS } from "../main"
 import { HOME_PAGE } from "./HomePage"
-
-let onlineUsers: string[] = [];
-let allUsers: string[] = [];
-let blockedUsers: string[] = [];
-let chatHistory: any[] = [];
-let activeChatUser: string | null = null;
-let userChats: { [key: string]: any[] } = {};
-let unreadCounts: { [key: string]: number } = {};
-let userRoomIds: { [key: string]: string } = {};
 
 class ChatPage implements Page {
     title: string = "Live Chat";
-    data: any = null;
+    static onlineUsers: string[] = [];
+    static allUsers: string[] = [];
+    static blockedUsers: string[] = [];
+    static chatHistory: any[] = [];
+    static activeChatUser: string | null = null;
+    static userChats: { [key: string]: any[] } = {};
+    static unreadCounts: { [key: string]: number } = {};
+    static userRoomIds: { [key: string]: string } = {};
 
     async render(): Promise<void> {
         const app = document.getElementById("app");
@@ -104,7 +102,7 @@ class ChatPage implements Page {
             });
             if (response.ok) {
                 const data = await response.json();
-                blockedUsers = data.blockedUsers || data || [];
+                ChatPage.blockedUsers = data.blockedUsers || data || [];
             }
         } catch (error) {
         }
@@ -145,7 +143,7 @@ class ChatPage implements Page {
 
             socket.onopen = () => {
                 GlobalState.setSocket(socket);
-                this.addSystemMessage('Chat bağlantısı kuruldu');
+                ChatPage.addSystemMessage('Chat bağlantısı kuruldu');
 
                 socket.send(JSON.stringify({ type: 'get_online_users' }));
                 socket.send(JSON.stringify({ type: 'get_offline_messages' }));
@@ -159,18 +157,18 @@ class ChatPage implements Page {
                         const msgData = data.data;
                         const senderUsername = msgData.username;
 
-                        if (senderUsername !== this.getCurrentUsername()) {
-                            for (const [user, roomId] of Object.entries(userRoomIds)) {
+                        if (senderUsername !== ChatPage.getCurrentUsername()) {
+                            for (const [user, roomId] of Object.entries(ChatPage.userRoomIds)) {
                                 if (roomId === msgData.room_id) {
-                                    if (!blockedUsers.includes(user)) {
-                                        if (activeChatUser === user) {
-                                            this.addMessageToActiveChat(senderUsername, msgData.message, 'received');
+                                    if (!ChatPage.blockedUsers.includes(user)) {
+                                        if (ChatPage.activeChatUser === user) {
+                                            ChatPage.addMessageToActiveChat(senderUsername, msgData.message, 'received');
                                         } else {
-                                            unreadCounts[user] = (unreadCounts[user] || 0) + 1;
-                                            if (!userChats[user]) {
-                                                userChats[user] = [];
+                                            ChatPage.unreadCounts[user] = (ChatPage.unreadCounts[user] || 0) + 1;
+                                            if (!ChatPage.userChats[user]) {
+                                                ChatPage.userChats[user] = [];
                                             }
-                                            userChats[user].push({
+                                            ChatPage.userChats[user].push({
                                                 sender: senderUsername,
                                                 message: msgData.message,
                                                 type: 'received',
@@ -178,7 +176,7 @@ class ChatPage implements Page {
                                                 messageType: 'text'
                                             });
 
-                                            this.updateChatsList();
+                                            ChatPage.updateChatsList();
                                         }
                                     }
                                     break;
@@ -191,18 +189,18 @@ class ChatPage implements Page {
                         const historyData = data.data;
                         const roomMessages = historyData.messages || [];
 
-                        for (const [user, roomId] of Object.entries(userRoomIds)) {
+                        for (const [user, roomId] of Object.entries(ChatPage.userRoomIds)) {
                             if (roomId === historyData.room_id) {
-                                userChats[user] = roomMessages.map((msg: any) => ({
-                                    sender: msg.username === this.getCurrentUsername() ? 'Siz' : msg.username,
+                                ChatPage.userChats[user] = roomMessages.map((msg: any) => ({
+                                    sender: msg.username === ChatPage.getCurrentUsername() ? 'Siz' : msg.username,
                                     message: msg.message,
-                                    type: msg.username === this.getCurrentUsername() ? 'sent' : 'received',
+                                    type: msg.username === ChatPage.getCurrentUsername() ? 'sent' : 'received',
                                     timestamp: new Date(msg.timestamp),
                                     messageType: msg.message_type || 'text'
                                 }));
 
-                                if (activeChatUser === user) {
-                                    this.loadChatMessages(user);
+                                if (ChatPage.activeChatUser === user) {
+                                    ChatPage.loadChatMessages(user);
                                 }
                                 break;
                             }
@@ -216,66 +214,66 @@ class ChatPage implements Page {
                         break;
 
                     case 'game_invite':
-                        if (activeChatUser === data.from) {
-                            this.addGameInviteToChat(data.from, 'received');
+                        if (ChatPage.activeChatUser === data.from) {
+                            ChatPage.addGameInviteToChat(data.from, 'received');
                         }
                         break;
 
                     case 'tournament_notification':
-                        this.displayTournamentNotification(data.message);
+                        ChatPage.displayTournamentNotification(data.message);
                         break;
 
                     case 'online_users':
-                        onlineUsers = data.users || [];
-                        onlineUsers.forEach(user => {
-                            if (!allUsers.includes(user)) {
-                                allUsers.push(user);
+                        ChatPage.onlineUsers = data.users || [];
+                        ChatPage.onlineUsers.forEach(user => {
+                            if (!ChatPage.allUsers.includes(user)) {
+                                ChatPage.allUsers.push(user);
                             }
                         });
 
-                        this.updateChatsList();
-                        if (activeChatUser) {
-                            this.updateChatHeader();
+                        ChatPage.updateChatsList();
+                        if (ChatPage.activeChatUser) {
+                            ChatPage.updateChatHeader();
                         }
                         break;
 
                     case 'user_joined':
-                        if (!onlineUsers.includes(data.username)) {
-                            onlineUsers.push(data.username);
-                            if (!allUsers.includes(data.username)) {
-                                allUsers.push(data.username);
+                        if (!ChatPage.onlineUsers.includes(data.username)) {
+                            ChatPage.onlineUsers.push(data.username);
+                            if (!ChatPage.allUsers.includes(data.username)) {
+                                ChatPage.allUsers.push(data.username);
                             }
-                            this.updateChatsList();
-                            if (activeChatUser === data.username) {
-                                this.updateChatHeader();
+                            ChatPage.updateChatsList();
+                            if (ChatPage.activeChatUser === data.username) {
+                                ChatPage.updateChatHeader();
                             }
                         }
                         break;
 
                     case 'user_left':
-                        onlineUsers = onlineUsers.filter(user => user !== data.username);
-                        this.updateChatsList();
-                        if (activeChatUser === data.username) {
-                            this.updateChatHeader();
+                        ChatPage.onlineUsers = ChatPage.onlineUsers.filter(user => user !== data.username);
+                        ChatPage.updateChatsList();
+                        if (ChatPage.activeChatUser === data.username) {
+                            ChatPage.updateChatHeader();
                         }
                         break;
 
                     case 'error':
-                        this.addSystemMessage(`Hata: ${data.data?.message || 'Bilinmeyen hata'}`);
+                        ChatPage.addSystemMessage(`Hata: ${data.data?.message || 'Bilinmeyen hata'}`);
                         break;
                 }
             };
 
             socket.onclose = () => {
-                this.addSystemMessage('Bağlantı kesildi');
+                ChatPage.addSystemMessage('Bağlantı kesildi');
             };
 
             socket.onerror = (error) => {
-                this.addSystemMessage('Bağlantı hatası');
+                ChatPage.addSystemMessage('Bağlantı hatası');
             };
 
         } catch (error) {
-            this.addSystemMessage('WebSocket bağlantısı kurulamadı');
+            ChatPage.addSystemMessage('WebSocket bağlantısı kurulamadı');
         }
     }
 
@@ -293,7 +291,7 @@ class ChatPage implements Page {
                     if (room.is_private && room.name.startsWith('private_')) {
                         const username = room.name.replace('private_', '');
 
-                        userRoomIds[username] = room.id;
+                        ChatPage.userRoomIds[username] = room.id;
 
                         try {
                             const historyResponse = await fetch(`${FETCH_ADDRESS}/chat/rooms/${room.id}/history?limit=50`, {
@@ -304,7 +302,7 @@ class ChatPage implements Page {
                                 const historyData = await historyResponse.json();
                                 const messages = historyData.messages || historyData || [];
 
-                                userChats[username] = messages.map((msg: any) => ({
+                                ChatPage.userChats[username] = messages.map((msg: any) => ({
                                     sender: msg.username === ChatPage.getCurrentUsername() ? 'Siz' : msg.username,
                                     message: msg.message,
                                     type: msg.username === ChatPage.getCurrentUsername() ? 'sent' : 'received',
@@ -315,13 +313,13 @@ class ChatPage implements Page {
                         } catch (historyError) {
                         }
 
-                        if (!allUsers.includes(username)) {
-                            allUsers.push(username);
+                        if (!ChatPage.allUsers.includes(username)) {
+                            ChatPage.allUsers.push(username);
                         }
                     }
                 }
 
-                updateChatsList();
+                ChatPage.updateChatsList();
             }
         } catch (error) {
         }
@@ -331,45 +329,45 @@ class ChatPage implements Page {
         event.preventDefault();
         const messageInput = document.getElementById("messageInput") as HTMLInputElement;
 
-        if (!activeChatUser) {
-            this.addSystemMessage('Lütfen bir kullanıcı seçin');
+        if (!ChatPage.activeChatUser) {
+            ChatPage.addSystemMessage('Lütfen bir kullanıcı seçin');
             return;
         }
 
         if (messageInput.value.trim()) {
             const message = messageInput.value.trim();
 
-            if (blockedUsers.includes(activeChatUser)) {
-                this.addSystemMessage(`${activeChatUser} kullanıcısı bloklanmış. Mesaj gönderilemez.`);
+            if (ChatPage.blockedUsers.includes(ChatPage.activeChatUser)) {
+                ChatPage.addSystemMessage(`${ChatPage.activeChatUser} kullanıcısı bloklanmış. Mesaj gönderilemez.`);
                 return;
             }
 
-            const roomId = userRoomIds[activeChatUser];
+            const roomId = ChatPage.userRoomIds[ChatPage.activeChatUser];
             const socket = GlobalState.getSocket();
 
             if (!roomId) {
-                this.addSystemMessage('Oda hazırlanıyor, lütfen bekleyin...');
+                ChatPage.addSystemMessage('Oda hazırlanıyor, lütfen bekleyin...');
 
-                const createdRoomId = await this.createOrJoinPrivateRoom(activeChatUser);
+                const createdRoomId = await ChatPage.createOrJoinPrivateRoom(ChatPage.activeChatUser);
                 if (!createdRoomId) {
-                    this.addSystemMessage('Oda oluşturulamadı. Lütfen tekrar deneyin.');
+                    ChatPage.addSystemMessage('Oda oluşturulamadı. Lütfen tekrar deneyin.');
                     return;
                 }
             }
 
             if (!socket || socket.readyState !== WebSocket.OPEN) {
-                this.addSystemMessage('WebSocket bağlantısı yok. Sayfa yenileniyor...');
+                ChatPage.addSystemMessage('WebSocket bağlantısı yok. Sayfa yenileniyor...');
 
-                this.connectWebSocket();
+                ChatPage.connectWebSocket();
 
-                this.addMessageToActiveChat('Siz', message, 'sent');
+                ChatPage.addMessageToActiveChat('Siz', message, 'sent');
                 messageInput.value = '';
                 return;
             }
 
-            const finalRoomId = userRoomIds[activeChatUser];
+            const finalRoomId = ChatPage.userRoomIds[ChatPage.activeChatUser];
             if (!finalRoomId) {
-                this.addSystemMessage('Oda ID bulunamadı. Lütfen kullanıcıyı tekrar seçin.');
+                ChatPage.addSystemMessage('Oda ID bulunamadı. Lütfen kullanıcıyı tekrar seçin.');
                 return;
             }
 
@@ -382,10 +380,10 @@ class ChatPage implements Page {
                     }
                 }));
 
-                this.addMessageToActiveChat('Siz', message, 'sent');
+                ChatPage.addMessageToActiveChat('Siz', message, 'sent');
                 messageInput.value = '';
             } catch (error) {
-                this.addSystemMessage('Mesaj gönderilemedi. Lütfen tekrar deneyin.');
+                ChatPage.addSystemMessage('Mesaj gönderilemedi. Lütfen tekrar deneyin.');
             }
         }
     }
@@ -400,9 +398,9 @@ class ChatPage implements Page {
                 gameType: 'pong'
             }));
 
-            this.addGameInviteToChat(username, 'sent');
+            ChatPage.addGameInviteToChat(username, 'sent');
         } else {
-            this.addSystemMessage('Bağlantı sorunu. Oyun davetiyesi gönderilemedi.');
+            ChatPage.addSystemMessage('Bağlantı sorunu. Oyun davetiyesi gönderilemedi.');
         }
     }
 
@@ -417,17 +415,17 @@ class ChatPage implements Page {
                 });
 
                 if (response.ok) {
-                    blockedUsers.push(username);
-                    addSystemMessage(`${username} kullanıcısı engellendi.`);
-                    updateChatsList();
-                    updateUserInfoPanel();
+                    ChatPage.blockedUsers.push(username);
+                    ChatPage.addSystemMessage(`${username} kullanıcısı engellendi.`);
+                    ChatPage.updateChatsList();
+                    ChatPage.updateUserInfoPanel();
 
-                    if (activeChatUser === username) {
-                        disableChatInput();
+                    if (ChatPage.activeChatUser === username) {
+                        ChatPage.disableChatInput();
                     }
                 }
             } catch (error) {
-                addSystemMessage('Engelleme işlemi başarısız.');
+                ChatPage.addSystemMessage('Engelleme işlemi başarısız.');
             }
         }
     }
@@ -437,18 +435,19 @@ class ChatPage implements Page {
             const response = await fetch(`${FETCH_ADDRESS}/user/friends/block/${username}`, {
                 method: 'DELETE',
                 credentials: 'include'
-            }); if (response.ok) {
-                blockedUsers = blockedUsers.filter(user => user !== username);
-                this.addSystemMessage(`${username} kullanıcısının engeli kaldırıldı.`);
-                this.updateChatsList();
-                this.updateUserInfoPanel();
+            }); 
+            if (response.ok) {
+                ChatPage.blockedUsers = ChatPage.blockedUsers.filter(user => user !== username);
+                ChatPage.addSystemMessage(`${username} kullanıcısının engeli kaldırıldı.`);
+                ChatPage.updateChatsList();
+                ChatPage.updateUserInfoPanel();
 
-                if (activeChatUser === username) {
-                    this.enableChatInput();
+                if (ChatPage.activeChatUser === username) {
+                    ChatPage.enableChatInput();
                 }
             }
         } catch (error) {
-            this.addSystemMessage('Engel kaldırma işlemi başarısız.');
+            ChatPage.addSystemMessage('Engel kaldırma işlemi başarısız.');
         }
     }
 
@@ -456,14 +455,15 @@ class ChatPage implements Page {
         try {
             const response = await fetch(`${FETCH_ADDRESS}/user/profile`, {
                 credentials: 'include'
-            }); if (response.ok) {
+            }); 
+            if (response.ok) {
                 const profile = await response.json();
-                this.showProfileModal(profile);
+                ChatPage.showProfileModal(profile);
             } else {
-                this.addSystemMessage('Profil yüklenemedi.');
+                ChatPage.addSystemMessage('Profil yüklenemedi.');
             }
         } catch (error) {
-            this.addSystemMessage('Profil yüklenemedi.');
+            ChatPage.addSystemMessage('Profil yüklenemedi.');
         }
     }
 
@@ -525,7 +525,7 @@ class ChatPage implements Page {
 
                 for (const room of rooms) {
                     if (room.is_private && room.name === `private_${username}`) {
-                        userRoomIds[username] = room.id;
+                        ChatPage.userRoomIds[username] = room.id;
 
                         const socket = GlobalState.getSocket();
                         if (socket && socket.readyState === WebSocket.OPEN) {
@@ -556,7 +556,7 @@ class ChatPage implements Page {
                 const roomId = createData.room?.id || createData.data?.room?.id || createData.id;
 
                 if (roomId) {
-                    userRoomIds[username] = roomId;
+                    ChatPage.userRoomIds[username] = roomId;
 
                     const socket = GlobalState.getSocket();
                     if (socket && socket.readyState === WebSocket.OPEN) {
@@ -570,7 +570,7 @@ class ChatPage implements Page {
                 }
             } else {
                 const tempRoomId = `temp_${username}_${Date.now()}`;
-                userRoomIds[username] = tempRoomId;
+                ChatPage.userRoomIds[username] = tempRoomId;
                 return tempRoomId;
             }
 
@@ -581,28 +581,28 @@ class ChatPage implements Page {
     }
 
     static async startChatWith(username: string) {
-        activeChatUser = username;
+        ChatPage.activeChatUser = username;
 
-        this.updateChatHeader();
-        this.updateChatsList();
-        this.updateUserInfoPanel();
+        ChatPage.updateChatHeader();
+        ChatPage.updateChatsList();
+        ChatPage.updateUserInfoPanel();
 
-        const roomId = await this.createOrJoinPrivateRoom(username);
+        const roomId = await ChatPage.createOrJoinPrivateRoom(username);
 
         if (!roomId) {
-            this.addSystemMessage('Oda oluşturulamadı. Lütfen tekrar deneyin.');
+            ChatPage.addSystemMessage('Oda oluşturulamadı. Lütfen tekrar deneyin.');
         }
 
-        this.loadChatMessages(username);
-        await this.loadRoomHistory(username);
+        ChatPage.loadChatMessages(username);
+        await ChatPage.loadRoomHistory(username);
 
-        unreadCounts[username] = 0;
-        this.updateChatsList();
+        ChatPage.unreadCounts[username] = 0;
+        ChatPage.updateChatsList();
 
-        if (blockedUsers.includes(username)) {
-            this.disableChatInput();
+        if (ChatPage.blockedUsers.includes(username)) {
+            ChatPage.disableChatInput();
         } else {
-            this.enableChatInput();
+            ChatPage.enableChatInput();
         }
     }
 
@@ -634,8 +634,8 @@ class ChatPage implements Page {
 
     static updateChatHeader() {
         const chatHeader = document.getElementById("chatHeader");
-        if (chatHeader && activeChatUser) {
-            const isOnline = onlineUsers.includes(activeChatUser);
+        if (chatHeader && ChatPage.activeChatUser) {
+            const isOnline = ChatPage.onlineUsers.includes(ChatPage.activeChatUser);
             const statusColor = isOnline ? 'bg-green-500' : 'bg-gray-400';
             const statusText = isOnline ? 'Çevrimiçi' : 'Çevrimdışı';
 
@@ -643,12 +643,12 @@ class ChatPage implements Page {
             <div class="flex items-center cursor-pointer" onclick="ChatPage.toggleUserInfoPanel()">
                 <div class="relative mr-3">
                     <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                        ${activeChatUser.charAt(0).toUpperCase()}
+                        ${ChatPage.activeChatUser.charAt(0).toUpperCase()}
                     </div>
                     <div class="absolute -bottom-1 -right-1 w-4 h-4 ${statusColor} border-2 border-white rounded-full"></div>
                 </div>
                 <div>
-                    <h3 class="font-semibold text-gray-800 text-lg">${activeChatUser}</h3>
+                    <h3 class="font-semibold text-gray-800 text-lg">${ChatPage.activeChatUser}</h3>
                     <p class="text-sm text-gray-600">${statusText}</p>
                 </div>
             </div>
@@ -665,27 +665,27 @@ class ChatPage implements Page {
 
     static updateUserInfoPanel() {
         const userInfoPanel = document.getElementById("userInfoPanel");
-        if (userInfoPanel && activeChatUser) {
-            const isBlocked = blockedUsers.includes(activeChatUser);
+        if (userInfoPanel && ChatPage.activeChatUser) {
+            const isBlocked = ChatPage.blockedUsers.includes(ChatPage.activeChatUser);
 
             userInfoPanel.innerHTML = `
             <div class="p-6">
                 <div class="text-center mb-6">
                     <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-3">
-                        ${activeChatUser.charAt(0).toUpperCase()}
+                        ${ChatPage.activeChatUser.charAt(0).toUpperCase()}
                     </div>
-                    <h3 class="text-xl font-semibold text-gray-800">${activeChatUser}</h3>
+                    <h3 class="text-xl font-semibold text-gray-800">${ChatPage.activeChatUser}</h3>
                     <p class="text-gray-600 text-sm">Galibiyet/Mağlubiyet: 5/2</p>
                 </div>
                 
                 <div class="space-y-3 mb-6">
-                    <button onclick="ChatPage.viewProfile('${activeChatUser}')" 
+                    <button onclick="ChatPage.viewProfile('${ChatPage.activeChatUser}')" 
                             class="w-full bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-600 transition duration-200 font-semibold">
                         👤 Profili Görüntüle
                     </button>
                     
                     ${!isBlocked ? `
-                        <button onclick="ChatPage.inviteToGame('${activeChatUser}')" 
+                        <button onclick="ChatPage.inviteToGame('${ChatPage.activeChatUser}')" 
                                 class="w-full bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 transition duration-200 font-semibold flex items-center justify-center">
                             🎮 Pong Oynamaya Davet Et
                         </button>
@@ -701,12 +701,12 @@ class ChatPage implements Page {
                         
                         <div id="optionsMenu" class="hidden absolute top-full left-0 mt-2 w-full bg-white border rounded-lg shadow-lg z-10">
                             ${!isBlocked ? `
-                                <button onclick="ChatPage.blockUser('${activeChatUser}')" 
+                                <button onclick="ChatPage.blockUser('${ChatPage.activeChatUser}')" 
                                         class="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition duration-200">
                                     🚫 Kullanıcıyı Engelle
                                 </button>
                             ` : `
-                                <button onclick="ChatPage.unblockUser('${activeChatUser}')" 
+                                <button onclick="ChatPage.unblockUser('${ChatPage.activeChatUser}')" 
                                         class="w-full text-left px-4 py-3 text-green-600 hover:bg-green-50 transition duration-200">
                                     ✅ Engeli Kaldır
                                 </button>
@@ -741,16 +741,16 @@ class ChatPage implements Page {
             return;
         }
 
-        const existingChatUsers = Object.keys(userChats);
-        const onlineUsersList = onlineUsers || [];
+        const existingChatUsers = Object.keys(ChatPage.userChats);
+        const onlineUsersList = ChatPage.onlineUsers || [];
 
-        if (allUsers.length === 0) {
-            await this.loadFriendsList();
-            await this.loadAllUsers();
+        if (ChatPage.allUsers.length === 0) {
+            await ChatPage.loadFriendsList();
+            await ChatPage.loadAllUsers();
         }
 
         const allAvailableUsers = [...new Set([
-            ...allUsers,
+            ...ChatPage.allUsers,
             ...existingChatUsers,
             ...onlineUsersList
         ])];
@@ -760,7 +760,7 @@ class ChatPage implements Page {
             return user.toLowerCase().includes(searchTerm) && user !== currentUser;
         });
 
-        this.updateSearchResults(filteredUsers);
+        ChatPage.updateSearchResults(filteredUsers);
     }
 
     static updateSearchResults(users: string[]) {
@@ -776,10 +776,10 @@ class ChatPage implements Page {
             }
 
             chatsList.innerHTML = users.map(user => {
-                const isOnline = onlineUsers.includes(user);
+                const isOnline = ChatPage.onlineUsers.includes(user);
                 const statusIcon = isOnline ? '🟢' : '🔴';
-                const hasExistingChat = userChats[user];
-                const lastMessage = hasExistingChat ? userChats[user][userChats[user].length - 1] : null;
+                const hasExistingChat = ChatPage.userChats[user];
+                const lastMessage = hasExistingChat ? ChatPage.userChats[user][ChatPage.userChats[user].length - 1] : null;
 
                 return `
                 <div class="flex items-center p-3 hover:bg-gray-50 transition duration-200 cursor-pointer rounded-lg mx-2"
@@ -808,9 +808,9 @@ class ChatPage implements Page {
     static updateChatsList() {
         const chatsList = document.getElementById("chatsList");
         if (chatsList) {
-            const chatUsers = Object.keys(userChats).sort((a, b) => {
-                const lastMessageA = userChats[a]?.[userChats[a].length - 1]?.timestamp || 0;
-                const lastMessageB = userChats[b]?.[userChats[b].length - 1]?.timestamp || 0;
+            const chatUsers = Object.keys(ChatPage.userChats).sort((a, b) => {
+                const lastMessageA = ChatPage.userChats[a]?.[ChatPage.userChats[a].length - 1]?.timestamp || 0;
+                const lastMessageB = ChatPage.userChats[b]?.[ChatPage.userChats[b].length - 1]?.timestamp || 0;
                 return new Date(lastMessageB).getTime() - new Date(lastMessageA).getTime();
             });
 
@@ -825,11 +825,11 @@ class ChatPage implements Page {
             }
 
             chatsList.innerHTML = chatUsers.map(user => {
-                const isActive = activeChatUser === user;
-                const isOnline = onlineUsers.includes(user);
+                const isActive = ChatPage.activeChatUser === user;
+                const isOnline = ChatPage.onlineUsers.includes(user);
                 const statusIcon = isOnline ? '🟢' : '🔴';
-                const lastMessage = userChats[user]?.[userChats[user].length - 1];
-                const unreadCount = unreadCounts[user] || 0;
+                const lastMessage = ChatPage.userChats[user]?.[ChatPage.userChats[user].length - 1];
+                const unreadCount = ChatPage.unreadCounts[user] || 0;
 
                 return `
                 <div class="flex items-center p-3 hover:bg-gray-50 transition duration-200 cursor-pointer rounded-lg mx-2 ${isActive ? 'bg-blue-50 border-l-4 border-blue-500' : ''}"
@@ -860,7 +860,7 @@ class ChatPage implements Page {
     }
 
     static addMessageToActiveChat(sender: string, message: string, type: 'sent' | 'received') {
-        if (!activeChatUser) return;
+        if (!ChatPage.activeChatUser) return;
 
         const messageData = {
             sender,
@@ -870,19 +870,19 @@ class ChatPage implements Page {
             messageType: 'text'
         };
 
-        if (!userChats[activeChatUser]) {
-            userChats[activeChatUser] = [];
+        if (!ChatPage.userChats[ChatPage.activeChatUser]) {
+            ChatPage.userChats[ChatPage.activeChatUser] = [];
         }
-        userChats[activeChatUser].push(messageData);
+        ChatPage.userChats[ChatPage.activeChatUser].push(messageData);
 
-        this.displayMessage(messageData);
+        ChatPage.displayMessage(messageData);
 
-        this.updateChatsList();
+        ChatPage.updateChatsList();
     }
 
     static addGameInviteToChat(username: string, type: 'sent' | 'received') {
-        if (!activeChatUser && type === 'sent') activeChatUser = username;
-        if (!activeChatUser) return;
+        if (!ChatPage.activeChatUser && type === 'sent') ChatPage.activeChatUser = username;
+        if (!ChatPage.activeChatUser) return;
 
         const messageData = {
             sender: type === 'sent' ? 'Siz' : username,
@@ -892,14 +892,14 @@ class ChatPage implements Page {
             messageType: 'game_invite'
         };
 
-        if (!userChats[activeChatUser]) {
-            userChats[activeChatUser] = [];
+        if (!ChatPage.userChats[ChatPage.activeChatUser]) {
+            ChatPage.userChats[ChatPage.activeChatUser] = [];
         }
-        userChats[activeChatUser].push(messageData);
+        ChatPage.userChats[ChatPage.activeChatUser].push(messageData);
 
-        this.displayGameInvite(messageData, username);
+        ChatPage.displayGameInvite(messageData, username);
 
-        this.updateChatsList();
+        ChatPage.updateChatsList();
     }
 
     static displayMessage(messageData: any) {
@@ -992,12 +992,12 @@ class ChatPage implements Page {
         if (chatMessages) {
             chatMessages.innerHTML = '';
 
-            if (userChats[username]) {
-                userChats[username].forEach(message => {
+            if (ChatPage.userChats[username]) {
+                ChatPage.userChats[username].forEach(message => {
                     if (message.messageType === 'game_invite') {
-                        this.displayGameInvite(message, username);
+                        ChatPage.displayGameInvite(message, username);
                     } else {
-                        this.displayMessage(message);
+                        ChatPage.displayMessage(message);
                     }
                 });
             }
@@ -1005,7 +1005,7 @@ class ChatPage implements Page {
     }
 
     static async loadRoomHistory(username: string) {
-        const roomId = userRoomIds[username];
+        const roomId = ChatPage.userRoomIds[username];
         if (!roomId) return;
 
         try {
@@ -1017,15 +1017,15 @@ class ChatPage implements Page {
                 const data = await response.json();
                 const messages = data.messages || data || [];
 
-                userChats[username] = messages.map((msg: any) => ({
-                    sender: msg.username === this.getCurrentUsername() ? 'Siz' : msg.username,
+                ChatPage.userChats[username] = messages.map((msg: any) => ({
+                    sender: msg.username === ChatPage.getCurrentUsername() ? 'Siz' : msg.username,
                     message: msg.message,
-                    type: msg.username === this.getCurrentUsername() ? 'sent' : 'received',
+                    type: msg.username === ChatPage.getCurrentUsername() ? 'sent' : 'received',
                     timestamp: new Date(msg.timestamp),
                     messageType: msg.message_type || 'text'
                 }));
 
-                this.loadChatMessages(username);
+                ChatPage.loadChatMessages(username);
             }
         } catch (error) {
         }
@@ -1052,9 +1052,9 @@ class ChatPage implements Page {
             socket.send(JSON.stringify({
                 type: 'game_invite_accepted',
                 to: inviter,
-                from: this.getCurrentUsername()
+                from: ChatPage.getCurrentUsername()
             }));
-            this.addSystemMessage(`${inviter} ile oyun başlatılıyor...`);
+            ChatPage.addSystemMessage(`${inviter} ile oyun başlatılıyor...`);
         }
     }
 
@@ -1066,19 +1066,19 @@ class ChatPage implements Page {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     name: `Chat with ${messageData.to}`,
-                    participants: [this.getCurrentUsername(), messageData.to]
+                    participants: [ChatPage.getCurrentUsername(), messageData.to]
                 })
             });
 
             if (createRoomResponse.ok) {
                 const roomData = await createRoomResponse.json();
 
-                this.addSystemMessage(`Mesaj ${messageData.to} kullanıcısına gönderildi (room created)`);
+                ChatPage.addSystemMessage(`Mesaj ${messageData.to} kullanıcısına gönderildi (room created)`);
             } else {
-                this.addSystemMessage('Mesaj gönderilemedi. Room oluşturulamadı.');
+                ChatPage.addSystemMessage('Mesaj gönderilemedi. Room oluşturulamadı.');
             }
         } catch (error) {
-            this.addSystemMessage('Mesaj gönderme hatası.');
+            ChatPage.addSystemMessage('Mesaj gönderme hatası.');
         }
     }
 
@@ -1102,8 +1102,8 @@ class ChatPage implements Page {
                 }
 
                 friendsList.forEach((friend: string) => {
-                    if (!allUsers.includes(friend)) {
-                        allUsers.push(friend);
+                    if (!ChatPage.allUsers.includes(friend)) {
+                        ChatPage.allUsers.push(friend);
                     }
                 });
             }
@@ -1129,11 +1129,11 @@ class ChatPage implements Page {
 
                     if (endpoint.includes('/friends')) {
                         if (data.user_friends && Array.isArray(data.user_friends)) {
-                            allUsers = data.user_friends.map((f: any) => f.username || f.friend_username || f.name || f);
+                            ChatPage.allUsers = data.user_friends.map((f: any) => f.username || f.friend_username || f.name || f);
                         } else if (data.friends && Array.isArray(data.friends)) {
-                            allUsers = data.friends.map((f: any) => f.username || f.name || f);
+                            ChatPage.allUsers = data.friends.map((f: any) => f.username || f.name || f);
                         } else if (Array.isArray(data)) {
-                            allUsers = data.map((f: any) => f.username || f.name || f);
+                            ChatPage.allUsers = data.map((f: any) => f.username || f.name || f);
                         }
                     } else if (endpoint.includes('/rooms')) {
                         if (data.rooms && Array.isArray(data.rooms)) {
@@ -1143,7 +1143,7 @@ class ChatPage implements Page {
                                     participants.push(...r.participants);
                                 }
                             });
-                            allUsers = participants.filter((u: any) => u !== this.getCurrentUsername());
+                            ChatPage.allUsers = participants.filter((u: any) => u !== ChatPage.getCurrentUsername());
                         } else if (Array.isArray(data)) {
                             const participants: string[] = [];
                             data.forEach((r: any) => {
@@ -1151,17 +1151,17 @@ class ChatPage implements Page {
                                     participants.push(...r.participants);
                                 }
                             });
-                            allUsers = participants.filter((u: any) => u !== this.getCurrentUsername());
+                            ChatPage.allUsers = participants.filter((u: any) => u !== ChatPage.getCurrentUsername());
                         }
                     } else if (endpoint.includes('/profile')) {
                         if (data.username) {
-                            allUsers = [data.username];
+                            ChatPage.allUsers = [data.username];
                         }
                     } else {
                         continue;
                     }
 
-                    if (allUsers.length > 0) {
+                    if (ChatPage.allUsers.length > 0) {
                         break;
                     }
                 }

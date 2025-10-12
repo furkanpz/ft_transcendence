@@ -1,4 +1,4 @@
-import { FETCH_ADDRESS, GlobalState, Page } from "../Page";
+import { FETCH_ADDRESS, GlobalState, Page } from "../main";
 import { HOME_PAGE } from "./HomePage";
 
 class BlockedUsersPage implements Page {

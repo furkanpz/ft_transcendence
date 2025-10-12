@@ -1,4 +1,4 @@
-import { GlobalState, Page, FETCH_ADDRESS} from "../Page"
+import { GlobalState, Page, FETCH_ADDRESS} from "../main"
 import { HOME_PAGE } from "../pages"
 
 class FriendsPage implements Page {

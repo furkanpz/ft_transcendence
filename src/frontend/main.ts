@@ -1,109 +1,124 @@
-// import { transform } from "typescript";
-import { GameRoom } from "../backend/server/types/game.types"
-import { HomePage } from "./pages/HomePage";
-import { changePassword, ProfilePage } from "./pages/ProfilePage";
-import { Lobby } from "./pages/LobbyPage";
-import { login, LoginPage } from "./pages/LoginPage";
-import { signUp, SignUpPage } from "./pages/SignUpPage";
-import { updateNavUser } from "./pages/Navbar";
-import { gameLoop, gameStart } from "./game";
+import { HOME_PAGE, PROFILE_PAGE, PAGES, SIGNUP_PAGE, AI_GAME_PAGE, PVP_GAME_PAGE, FRIENDS_PAGE, LOGIN_PAGE, LoginPage, SignUpPage, FriendsPage} from "./pages";
+import { BLOCKED_USERS_PAGE, BlockedUsersPage } from "./pages/BlockedUsersPage";
+import { CHAT_PAGE, ChatPage } from "./pages/ChatPage";
+import { MATCHMAKING_PAGE } from "./pages/MatchmakingPage";
+import { ProfilePage } from "./pages/ProfilePage";
 
-//YUKARISI BUGRAYA AIT
+// websocket için de kullanıyorum o yüzden sadece adres ve portu yazdım
+const FETCH_ADDRESS = "http://localhost:3000/api"
+const WS_ADDRESS = "ws://localhost:3000/ws"
 
-export type UserProfileDTO = {
-    success: boolean;
-    message: string;
-    id: number;
-    username: string;
-    email: string;
-    avatar_url: string;
-    role: string;
-    created_at: string;
+interface Page {
+	title: string;
+	onUnload: () => Promise<void>;
+	onPreLoad: () => Promise<void>;
+	render: () => Promise<void>;
+	onLoad: () => Promise<void>;
 };
 
+class GlobalState {
+	private static currentPage: Page = HOME_PAGE;
+	private static gameAnimationFrameId: number | null = null;
+	private static gameSocket: WebSocket | null;
+	private static username: string = "null";
+	public static isAuthenticated : boolean = false;
+	
+	private constructor() {}
 
-window.addEventListener("popstate", async (e) => {
-    const app = document.getElementById("app");
-    if (!app) return;
-    const state = e.state;
-    if (state?.page === "home") {
-        app.innerHTML = await HomePage();
-    } else if (state?.page === "login") {
-        app.innerHTML = await LoginPage();
-    }
-    else if (state?.page === "signup") {
-        app.innerHTML = await SignUpPage();
-    }
+	public static getSocket(): WebSocket | null
+	{
+		return GlobalState.gameSocket;
+	}
 
-});
+	public static setSocket(socket: WebSocket | null): void
+	{
+		GlobalState.gameSocket = socket;
+	}
 
-export async function loadPage(page: (name: string | null) => Promise<string>, pageName: string = "home") {
+	public static getcurrentPage(): Page {
+		return GlobalState.currentPage;
+	}
 
-    const app = document.getElementById("app");
-    if (app) {
-        history.pushState({ page: pageName }, `${pageName}`, `/#${pageName}`);
-        if (pageName == "match history")
-            app.innerHTML = await page("match history");
-        else if (pageName == "profile")
-            app.innerHTML = await page("profile");
-        else if (pageName == "change password")
-            app.innerHTML = await page("change password");
-        else
-            app.innerHTML = await page(null);
-        updateNavUser();
-    }
+	public static setcurrentPage(page: Page): void {
+		GlobalState.currentPage = page;
+	}
+
+	public static getAnimationFrameId(): number | null {
+		return GlobalState.gameAnimationFrameId;
+	}
+
+	public static setAnimationFrameId(id: number | null): void {
+		GlobalState.gameAnimationFrameId = id;
+	}
+
+	public static async setPage(page: Page): Promise<void> {
+		await GlobalState.getcurrentPage().onUnload();
+		GlobalState.setcurrentPage(page);
+		await page.onPreLoad();
+		document.title = page.title;
+		const path = GlobalState.getPagePath(page);
+		window.history.pushState({ pageKey: path }, page.title, path);
+		await page.render();
+		await page.onLoad();
+	}
+
+	public static getPagePath(page: Page): string {
+		for (const [key, value] of Object.entries(PAGES)) {
+			if (value === page) {
+				return "/" + key;
+			}
+		}
+		return "/home";
+	}
+
+	public static getPage(path: string): Page {
+		const key = path.slice(1).toLowerCase();
+		return PAGES[key] || HOME_PAGE;
+	}
 }
 
-export async function Canvas() : Promise<string>     {
-    return `
-    <div class="items-center justify-center flex text-center border-2">
-    <canvas id="canvas" class="border-2 border-amber-500">
-    
-    </canvas>
-    </div>
-    `
+window.onpopstate = function(event) {
+	GlobalState.getcurrentPage().onUnload();
+	const path = window.location.pathname.slice(1).toLowerCase();
+	if (path === "profile") {
+		GlobalState.setPage(PROFILE_PAGE);
+	} else {
+		GlobalState.setPage(HOME_PAGE);
+	}
+};
+
+function init() {
+	const path = window.location.pathname;
+	const initialPage = GlobalState.getPage(path);
+
+	GlobalState.setcurrentPage(initialPage);
+	document.title = initialPage.title;
+	initialPage.onPreLoad();
+	initialPage.render();
+	initialPage.onLoad();
+
+	window.history.replaceState({ pageKey: path }, initialPage.title, path);
 }
 
+init();
 
+export { Page, GlobalState, FETCH_ADDRESS, WS_ADDRESS };
 
+(window as any).GlobalState = GlobalState;
+(window as any).PROFILE_PAGE = PROFILE_PAGE;
+(window as any).HOME_PAGE = HOME_PAGE;
+(window as any).LOGIN_PAGE = LOGIN_PAGE;
+(window as any).SIGNUP_PAGE = SIGNUP_PAGE;
+(window as any).AI_GAME_PAGE = AI_GAME_PAGE;
+(window as any).PVP_GAME_PAGE = PVP_GAME_PAGE;
+(window as any).FRIENDS_PAGE = FRIENDS_PAGE;
+(window as any).BLOCKED_USERS_PAGE = BLOCKED_USERS_PAGE;
+(window as any).MATCHMAKING_PAGE = MATCHMAKING_PAGE;
+(window as any).CHAT_PAGE = CHAT_PAGE;
 
-window.addEventListener("DOMContentLoaded", () => {
-    const app = document.getElementById("app");
-    const hash = window.location.hash;
-
-    if (!app) return;
-
-    if (hash === "#login") {
-        history.replaceState({ page: "login" }, "login", "/#login");
-        loadPage(LoginPage, "login");
-    } else if (hash === "#signup") {
-        history.replaceState({ page: "signup" }, "signup", "/#signup");
-        loadPage(SignUpPage, "signup");
-    } else {
-        history.replaceState({ page: "home" }, "home", "/#home");
-        loadPage(HomePage, "home");
-    }
-});
-
-(window as any).Canvas = Canvas;
-(window as any).ProfilePage = ProfilePage;
-(window as any).gameStart = gameStart;
-(window as any).gameLoop = gameLoop;
-(window as any).Lobby = Lobby;
-(window as any).HomePage = HomePage;
-(window as any).loadPage = loadPage;
-(window as any).LoginPage = LoginPage;
-(window as any).loadLoginPage = LoginPage;
-(window as any).loadSignUpPage = SignUpPage;
-(window as any).loadHomePage = HomePage;
-(window as any).login = login;
-(window as any).changePassword = changePassword;
-(window as any).updateNavUser = updateNavUser;
-(window as any).signUp = signUp;
 (window as any).SignUpPage = SignUpPage;
-// main.ts'in en altına ekle
-// (window as any).login = login;
-// (window as any).signUp = signUp;
-// (window as any).toggleSignUp = toggleSignUp;
-// (window as any).LoginPage = LoginPage;
-// (window as any).loadPage = loadPage;
+(window as any).LoginPage = LoginPage;
+(window as any).FriendsPage = FriendsPage;
+(window as any).ChatPage = ChatPage;
+(window as any).ProfiPage = ProfilePage;
+(window as any).BlockedUsersPage = BlockedUsersPage

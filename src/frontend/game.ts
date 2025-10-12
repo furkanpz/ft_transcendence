@@ -1,4 +1,4 @@
-import { GlobalState } from "./Page";
+import { GlobalState } from "./main";
 
 class Vector2 {
     x: number;
