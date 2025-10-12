@@ -38,7 +38,7 @@ export async function sendRecovery(email: string, otp: string){
 }
 // ENV DOMAIN GEREKLİ!
 export async function sendRecovery_2(email: string, otp: string){
-	const recoveryUrl = `http://localhost:3000/api/auth/account_recovery?verify=${otp}&email=${encodeURIComponent(email)}`;
+	const recoveryUrl = `https://localhost:3000/api/auth/account_recovery?verify=${otp}&email=${encodeURIComponent(email)}`;
 
 	await smtp.sendMail({
 		from: '"ft_transcendance" <furkanvibe@gmail.com>',

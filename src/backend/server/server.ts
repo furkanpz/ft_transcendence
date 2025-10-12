@@ -25,15 +25,15 @@ const server = Fastify({
     customOptions: {
       removeAdditional: false
     }
-  }
+  },
 });
 export default server;
 
 async function main() {
   await server.register(cors, {
-    origin: ['https://localhost:3000', "https://localhost:5173", 'https://10.11.7.9:5173', 'http://localhost:3000', "http://localhost:5173", 'http://10.11.7.9:5173'],
+    origin: ['https://localhost:3000', "https://localhost:5173", 'https://10.11.7.9:5173', 'https://localhost:3000', "https://localhost:5173", 'https://10.11.7.9:5173'],
     credentials: true,
-	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+	  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   });
   await server.register(fastifyWebsocket);
   await server.register(rateLimit, {
@@ -53,7 +53,7 @@ async function main() {
     secret: process.env.JWT_SECRET || 'default_secret',
     cookie: {
       cookieName: 'access_token',
-      signed: false
+      signed: true
     }
   });
 

@@ -5,7 +5,7 @@ import { MATCHMAKING_PAGE } from "./pages/MatchmakingPage";
 import { ProfilePage } from "./pages/ProfilePage";
 
 // websocket için de kullanıyorum o yüzden sadece adres ve portu yazdım
-const FETCH_ADDRESS = "http://localhost:3000/api"
+const FETCH_ADDRESS = "https://localhost:3000/api"
 const WS_ADDRESS = "ws://localhost:3000/ws"
 
 interface Page {
