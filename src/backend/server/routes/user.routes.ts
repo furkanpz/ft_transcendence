@@ -8,7 +8,8 @@ import {
 	changePasswordController,
 	blockUserController,
 	getBlockedUsersController,
-	unblockUserController
+	unblockUserController,
+	changeUsernameController
 } from '../controller/user.controller'
 import { authJwtVerify } from '../services/auth/jwt.services'
 
@@ -47,8 +48,8 @@ export default async function userRoutes(server: FastifyInstance) {
 	server.put("/username",
 	{
 		preHandler:authJwtVerify,
-		schema: schemas.passwordSchema,
-		handler:changePasswordController
+		schema: schemas.usernameSchema,
+		handler:changeUsernameController
 	});
 	
 	server.put("/username",
