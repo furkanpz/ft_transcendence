@@ -100,6 +100,11 @@ export async function setNewPw(new_pw: string, user_id: number): Promise<void> {
 	await db.run("UPDATE ft_users SET password = ? WHERE id = ?",hashed_pw, user_id);
 }
 
+export async function setNewUsername(new_username: string, user_id: number): Promise<void> {
+	const db = await getDb();
+	await db.run("UPDATE ft_users SET username = ? WHERE id = ?",new_username, user_id);
+}
+
 export async function getUserWithEmail(email: string): Promise<number | undefined> {
 	const db = await getDb();
 	const user = await db.get("SELECT id FROM ft_users WHERE email = ?", email);

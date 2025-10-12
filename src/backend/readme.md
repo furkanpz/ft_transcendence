@@ -132,6 +132,15 @@ Bu Aşama STEP 2 sonrasında 15 Dakika içinde doldurulmalıdır yoksa iptal olu
 | `new_re_password`      | `string` | **Gerekli**. Min-Max 6-64|
 | `user_id`      | `number` | **ADMIN için**. Min  1|
 
+#### CHANGE USERNAME
+
+```http
+  PUT /api/user/password
+```
+| Parametre | Tip     | Açıklama                       |
+| :-------- | :------- | :-------------------------------- |
+| `username`      | `string` | **Gerekli**. Min-Max 3-36 pattern:'^[a-zA-Z0-9_]+$' |
+
 #### SET 2FA
 
 ```http

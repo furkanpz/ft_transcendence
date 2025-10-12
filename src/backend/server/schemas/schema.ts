@@ -99,6 +99,17 @@ export const passwordSchema = {
 		additionalProperties: false
 	},
 }
+export const usernameSchema = {
+	body:{
+		required: 			['username'],
+		type: 'object',
+		properties: {
+			username:		usernameKeySchema,
+		},
+		additionalProperties: false
+	},
+}
+
 
 export const roleSchema = {
 	body: {

@@ -115,7 +115,6 @@ class ProfilePage implements Page {
 		this.updateProfileStatus('Loading profile information...', 'info');
 		
 		try {
-			// Backend API çağrısı - gerçek endpoint
 			const response = await fetch(`${FETCH_ADDRESS}/user/profile`, {
 				method: 'GET',
 				credentials: 'include',
@@ -364,7 +363,7 @@ class ProfilePage implements Page {
 					body: JSON.stringify({ t2type: false })
 				});
 
-				if (response.ok || response.status === 404) {
+				if (response.ok) {
 					alert('2FA disabled successfully!');
 					this.update2FAStatus(false);
 				} else if (response.status === 401) {
@@ -405,19 +404,12 @@ class ProfilePage implements Page {
 				});
 
 				if (response.ok) {
-					const setupData = await response.json();
-					// README'ye göre başarılı response: {success: true, message:"OTP sent successfully"}
-					if (setupData.success && setupData.message === "OTP sent successfully") {
-						this.show2FASetup({
-							qrCodeUrl: null, // QR kod backend'den gelmeyecek, kullanıcı manuel girecek
-							secret: null
-						});
+					const result = await response.json();
+					if (result.message === "OTP sent successfully") {
+						alert('A verification code has been sent to your email. Please enter it below.');
+						this.show2FASetup();
 					} else {
-						alert('2FA setup started. Please check your authenticator app.');
-						this.show2FASetup({
-							qrCodeUrl: null,
-							secret: null
-						});
+						alert(`Error: ${result.message || 'Failed to start 2FA setup'}`);
 					}
 				} else if (response.status === 401) {
 					alert('Please login to setup 2FA');
@@ -442,7 +434,7 @@ class ProfilePage implements Page {
 		}
 	}
 
-	private show2FASetup(setupData: any): void {
+	private show2FASetup(): void {
 		const twoFASetup = document.getElementById('twoFASetup');
 		const toggle2FABtn = document.getElementById('toggle2FABtn') as HTMLButtonElement;
 		
@@ -450,21 +442,14 @@ class ProfilePage implements Page {
 			twoFASetup.classList.remove('hidden');
 		}
 
-		// Display QR code
 		const qrCodeContainer = document.getElementById('qrCodeContainer');
 		if (qrCodeContainer) {
-			if (setupData.qrCodeUrl) {
-				qrCodeContainer.innerHTML = `<img src="${setupData.qrCodeUrl}" alt="2FA QR Code" class="mx-auto">`;
-			} else {
-				// README'ye göre backend sadece "OTP sent successfully" mesajı döndürür
-				// QR kod kullanıcı kendi authenticator app'inde manuel olarak ayarlayacak
-				qrCodeContainer.innerHTML = `
-					<div class="text-center">
-						<p class="text-gray-700 mb-2">Please set up 2FA manually in your authenticator app</p>
-						<p class="text-sm text-gray-500">Use your authenticator app to generate a code</p>
-					</div>
-				`;
-			}
+			qrCodeContainer.innerHTML = `
+				<div class="text-center">
+					<p class="text-gray-700 mb-2">Please check your email for the 6-digit verification code.</p>
+					<p class="text-sm text-gray-500">Enter the code below to enable 2FA.</p>
+				</div>
+			`;
 		}
 
 		toggle2FABtn.textContent = 'Cancel Setup';
@@ -498,10 +483,10 @@ class ProfilePage implements Page {
 					'Content-Type': 'application/json'
 				},
 				credentials: 'include',
-				body: JSON.stringify({ OTP: parseInt(verificationCode) })
+				body: JSON.stringify({ OTP: verificationCode })
 			});
 
-			if (response.ok || response.status === 404) {
+			if (response.ok) {
 				alert('2FA enabled successfully!');
 				this.update2FAStatus(true);
 				

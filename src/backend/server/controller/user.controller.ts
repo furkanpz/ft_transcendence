@@ -166,6 +166,22 @@ export async function changePasswordController(request:FastifyRequest, response:
 	return sendSuccess(response, "Password changed successfully");
 }
 
+export async function changeUsernameController(request:FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
+	const user = request.user as jwtUser;
+    const {username} = (request.body as { username: string });
+
+    if (!username || username.length == 0)
+		return sendError(response, 400, "Username must not be empty!");
+    if (user.username == username)
+		return sendError(response, 400, "New username cannot be the same as the old username!");
+
+    const findsomeone = await userServices.userFindInDb(username);
+    if (findsomeone)
+		return sendError(response, 400, "That username isn’t available.");
+    await userServices.setNewUsername(username, user.id);
+	return sendSuccess(response, "Username changed successfully");
+}
+
 export async function blockUserController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
     const user = request.user as jwtUser;
     const isAdmin = user.role === userRole.admin;
