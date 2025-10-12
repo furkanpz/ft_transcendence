@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import jwt from '@fastify/jwt';
 import fastifyStatic from '@fastify/static';
 import path from 'path';
+import fs from 'fs';
 import setRoutes from './routes';
 import fCookie from '@fastify/cookie';
 import fastifyOauth2 from '@fastify/oauth2';
@@ -9,8 +10,17 @@ const { GOOGLE_CONFIGURATION } = fastifyOauth2;
 import cors from '@fastify/cors';
 import fastifyWebsocket from '@fastify/websocket';
 import rateLimit from '@fastify/rate-limit';
+
+
+const certPath = path.join(__dirname, '../../certs');
+const httpsOptions = {
+  key: fs.readFileSync(path.join(certPath, 'key.pem')),
+  cert: fs.readFileSync(path.join(certPath, 'cert.pem'))
+};
+
 const server = Fastify({
-  logger: false,
+  logger: true,
+  https: httpsOptions,
   ajv: {
     customOptions: {
       removeAdditional: false
@@ -21,7 +31,7 @@ export default server;
 
 async function main() {
   await server.register(cors, {
-    origin: ['http://localhost:3000', "http://localhost:5173", 'http://10.11.7.9:5173'],
+    origin: ['https://localhost:3000', "https://localhost:5173", 'https://10.11.7.9:5173', 'http://localhost:3000', "http://localhost:5173", 'http://10.11.7.9:5173'],
     credentials: true,
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   });
@@ -63,7 +73,7 @@ async function main() {
       auth: GOOGLE_CONFIGURATION
     },
     startRedirectPath: '/api/auth/login/google',
-    callbackUri: process.env.GOOGLE_CALLBACK_URI || 'http://localhost:3000/api/auth/login/google/callback'
+    callbackUri: process.env.GOOGLE_CALLBACK_URI || 'https://localhost:3000/api/auth/login/google/callback'
   });
 
   await setRoutes(server);

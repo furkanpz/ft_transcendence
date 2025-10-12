@@ -1,11 +1,12 @@
 {
-  "name": "FT_TRANSCENDENCE",
+  "name": "ft-transcendence",
   "version": "1.0.0",
   "main": "./out/server.js",
   "scripts": {
     "build": "tsc",
     "start": "node out/server/server.js",
     "dev": "ts-node-dev --respawn --transpile-only server/server.ts",
+    "https": "ts-node-dev --respawn --transpile-only server/server.ts",
     "db:init": "ts-node-dev server/db/db.init.ts",
     "clean": "rm -rf out node_modules",
     "kill": "kill -9 $(lsof -ti :3000)"
