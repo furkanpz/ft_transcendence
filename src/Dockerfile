@@ -3,6 +3,9 @@ FROM node:latest
 COPY ./backend /backend
 COPY ./frontend /frontend
 COPY ./exe.sh /exe.sh
+
+RUN mkdir -p /backend/certs
+
 RUN chmod +x /exe.sh
 RUN chmod 777 ./backend ./frontend
 
