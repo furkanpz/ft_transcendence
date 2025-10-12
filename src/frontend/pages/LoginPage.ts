@@ -24,7 +24,7 @@ class LoginPage implements Page {
 				<div id="loginArea" class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
 					<button id="backButton" onclick="GlobalState.setPage(HOME_PAGE)">Back to Home</button>
 					<form method="post"  class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">
-						<input type="text" id="email" placeholder="Nickname" class="bg-white p-1"></input>
+						<input type="text" id="username" placeholder="Username" class="bg-white p-1"></input>
 						<input type="password" id="password" placeholder="Password" class="bg-white p-1"></input>
 						<button type="submit" onclick="LoginPage.login(event)" class="bg-white text-black py-2 px-4 rounded">Login</button>
 					</form>

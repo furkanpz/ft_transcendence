@@ -1,5 +1,6 @@
 import { Page, GlobalState, FETCH_ADDRESS } from "../main"
 import { LOGIN_PAGE } from "./LoginPage"
+import { HOME_PAGE } from "./HomePage"
 
 class ProfilePage implements Page {
 	title: string = "Profile";
@@ -27,6 +28,20 @@ class ProfilePage implements Page {
 								<label class="block text-sm font-medium mb-2">Email:</label>
 								<input type="text" id="currentEmail" class="w-full p-3 border rounded-lg bg-gray-100" readonly>
 							</div>
+						</div>
+					</div>
+
+					<!-- Username Change Section -->
+					<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+						<h2 class="text-xl font-semibold mb-4">Change Username</h2>
+						<div class="space-y-4">
+							<div>
+								<label class="block text-sm font-medium mb-2">New Username:</label>
+								<input type="text" id="newUsername" class="w-full p-3 border rounded-lg" placeholder="Enter new username">
+							</div>
+							<button id="changeUsernameBtn" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition">
+								Update Username
+							</button>
 						</div>
 					</div>
 
@@ -88,7 +103,7 @@ class ProfilePage implements Page {
 
 					<!-- Navigation -->
 					<div class="text-center">
-						<button id="homeBtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition" onclick="loadPage(HOME_PAGE)">
+						<button id="homeBtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">
 							Back to Home
 						</button>
 					</div>
@@ -134,7 +149,6 @@ class ProfilePage implements Page {
 					currentEmailInput.value = userData.email || 'user@example.com';
 				}
 				
-				// Update 2FA status - backend'den gelen veride twoFactorEnabled veya 2fa_enabled olabilir
 				this.update2FAStatus(userData.twoFactorEnabled || userData['2fa_enabled'] || false);
 				this.updateProfileStatus('Profile loaded successfully', 'success');
 				console.log('User data loaded successfully');
@@ -226,6 +240,12 @@ class ProfilePage implements Page {
 			changePasswordBtn.addEventListener('click', this.handlePasswordChange.bind(this));
 		}
 
+		// Username change
+		const changeUsernameBtn = document.getElementById('changeUsernameBtn');
+		if (changeUsernameBtn) {
+			changeUsernameBtn.addEventListener('click', this.handleUsernameChange.bind(this));
+		}
+
 		// 2FA toggle
 		const toggle2FABtn = document.getElementById('toggle2FABtn');
 		if (toggle2FABtn) {
@@ -236,6 +256,14 @@ class ProfilePage implements Page {
 		const verify2FABtn = document.getElementById('verify2FABtn');
 		if (verify2FABtn) {
 			verify2FABtn.addEventListener('click', this.handleVerify2FA.bind(this));
+		}
+
+		// Home button
+		const homeBtn = document.getElementById('homeBtn');
+		if (homeBtn) {
+			homeBtn.addEventListener('click', () => {
+				GlobalState.setPage(HOME_PAGE);
+			});
 		}
 	}
 
@@ -329,6 +357,61 @@ class ProfilePage implements Page {
 			// Re-enable button
 			changePasswordBtn.disabled = false;
 			changePasswordBtn.textContent = originalText;
+		}
+	}
+
+	private async handleUsernameChange(): Promise<void> {
+		const newUsernameInput = document.getElementById('newUsername') as HTMLInputElement;
+		const newUsername = newUsernameInput?.value.trim();
+
+		if (!newUsername) {
+			alert('Please enter a new username.');
+			return;
+		}
+
+		const currentUsernameInput = document.getElementById('currentUsername') as HTMLInputElement;
+		if (newUsername === currentUsernameInput.value) {
+			alert('New username must be different from the current one.');
+			return;
+		}
+
+		const changeUsernameBtn = document.getElementById('changeUsernameBtn') as HTMLButtonElement;
+		const originalText = changeUsernameBtn.textContent;
+		changeUsernameBtn.disabled = true;
+		changeUsernameBtn.textContent = 'Updating...';
+
+		try {
+			const response = await fetch(`${FETCH_ADDRESS}/user/username`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				credentials: 'include',
+				body: JSON.stringify({
+					username: newUsername
+				})
+			});
+
+			if (response.ok) {
+				const result = await response.json();
+				alert(result.message || 'Username updated successfully!');
+				
+				// Update username on the page
+				if (currentUsernameInput) {
+					currentUsernameInput.value = newUsername;
+				}
+				newUsernameInput.value = ''; // Clear the input
+			} else {
+				const error = await response.json();
+				alert(`Error: ${error.message || 'Failed to update username.'}`);
+			}
+		} catch (error) {
+			console.error('Network error updating username:', error);
+			alert('Network error. Please check your connection and try again.');
+		} finally {
+			// Re-enable button
+			changeUsernameBtn.disabled = false;
+			changeUsernameBtn.textContent = originalText;
 		}
 	}
 
