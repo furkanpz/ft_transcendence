@@ -21,7 +21,7 @@ class Game1v1Page implements Page {
     }
 
     async onPreLoad() : Promise<void> {
-        const socket = new WebSocket(`ws://localhost:3000/ws/game/${this.roomId}`);
+        const socket = new WebSocket(`wss://localhost:3000/ws/game/${this.roomId}`);
 
         socket.onopen = () => {
             console.log("WebSocket connection established for 1v1 game");

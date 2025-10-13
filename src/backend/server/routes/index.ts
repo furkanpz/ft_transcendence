@@ -5,7 +5,7 @@ import adminRoutes from './admin.routes';
 import { twoFactorRoutes } from './2fa.routes';
 import chatRoutes from './chat.routes';
 import { chatController } from '../controller/chat.controller';
-import { gameController } from '../controller/game.controller';
+import { gameController, classicQueueController, multiplayerQueueController, tournamentQueueController } from '../controller/game.controller';
 
 export default async function setRoutes(server: FastifyInstance) {
 	await server.register(authRoutes, { prefix: '/api/auth' });
@@ -25,7 +25,40 @@ export default async function setRoutes(server: FastifyInstance) {
 	}, chatController);
 	});
 	await server.register(async function (fastify) {
-	fastify.get('/ws/game/:roomId', {
+		fastify.get('/queue/classic', {
+			websocket: true,
+			config: {
+				rateLimit: {
+					max: 5,
+					timeWindow: '10 seconds'
+				}
+			}
+		}, classicQueueController);
+	});
+	await server.register(async function (fastify) {
+		fastify.get('/queue/multiplayer', {
+		websocket: true,
+		config: {
+			rateLimit: {
+				max: 5,
+				timeWindow: '10 seconds'
+			}
+		}
+	}, multiplayerQueueController);
+	});
+	await server.register(async function (fastify) {
+		fastify.get('/queue/tournament', {
+		websocket: true,
+		config: {
+			rateLimit: {
+				max: 5,
+				timeWindow: '10 seconds'
+			}
+		}
+	}, tournamentQueueController);
+	});
+	await server.register(async function (fastify) {
+	fastify.get('/game', {
 		websocket: true,
 		config: {
 			rateLimit: {

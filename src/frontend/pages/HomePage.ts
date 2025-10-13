@@ -32,11 +32,11 @@ class HomePage implements Page {
 				<!-- main body -->
 				<div class="mx-32 h-[92vh] text-center items-center flex flex-col justify-center gap-6">
 					<div class="flex flex-row w-2xl justify-between gap-6">
-						<button onclick="GlobalState.setPage(MATCHMAKING_PAGE)" 
+						<button onclick="GlobalState.setPage(MATCHMAKING_PAGE('classic'))" 
 							class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
 							1v1
 						</button>
-						<button onclick="GlobalState.setPage(MATCHMAKING_PAGE)" 
+						<button onclick="GlobalState.setPage(MATCHMAKING_PAGE('classic'))" 
 							class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
 							Single Player
 						</button>
@@ -45,12 +45,12 @@ class HomePage implements Page {
 					${
 						window.localStorage.getItem("isAuthenticated") === "1"
 							? `
-								<button  id="1v1Online-btn"
+								<button  id="1v1Online-btn" onClick=""
 									class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
 									1V1 Online
 								</button>
 
-								<button onclick="GlobalState.setPage(HOME_PAGE)" id="tournament-btn"
+								<button onclick="GlobalState.setPage(MATCHMAKING('tournament'))" id="tournament-btn"
 									class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
 									Tournament
 								</button>
@@ -79,7 +79,7 @@ class HomePage implements Page {
 			const PVPBtn = document.getElementById("1v1Online-btn");
 			if (PVPBtn)
 			{
-				PVPBtn.addEventListener("click", () => {GlobalState.setPage(MATCHMAKING_PAGE)})
+				PVPBtn.addEventListener("click", () => {GlobalState.setPage(MATCHMAKING_PAGE('classic'))});
 			}
 			
 			const friendsBtn = document.getElementById("friends-btn");

@@ -21,7 +21,7 @@ class TournamentPage implements Page {
     }
 
     async onPreLoad() : Promise<void> {
-        const socket = new WebSocket(`ws://localhost:3000/ws/tournament/${this.tournamentId}`);
+        const socket = new WebSocket(`wss://localhost:3000/ws/tournament/${this.tournamentId}`);
 
         socket.onopen = () => {
             console.log("WebSocket connection established for Tournament");

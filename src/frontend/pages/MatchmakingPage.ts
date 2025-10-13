@@ -7,30 +7,31 @@ class MatchmakingPage implements Page {
 
 	title: string = "Tournament";
 	data: any;
+	gameType: string;
 
-	constructor() {
-  }
+	constructor(gameType: string) {
+		this.gameType = gameType;
+  	}
 
-  async render(): Promise<void> {
-	const app = document.getElementById("app");
-	if (app) {
-	  app.innerHTML = `
-		<h1>Matchmaking Page</h1>
-		<p>Welcome to the Matchmaking Page!</p>
-	  `;
+	async render(): Promise<void> {
+		const app = document.getElementById("app");
+		if (app) {
+		app.innerHTML = `
+			<h1>Matchmaking Page</h1>
+			<p>Welcome to the Matchmaking Page!</p>
+		`;
+		}
 	}
-  }
 
-  async onPreLoad(): Promise<void> {
-	console.log("Matchmaking Page preloaded");
-  }
+	async onPreLoad(): Promise<void> {
+		console.log("Matchmaking Page preloaded");
+	}
 
-  async onLoad(): Promise<void> {
-	const socket = new WebSocket("ws://localhost:3000/ws/matchmaking");
+	async onLoad(): Promise<void> {
+	const socket = new WebSocket(`wss://localhost:3000/queue/${this.gameType}`);
 
 	socket.onopen = () => {
 	  console.log("WebSocket connection established");
-	  socket.send(JSON.stringify({ action: "joinQueue", queueType: "1v1" }));
 	};
 
 	socket.onmessage = (event) => {
@@ -52,7 +53,6 @@ class MatchmakingPage implements Page {
 				console.error("Unknown queue type:", message.queueType);
 		}
 		alert(`Match found! Opponent: ${message.opponent}`);
-		// Navigate to game page or handle match found logic
 	  }
 	};
 
@@ -72,6 +72,6 @@ class MatchmakingPage implements Page {
 
 }
 
-const MATCHMAKING_PAGE = new MatchmakingPage();
+const MATCHMAKING_PAGE = (gameType: string) => new MatchmakingPage(gameType);
 
 export { MATCHMAKING_PAGE };
