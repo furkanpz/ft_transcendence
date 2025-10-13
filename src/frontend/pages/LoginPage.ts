@@ -38,7 +38,7 @@ class LoginPage implements Page {
 
 	static async login(event: Event) {
 	event.preventDefault();
-	const email = document.getElementById("email") as HTMLInputElement;
+	const email = document.getElementById("username") as HTMLInputElement;
 	const password = document.getElementById("password") as HTMLInputElement;
 	fetch(`${FETCH_ADDRESS}/auth/sign-in`, {
 		method: "POST",
