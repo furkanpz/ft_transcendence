@@ -141,6 +141,15 @@ Bu Aşama STEP 2 sonrasında 15 Dakika içinde doldurulmalıdır yoksa iptal olu
 | :-------- | :------- | :-------------------------------- |
 | `username`      | `string` | **Gerekli**. Min-Max 3-36 pattern:'^[a-zA-Z0-9_]+$' |
 
+#### CHANGE USER IMAGE
+
+```http
+  POST /api/user/image-upload
+```
+| Parametre | Tip     | Açıklama                       |
+| :-------- | :------- | :-------------------------------- |
+| `username`      | `string` | **Gerekli**. MAX 10MB Format:BASE64 - '^data:image\\/(png|jpeg|jpg|webp);base64,[A-Za-z0-9+/=]+$' |
+
 #### SET 2FA
 
 ```http

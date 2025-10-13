@@ -252,3 +252,11 @@ export async function unblockUserController(request: FastifyRequest, response: F
         await userFriendsUtils.unblockUser(targetUserId, blocked_id);
     return sendSuccess(response, "User unblocked successfully");
 }
+
+export async function imageUploadController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
+    const user = request.user as jwtUser;
+    const { image } = request.params as { image: string };
+
+    await userServices.setUserImage(user.id, image);
+    return sendSuccess(response, "Image changed successfully!");
+}

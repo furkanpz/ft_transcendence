@@ -26,6 +26,22 @@ export const twoFSchema = {
 	}
 }};
 
+export const imageDataUriSchema = {
+	type: 'string',
+	pattern: '^data:image\\/(png|jpeg|jpg|webp);base64,[A-Za-z0-9+/=]+$',
+	maxLength: 10000000,
+}
+
+export const imageSchema = {
+		body: {
+			type: 'object',
+			required: ['image'],
+			properties: {
+				image: imageDataUriSchema
+			}
+		}
+	};
+
 
 export const twoFSVerifySchema = {
 	body : {
