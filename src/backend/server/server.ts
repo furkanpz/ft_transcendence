@@ -80,6 +80,8 @@ async function main() {
   await server.listen({ port: 3000, host: '0.0.0.0' });
 }
 
+console.log(process.env.GOOGLE_CLIENT_ID);
+
 main().catch((err) => {
   console.error('Server startup error:', err);
   process.exit(1);
