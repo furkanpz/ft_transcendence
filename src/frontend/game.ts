@@ -132,7 +132,7 @@ function drawMenuBackground(ctx: CanvasRenderingContext2D) {
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 }
 
-export function gameStart(isAI: boolean) {
+export async function gameStart(isAI: boolean) {
 
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     canvas.width = WIDTH;
