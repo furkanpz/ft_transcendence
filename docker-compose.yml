@@ -7,6 +7,9 @@ services:
     volumes:
       - ./src/frontend:/frontend:rw
       - ./src/backend/db:/backend/db:rw
+      - ./src/backend/uploads:/backend/uploads:rw
+      - /frontend/node_modules
+      - /backend/node_modules
     env_file:
       - .env
 

@@ -1,4 +1,3 @@
-// import { initializeDatabase } from '../db/init';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { friendstat, userRole, jwtUser } from '../types/user.types'
 import * as userServices from '../services/user/user.services'

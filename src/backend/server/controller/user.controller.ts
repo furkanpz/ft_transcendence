@@ -262,8 +262,30 @@ export async function unblockUserController(request: FastifyRequest, response: F
 
 export async function imageUploadController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
     const user = request.user as jwtUser;
-    const { image } = request.body as { image: string };
-
-    await userServices.setUserImage(user.id, image);
-    return sendSuccess(response, "Image changed successfully!");
+    
+    try {
+        const data = await request.file();
+        
+        if (!data) {
+            return (sendError(response, 400, "No file uploaded"));
+        }
+        const currentUser = await userServices.userIdFindInDb(user.id);
+        const avatarService = await import('../services/user/avatar.services');
+        const result = await avatarService.uploadAvatar(data, user.id);
+        
+        if (!result.success) {
+            return (sendError(response, 400, result.message || "Failed to upload avatar"));
+        }
+        if (currentUser?.avatar_url) {
+            await avatarService.deleteOldAvatar(currentUser.avatar_url);
+        }
+        await userServices.setUserImage(user.id, result.url!);
+        
+        return sendSuccess(response, "Avatar uploaded successfully!", {
+            avatar_url: result.url
+        });
+    } catch (error: any) {
+        console.error('Avatar upload error:', error);
+        return (sendError(response, 500, "Internal server error during avatar upload"));
+    }
 }

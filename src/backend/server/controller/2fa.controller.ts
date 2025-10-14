@@ -62,7 +62,7 @@ export async function veriyfOTPController(request: FastifyRequest, response: Fas
 			httpOnly: true,
 			path: '/',
 			sameSite: 'strict',
-			// secure: true only https durumu
+			secure: true
 		});
 		userServices.setIsOnline(true, db_user.id);
 		return sendSuccess(response, "Token generated successfully", { access_token: token });

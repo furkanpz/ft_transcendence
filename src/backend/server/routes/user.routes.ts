@@ -55,7 +55,6 @@ export default async function userRoutes(server: FastifyInstance) {
 
 	server.post("/image-upload", {
 		preHandler:authJwtVerify,
-		schema: schemas.imageSchema,
 		handler:imageUploadController
 	});
 	

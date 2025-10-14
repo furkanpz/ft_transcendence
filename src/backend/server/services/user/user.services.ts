@@ -63,7 +63,7 @@ export async function setUserImage(user_id : number, image: string) {
 
 export async function setTemp2FA(user_id: number, otp: string, secret: string) {
 	const db = await getDb();
-	const expiry = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 dakika sonrası
+	const expiry = new Date(Date.now() + 5 * 60 * 1000).toISOString();
   	await db.run(`DELETE FROM ft_twof WHERE user_id = ?`, [user_id]);
 	const stmt = `
     INSERT INTO ft_twof (user_id, twof_secret, twof_code, twof_expiry)

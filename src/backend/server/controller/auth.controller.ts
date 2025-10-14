@@ -39,7 +39,7 @@ export async function loginController(request: FastifyRequest, response: Fastify
 		httpOnly: true,
 		path: '/',
 		sameSite: 'strict',
-		// secure: true only https durumu
+		secure: true
 	});
 	userServices.setIsOnline(true, db_user.id);
 	return (sendSuccess(response, "", {access_token: token}));

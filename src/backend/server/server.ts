@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import jwt from '@fastify/jwt';
 import fastifyStatic from '@fastify/static';
+import fastifyMultipart from '@fastify/multipart';
 import path from 'path';
 import fs from 'fs';
 import setRoutes from './routes';
@@ -44,17 +45,34 @@ async function main() {
     timeWindow: '1 minute'
   });
 
-  await server.register(fastifyStatic, {
-    root: path.join(__dirname, '../../../frontend'),
+  await server.register(fastifyMultipart, {
+    limits: {
+      fileSize: 5 * 1024 * 1024,
+      files: 1 
+    }
+  });
 
-    prefix: '/',
-    decorateReply: false
+  await server.register(fastifyStatic, {
+    root: path.join(__dirname, '../../../uploads'),
+    prefix: '/uploads/',
+    decorateReply: false,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+        res.setHeader('Content-Type', 'image/jpeg');
+      } else if (filePath.endsWith('.png')) {
+        res.setHeader('Content-Type', 'image/png');
+      } else if (filePath.endsWith('.webp')) {
+        res.setHeader('Content-Type', 'image/webp');
+      }
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
+    }
   });
 
   await server.register(jwt, {
     secret: process.env.JWT_SECRET || 'default_secret',
     cookie: {
       cookieName: 'access_token',
+      signed: false
     }
   });
 

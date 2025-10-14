@@ -140,25 +140,45 @@ class ProfilePage implements Page {
 			changePictureBtn.addEventListener("click", () => {
 				const fileInput = document.createElement("input");
 				fileInput.type = "file";
-				fileInput.accept = "image/*"; // sadece resim dosyaları
+				fileInput.accept = "image/jpeg,image/jpg,image/png,image/webp";
 				fileInput.click();
-				fileInput.addEventListener("change", () => {
+				fileInput.addEventListener("change", async () => {
 					const file = fileInput.files?.[0];
 					if (!file) return;
 
-					const reader = new FileReader();
-					reader.onload = async () => {
-						const base64 = reader.result as string;
-						const response = await fetch(`${FETCH_ADDRESS}/user/image-upload`, { method: "POST", credentials: "include", headers:{"Content-Type": "application/json"}, body: JSON.stringify({ image: base64 }) });
-						if (response.ok)
-						{
-							alert("avatar changed succesfully");
+					if (file.size > 5 * 1024 * 1024) {
+						alert("File size must be less than 5MB");
+						return;
+					}
+
+					const formData = new FormData();
+					formData.append("file", file);
+
+					try {
+						const response = await fetch(`${FETCH_ADDRESS}/user/image-upload`, {
+							method: "POST",
+							credentials: "include",
+							body: formData
+						});
+
+						if (response.ok) {
+							const data = await response.json();
+							alert("Avatar changed successfully!");
+							
+							const profilePicture = document.getElementById("profilePicture") as HTMLImageElement;
+							if (profilePicture && data.avatar_url) {
+								profilePicture.src = `https://localhost:3000${data.avatar_url}`;
+							}
+							
+							await this.loadUserData();
+						} else {
+							const error = await response.json();
+							alert("Failed to upload avatar: " + (error.message || "Unknown error"));
 						}
-						else{
-							alert("Something went wrong");
-						}
-					};
-					reader.readAsDataURL(file); // dosyayı base64'e çevir
+					} catch (error) {
+						console.error("Upload error:", error);
+						alert("Network error. Please try again.");
+					}
 				});
 			})
 		}
@@ -190,25 +210,32 @@ class ProfilePage implements Page {
 				const userData = await response.json();
 				const currentUsernameInput = document.getElementById('currentUsername') as HTMLInputElement;
 				const currentEmailInput = document.getElementById('currentEmail') as HTMLInputElement;
+				const profilePicture = document.getElementById('profilePicture') as HTMLImageElement;
+				
 				if (currentUsernameInput) {
 					currentUsernameInput.value = userData.username || 'Current User';
 				}
 				if (currentEmailInput) {
 					currentEmailInput.value = userData.email || 'user@example.com';
 				}
+				
+				if (profilePicture && userData.avatar_url) {
+					if (userData.avatar_url.startsWith('/uploads/')) {
+						profilePicture.src = `https://localhost:3000${userData.avatar_url}`;
+					} else {
+						profilePicture.src = userData.avatar_url;
+					}
+				}
 
 				this.update2FAStatus(userData.twoFactorEnabled || userData['2fa_enabled'] || false);
 				this.updateProfileStatus('Profile loaded successfully', 'success');
 				console.log('User data loaded successfully');
 			} else if (response.status === 401) {
-				// Unauthorized - redirect to login
 				console.warn('User not authenticated');
 				this.updateProfileStatus('Authentication required', 'error');
 				alert('You must be logged in to view your profile. Redirecting to login page...');
-				// Redirect to login page using GlobalState
 				GlobalState.setPage(LOGIN_PAGE);
 			} else {
-				// API error
 				console.error('API error, status:', response.status);
 				this.updateProfileStatus('Error loading profile data', 'error');
 				alert('Error loading profile. Please try again later.');
@@ -230,7 +257,6 @@ class ProfilePage implements Page {
 			currentEmailInput.value = 'guest@localhost.dev';
 		}
 
-		// Mock 2FA as disabled for development
 		this.update2FAStatus(false);
 		this.updateProfileStatus('Using demo data - Login to view real profile', 'info');
 		console.log('Using mock user data for development (not logged in)');
