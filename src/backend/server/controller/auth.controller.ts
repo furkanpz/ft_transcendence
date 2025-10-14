@@ -9,7 +9,7 @@ import { sendSuccess, sendError } from '../helpers/response';
 import { db_User, User, userRole, jwtUser } from '../types/user.types'
 
 import {FastifyReply, FastifyRequest} from 'fastify';
-import server from '../server';
+import server, { MAIN_URL } from '../server';
 import crypto from 'crypto';
 import { OAuth2Namespace } from '@fastify/oauth2';
 
@@ -123,7 +123,7 @@ export async function googleAuthController(request: FastifyRequest, response: Fa
         });
     
         userServices.setIsOnline(true, db_user.id);
-        return response.redirect('/');
+        return response.redirect(MAIN_URL);
 }
 
 
@@ -136,4 +136,9 @@ export async function accountRecoveryController(request: FastifyRequest, respons
 	await setTemp2FA(id, OTP.otp, OTP.secret);
 	await sendRecovery_2(email, OTP.otp)
 	return (sendSuccess(response, "If there is such a user, a verification email has been sent"));
+}
+
+export async function LoginCheck(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
+	const user = request.user as jwtUser;
+	return (sendSuccess(response, "", user));
 }

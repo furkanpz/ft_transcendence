@@ -4,7 +4,8 @@ import {loginController,
 	logoutController,
 	registerController,
 	googleAuthController,
-	accountRecoveryController
+	accountRecoveryController,
+	LoginCheck
 } from '../controller/auth.controller'
 import { authJwtVerify } from '../services/auth/jwt.services'
 
@@ -36,5 +37,10 @@ export default async function AuthRoutes(server:FastifyInstance) {
 		schema: schemas.account_recovery,
 		config: schemas.rateLimiter,
 		handler:accountRecoveryController
+	})
+
+	server.get("/check" , {
+		preHandler: authJwtVerify,
+		handler: LoginCheck
 	})
 }

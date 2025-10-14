@@ -29,9 +29,11 @@ const server = Fastify({
 });
 export default server;
 
+export const MAIN_URL = process.env.MAIN_URL || "https://localhost:5173/";
+
 async function main() {
   await server.register(cors, {
-    origin: ['https://localhost:3000', "https://localhost:5173", 'https://10.11.7.9:5173', 'https://localhost:3000', "https://localhost:5173", 'https://10.11.7.9:5173'],
+    origin: [MAIN_URL, 'https://localhost:3000', "https://localhost:5173", 'https://10.11.7.9:5173', 'https://localhost:3000', "https://localhost:5173", 'https://10.11.7.9:5173'],
     credentials: true,
 	  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   });

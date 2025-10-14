@@ -113,6 +113,13 @@ Bu Aşama STEP 2 sonrasında 15 Dakika içinde doldurulmalıdır yoksa iptal olu
   GET /api/auth/login/google
 ```
 
+
+#### AUTH CHECK
+
+```http
+  GET /api/auth/check
+```
+
 ## USER ENDPOINTS (JWT REQUIRED)
 
 #### PROFILE
