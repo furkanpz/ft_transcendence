@@ -155,7 +155,7 @@ Bu Aşama STEP 2 sonrasında 15 Dakika içinde doldurulmalıdır yoksa iptal olu
 ```
 | Parametre | Tip     | Açıklama                       |
 | :-------- | :------- | :-------------------------------- |
-| `username`      | `string` | **Gerekli**. MAX 10MB Format:BASE64 - '^data:image\\/(png|jpeg|jpg|webp);base64,[A-Za-z0-9+/=]+$' |
+| `image`      | `string` | **Gerekli**. MAX 10MB Format:BASE64 - '^data:image\\/(png|jpeg|jpg|webp);base64,[A-Za-z0-9+/=]+$' |
 
 #### SET 2FA
 

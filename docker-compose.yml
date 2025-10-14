@@ -6,6 +6,7 @@ services:
       - 3000:3000
     volumes:
       - ./src/frontend:/frontend:rw
+      - ./src/backend/db:/backend/db:rw
     env_file:
       - .env
 

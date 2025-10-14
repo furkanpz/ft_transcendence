@@ -128,15 +128,22 @@ export async function friendRequestController(request: FastifyRequest, response:
 
 export async function userProfileController(request: FastifyRequest, response: FastifyReply) {
     const user = request.user as jwtUser;
+    console.log(user);
 
-    const db_User = await userServices.userIdFindInDb(user.id) as db_User;
+    const db_User = await userServices.userIdFindInDb(user.id);
+    
+    if (!db_User) {
+        response.clearCookie("access_token");
+        return sendError(response, 401, "User not found in database. Please login again.");
+    }
+    
     const profileData = {
         id: db_User.id,
         username: db_User.username,
         email: db_User.email,
         avatar_url: db_User.avatar_url,
         created_at: db_User.created_at,
-        role: db_User.user_role,
+        role: db_User.role,
     };
     return sendSuccess(response, "User profile retrieved successfully", profileData);
 }
@@ -255,7 +262,7 @@ export async function unblockUserController(request: FastifyRequest, response: F
 
 export async function imageUploadController(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
     const user = request.user as jwtUser;
-    const { image } = request.params as { image: string };
+    const { image } = request.body as { image: string };
 
     await userServices.setUserImage(user.id, image);
     return sendSuccess(response, "Image changed successfully!");
