@@ -8,8 +8,16 @@ import { PROFILE_PAGE } from "./ProfilePage";
 
 class HomePage implements Page {
 	title: string = "Home";
-	data: any = null;
+	data: any;
 	async render() : Promise<void> {
+		const response =  await fetch(`${FETCH_ADDRESS}/auth/check`, {credentials: "include"});
+		if (response.ok)
+		{
+			const dataWeHave = await response.json();
+			console.log("datawehabe: ", dataWeHave);
+			this.data = dataWeHave.username;
+		}
+		else{ this.data = null;}
 		const app = document.getElementById("app");
 		if (app) {
 			app.innerHTML = `
@@ -21,8 +29,8 @@ class HomePage implements Page {
 					</div>
 					<div class="flex items-center">
 					${
-						window.localStorage.getItem("isAuthenticated") === "1" ? `<button id="authButton" onclick="GlobalState.setPage(PROFILE_PAGE)"
-						class="cursor-pointer text-2xl font-semibold text-white hover:text-amber-400">Profil</button>` : `<button id="authButton" onclick="GlobalState.setPage(LOGIN_PAGE)"
+						this.data ? `<button id="authButton" onclick="GlobalState.setPage(PROFILE_PAGE)"
+						class="cursor-pointer text-2xl font-semibold text-white hover:text-amber-400">${this.data}</button>` : `<button id="authButton" onclick="GlobalState.setPage(LOGIN_PAGE)"
 						class="cursor-pointer text-2xl font-semibold text-white hover:text-amber-400">Login</button>`
 					}
 						
@@ -41,9 +49,9 @@ class HomePage implements Page {
 							Single Player
 						</button>
 					</div>
-
 					${
-						window.localStorage.getItem("isAuthenticated") === "1"
+						
+						this.data != null
 							? `
 								<button  id="1v1Online-btn" onClick=""
 									class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
@@ -101,7 +109,6 @@ class HomePage implements Page {
 			if (logoutBtn) {
 				logoutBtn.addEventListener("click", async () => {
 					await fetch(`${FETCH_ADDRESS}/auth/logout`, {credentials: "include"});
-					window.localStorage.removeItem("isAuthenticated");
 					window.location.reload();
 				});
 			}
@@ -109,10 +116,12 @@ class HomePage implements Page {
 	}
 
 	async onPreLoad(): Promise<void> {
-		console.log("Preparing to load Home page");
+		
+		
 	}
 
 	async onLoad() : Promise<void> {
+		
 		console.log("Home page loaded");
 	}
 
