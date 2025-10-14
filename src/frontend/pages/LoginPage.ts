@@ -28,6 +28,11 @@ class LoginPage implements Page {
 						<input type="password" id="password" placeholder="Password" class="bg-white p-1"></input>
 						<button type="submit" onclick="LoginPage.login(event)" class="bg-white text-black py-2 px-4 rounded">Login</button>
 					</form>
+
+					<button id="googleLoginBtn" onclick="LoginPage.loginWithGoogle()" class="bg-blue border border-blue-1500 rounded-lg p-5 flex items-center gap-3 hover:shadow-lg transition-shadow">
+						<img src="google-logo.png" alt="Google" class="w-9 h-9">
+					</button>
+
 					<div id="twoFactorArea" class="bg-green-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6" style="display: none;">
 						<h2 class="text-white text-xl font-bold mb-4">2FA Verification</h2>
 						<p class="text-white mb-4">Enter the 6-digit code sent to your email:</p>
@@ -46,6 +51,10 @@ class LoginPage implements Page {
 	}
 
 	static currentUsername: string = "";
+
+	static async loginWithGoogle() {
+		window.location.href = `${FETCH_ADDRESS}/auth/login/google`;
+	}
 
 	static async login(event: Event) {
 		event.preventDefault();
