@@ -53,7 +53,7 @@ class LoginPage implements Page {
 	static currentUsername: string = "";
 
 	static async loginWithGoogle() {
-		window.location.href = `${FETCH_ADDRESS}/auth/login/google`;
+		window.location.href = `${FETCH_ADDRESS}/api/auth/account_recovery?verify=&email=`;
 	}
 
 	static async login(event: Event) {

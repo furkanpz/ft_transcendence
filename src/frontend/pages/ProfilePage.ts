@@ -39,7 +39,7 @@ class ProfilePage implements Page {
 								<label class="block text-sm font-medium mb-2">New Username:</label>
 								<input type="text" id="newUsername" class="w-full p-3 border rounded-lg" placeholder="Enter new username">
 							</div>
-							<button id="changeUsernameBtn" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition">
+							<button id="changeUsernameBtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">
 								Update Username
 							</button>
 						</div>
@@ -61,7 +61,7 @@ class ProfilePage implements Page {
 								<label class="block text-sm font-medium mb-2">Confirm New Password:</label>
 								<input type="password" id="confirmPassword" class="w-full p-3 border rounded-lg" placeholder="Confirm new password">
 							</div>
-							<button id="changePasswordBtn" class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition">
+							<button id="changePasswordBtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">
 								Update Password
 							</button>
 						</div>
@@ -76,7 +76,7 @@ class ProfilePage implements Page {
 									<p class="font-medium">2FA Status:</p>
 									<p id="twoFAStatus" class="text-sm text-gray-600">Disabled</p>
 								</div>
-								<button id="toggle2FABtn" class="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition">
+								<button id="toggle2FABtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">
 									Enable 2FA
 								</button>
 							</div>
@@ -94,7 +94,7 @@ class ProfilePage implements Page {
 									<label class="block text-sm font-medium mb-2">Enter verification code:</label>
 									<input type="text" id="verificationCode" class="w-full p-3 border rounded-lg" placeholder="Enter 6-digit code">
 								</div>
-								<button id="verify2FABtn" class="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition">
+								<button id="verify2FABtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition">
 									Verify & Enable 2FA
 								</button>
 							</div>
@@ -119,10 +119,8 @@ class ProfilePage implements Page {
 	async onLoad() : Promise<void> {
 		console.log("Profile page loaded");
 		
-		// Load current user data
 		await this.loadUserData();
 		
-		// Setup event listeners
 		this.setupEventListeners();
 	}
 
@@ -195,14 +193,14 @@ class ProfilePage implements Page {
 		if (twoFAStatus && toggle2FABtn) {
 			if (isEnabled) {
 				twoFAStatus.textContent = 'Enabled';
-				twoFAStatus.className = 'text-sm text-green-600';
+				twoFAStatus.className = 'text-sm text-gray-600';
 				toggle2FABtn.textContent = 'Disable 2FA';
-				toggle2FABtn.className = 'bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition';
+				toggle2FABtn.className = 'bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition';
 			} else {
 				twoFAStatus.textContent = 'Disabled';
-				twoFAStatus.className = 'text-sm text-red-600';
+				twoFAStatus.className = 'text-sm text-gray-600';
 				toggle2FABtn.textContent = 'Enable 2FA';
-				toggle2FABtn.className = 'bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition';
+				toggle2FABtn.className = 'bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition';
 			}
 		}
 	}
@@ -214,22 +212,7 @@ class ProfilePage implements Page {
 			
 			// Reset classes
 			statusElement.className = 'mb-4 p-3 rounded-lg text-sm';
-			
-			// Apply type-specific styling
-			switch (type) {
-				case 'success':
-					statusElement.className += ' bg-green-100 text-green-700 border border-green-200';
-					break;
-				case 'error':
-					statusElement.className += ' bg-red-100 text-red-700 border border-red-200';
-					break;
-				case 'warning':
-					statusElement.className += ' bg-yellow-100 text-yellow-700 border border-yellow-200';
-					break;
-				default:
-					statusElement.className += ' bg-blue-100 text-blue-700 border border-blue-200';
-					break;
-			}
+
 		}
 	}
 
