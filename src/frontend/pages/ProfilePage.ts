@@ -5,13 +5,38 @@ import { HOME_PAGE } from "./HomePage"
 class ProfilePage implements Page {
 	title: string = "Profile";
 	data: any = null;
-	
-	async render() : Promise<void> {
+
+	async render(): Promise<void> {
 		const app = document.getElementById("app");
 		if (app) {
-			app.innerHTML = `
+				app.innerHTML = `
 				<div class="container mx-auto p-6 max-w-4xl">
 					<h1 class="text-3xl font-bold mb-8 text-center">User Profile</h1>
+					
+					<!-- Success Message Container -->
+					<div id="successMessage" class="hidden mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+						<div class="flex items-center">
+							<svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+								<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+							</svg>
+							<span id="successMessageText"></span>
+						</div>
+					</div>
+					
+					<!-- Profile Picture Section -->
+					<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+						<div class="flex justify-center">
+							<div class="relative">
+								<img id="profilePicture" src="Portrait_Placeholder.png" alt="Profile Picture" class="w-32 h-32 rounded-full object-cover border-4 border-gray-200">
+								<button id="changePictureBtn" class="absolute bottom-2 right-2 bg-gray-500 text-white p-2 rounded-full hover:bg-gray-600 transition">
+									<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+									</svg>
+								</button>
+							</div>
+						</div>
+					</div>
 					
 					<!-- Current User Info -->
 					<div class="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -110,23 +135,48 @@ class ProfilePage implements Page {
 				</div>
 			`;
 		}
+		const changePictureBtn = document.getElementById("changePictureBtn");
+		if (changePictureBtn) {
+			changePictureBtn.addEventListener("click", () => {
+				const fileInput = document.createElement("input");
+				fileInput.type = "file";
+				fileInput.accept = "image/*"; // sadece resim dosyaları
+				fileInput.click();
+				fileInput.addEventListener("change", () => {
+					const file = fileInput.files?.[0];
+					if (!file) return;
+
+					const reader = new FileReader();
+					reader.onload = async () => {
+						const base64 = reader.result as string;
+						const response = await fetch(`${FETCH_ADDRESS}/user/image-upload`, { method: "POST", credentials: "include", headers:{"Content-Type": "application/json"}, body: JSON.stringify({ image: base64 }) });
+						if (response.ok)
+						{
+							alert("avatar changed succesfully");
+						}
+						else{
+							alert("Something went wrong");
+						}
+					};
+					reader.readAsDataURL(file); // dosyayı base64'e çevir
+				});
+			})
+		}
 	}
 
-	async onPreLoad() : Promise<void> {
+	async onPreLoad(): Promise<void> {
 		console.log("Preparing to load Profile page");
 	}
 
-	async onLoad() : Promise<void> {
-		console.log("Profile page loaded");
-		
+	async onLoad(): Promise<void> {
 		await this.loadUserData();
-		
+
 		this.setupEventListeners();
 	}
 
 	private async loadUserData(): Promise<void> {
 		this.updateProfileStatus('Loading profile information...', 'info');
-		
+
 		try {
 			const response = await fetch(`${FETCH_ADDRESS}/user/profile`, {
 				method: 'GET',
@@ -135,7 +185,7 @@ class ProfilePage implements Page {
 					'Content-Type': 'application/json'
 				}
 			});
-			
+
 			if (response.ok) {
 				const userData = await response.json();
 				const currentUsernameInput = document.getElementById('currentUsername') as HTMLInputElement;
@@ -146,7 +196,7 @@ class ProfilePage implements Page {
 				if (currentEmailInput) {
 					currentEmailInput.value = userData.email || 'user@example.com';
 				}
-				
+
 				this.update2FAStatus(userData.twoFactorEnabled || userData['2fa_enabled'] || false);
 				this.updateProfileStatus('Profile loaded successfully', 'success');
 				console.log('User data loaded successfully');
@@ -179,7 +229,7 @@ class ProfilePage implements Page {
 		if (currentEmailInput) {
 			currentEmailInput.value = 'guest@localhost.dev';
 		}
-		
+
 		// Mock 2FA as disabled for development
 		this.update2FAStatus(false);
 		this.updateProfileStatus('Using demo data - Login to view real profile', 'info');
@@ -189,7 +239,7 @@ class ProfilePage implements Page {
 	private update2FAStatus(isEnabled: boolean): void {
 		const twoFAStatus = document.getElementById('twoFAStatus');
 		const toggle2FABtn = document.getElementById('toggle2FABtn') as HTMLButtonElement;
-		
+
 		if (twoFAStatus && toggle2FABtn) {
 			if (isEnabled) {
 				twoFAStatus.textContent = 'Enabled';
@@ -209,10 +259,25 @@ class ProfilePage implements Page {
 		const statusElement = document.getElementById('profileStatus');
 		if (statusElement) {
 			statusElement.textContent = message;
-			
+
 			// Reset classes
 			statusElement.className = 'mb-4 p-3 rounded-lg text-sm';
 
+		}
+	}
+
+	private showSuccessMessage(message: string): void {
+		const successMessage = document.getElementById('successMessage');
+		const successMessageText = document.getElementById('successMessageText');
+
+		if (successMessage && successMessageText) {
+			successMessageText.textContent = message;
+			successMessage.classList.remove('hidden');
+
+			// Hide the message after 5 seconds
+			setTimeout(() => {
+				successMessage.classList.add('hidden');
+			}, 5000);
 		}
 	}
 
@@ -283,7 +348,7 @@ class ProfilePage implements Page {
 		const hasUpperCase = /[A-Z]/.test(newPassword);
 		const hasLowerCase = /[a-z]/.test(newPassword);
 		const hasNumbers = /\d/.test(newPassword);
-		
+
 		if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
 			alert('Password must contain at least one uppercase letter, one lowercase letter, and one number');
 			return;
@@ -302,8 +367,8 @@ class ProfilePage implements Page {
 					'Content-Type': 'application/json'
 				},
 				credentials: 'include',
-				body: JSON.stringify({ 
-					password: currentPassword, 
+				body: JSON.stringify({
+					password: currentPassword,
 					new_password: newPassword,
 					new_re_password: confirmPassword
 				})
@@ -312,11 +377,11 @@ class ProfilePage implements Page {
 			if (response.ok) {
 				try {
 					const result = await response.json();
-					alert(result.message || 'Password updated successfully!');
+					this.showSuccessMessage(result.message || 'Password updated successfully!');
 				} catch {
-					alert('Password updated successfully!');
+					this.showSuccessMessage('Password updated successfully!');
 				}
-				
+
 				// Clear all password fields
 				currentPasswordInput.value = '';
 				newPasswordInput.value = '';
@@ -377,8 +442,8 @@ class ProfilePage implements Page {
 
 			if (response.ok) {
 				const result = await response.json();
-				alert(result.message || 'Username updated successfully!');
-				
+				this.showSuccessMessage(result.message || 'Username updated successfully!');
+
 				// Update username on the page
 				if (currentUsernameInput) {
 					currentUsernameInput.value = newUsername;
@@ -503,7 +568,7 @@ class ProfilePage implements Page {
 	private show2FASetup(): void {
 		const twoFASetup = document.getElementById('twoFASetup');
 		const toggle2FABtn = document.getElementById('toggle2FABtn') as HTMLButtonElement;
-		
+
 		if (twoFASetup) {
 			twoFASetup.classList.remove('hidden');
 		}
@@ -555,13 +620,13 @@ class ProfilePage implements Page {
 			if (response.ok) {
 				alert('2FA enabled successfully!');
 				this.update2FAStatus(true);
-				
+
 				// Hide setup section
 				const twoFASetup = document.getElementById('twoFASetup');
 				if (twoFASetup) {
 					twoFASetup.classList.add('hidden');
 				}
-				
+
 				// Clear verification code
 				verificationCodeInput.value = '';
 			} else if (response.status === 401) {
@@ -586,7 +651,7 @@ class ProfilePage implements Page {
 		}
 	}
 
-	async onUnload() : Promise<void> {
+	async onUnload(): Promise<void> {
 		console.log("Profile page unloaded");
 	}
 };
