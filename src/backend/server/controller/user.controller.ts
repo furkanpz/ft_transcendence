@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { db_User, friendstat, userRole, jwtUser } from '../types/user.types';
+import { db_User, friendstat, userRole, jwtUser, User } from '../types/user.types';
 import * as userServices from '../services/user/user.services';
 import * as userFriendsUtils from '../services/user/friends.services';
 import { sendSuccess, sendError } from '../helpers/response';
@@ -177,9 +177,10 @@ export async function changeUsernameController(request:FastifyRequest, response:
 	const user = request.user as jwtUser;
     const {username} = (request.body as { username: string });
 
+    const db_user = await userServices.userIdFindInDb(user.id) as User;
     if (!username || username.length == 0)
 		return sendError(response, 400, "Username must not be empty!");
-    if (user.username == username)
+    if (db_user.username == username)
 		return sendError(response, 400, "New username cannot be the same as the old username!");
 
     const findsomeone = await userServices.userFindInDb(username);
