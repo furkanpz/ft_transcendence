@@ -38,6 +38,15 @@ class ProfilePage implements Page {
 						</div>
 					</div>
 					
+
+					<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+						<h2 class="text-xl font-semibold text-center mb-4">Stats</h2>
+						<div class="flex justify-between mx-40">
+						<div> <span class="font-bold">Win</span> <br/>1</div>
+						<div> <span class="font-bold">Lose</span> <br/>1</div>
+						</div>
+					</div>
+
 					<!-- Current User Info -->
 					<div class="bg-white rounded-lg shadow-md p-6 mb-6">
 						<h2 class="text-xl font-semibold mb-4">Current User Information</h2>
