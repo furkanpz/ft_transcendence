@@ -1,5 +1,6 @@
 import { GlobalState, Page, FETCH_ADDRESS} from "../main"
 import { HOME_PAGE } from "../pages"
+import { BLOCKED_USERS_PAGE } from "./BlockedUsersPage"
 
 class FriendsPage implements Page {
 	title: string = "Friends"
@@ -31,84 +32,163 @@ class FriendsPage implements Page {
 		}
 		let myFriends = this.data?.user_friends || [];
 		const friendsHTML = myFriends.length > 0
-		? myFriends.map((req: any) => `<div class="flex flex-col gap-4">
-            <div
-  class="flex justify-between w-full items-center bg-white p-4 rounded-md shadow-sm border border-gray-200"
->
-  <span class="font-medium">${req.username || "Your Friend"}</span>
-  
-  <div class="flex gap-2">
-    <button
-		data-id="${req.friend_id}"
-		id="removeFriendBtn"
-      class="text-sm text-red-600 border border-red-600 px-3 py-1 rounded hover:bg-red-50 transition"
-    >
-      Arkadaşlıktan Çıkar
-    </button>
-    <button
-	data-id="${req.friend_id}"
-		id="blockUserBtn"
-      class="text-sm text-white bg-red-600 px-3 py-1 rounded hover:bg-red-700 transition"
-    >
-      Kullanıcıyı Engelle
-    </button>
-  </div>
-</div>
-
-        </div>`).join("")
-		: `<p class="text-gray-500">You got no friends</p>`;
-
-		const pendingHtml = pendingRequests.length > 0
-			? pendingRequests.map((req: any) => `
-				<div class="flex justify-between w-sm items-center bg-white p-4 rounded-md shadow-sm border border-gray-200">
-					<span class="font-medium">${req.username || "Unknown User"}</span>
+		? myFriends.map((req: any) => `
+			<div class="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-all duration-300 border border-gray-100">
+				<div class="flex justify-between items-center">
+					<div class="flex items-center gap-3">
+						<div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+							${(req.username || "?").charAt(0).toUpperCase()}
+						</div>
+						<span class="font-semibold text-lg text-gray-800">${req.username || "Your Friend"}</span>
+					</div>
+					
 					<div class="flex gap-2">
-						<button data-username="${req.username}" data-id="${req.friend_id}" id="acceptBtn" class="accept-btn px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition">
-							✔
+						<button
+							data-id="${req.friend_id}"
+							id="removeFriendBtn"
+							class="px-4 py-2 text-sm font-medium text-red-600 border-2 border-red-600 rounded-lg hover:bg-red-50 active:bg-red-100 transition-all duration-200"
+						>
+							Arkadaşlıktan Çıkar
 						</button>
-						<button data-id="${req.friend_id}" data-username="${req.username}" id="rejectBtn" onClick="" class="reject-btn px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition">
-							✖
+						<button
+							data-id="${req.friend_id}"
+							id="blockUserBtn"
+							class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 active:bg-red-800 transition-all duration-200 shadow-md"
+						>
+							Engelle
 						</button>
 					</div>
 				</div>
+			</div>
+		`).join("")
+		: `<div class="text-center py-12 bg-white rounded-lg shadow-md">
+				<div class="text-6xl mb-4">😔</div>
+				<p class="text-gray-500 text-lg">Henüz arkadaşın yok</p>
+			</div>`;
+
+		const pendingHtml = pendingRequests.length > 0
+			? pendingRequests.map((req: any) => `
+				<div class="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-all duration-300 border border-gray-100">
+					<div class="flex justify-between items-center">
+						<div class="flex items-center gap-3">
+							<div class="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+								${(req.username || "?").charAt(0).toUpperCase()}
+							</div>
+							<span class="font-semibold text-lg text-gray-800">${req.username || "Unknown User"}</span>
+						</div>
+						<div class="flex gap-2">
+							<button 
+								data-username="${req.username}" 
+								data-id="${req.friend_id}" 
+								id="acceptBtn" 
+								class="accept-btn w-10 h-10 bg-green-500 text-white rounded-lg hover:bg-green-600 active:bg-green-700 transition-all duration-200 flex items-center justify-center font-bold shadow-md"
+							>
+								✓
+							</button>
+							<button 
+								data-id="${req.friend_id}" 
+								data-username="${req.username}" 
+								id="rejectBtn" 
+								class="reject-btn w-10 h-10 bg-red-500 text-white rounded-lg hover:bg-red-600 active:bg-red-700 transition-all duration-200 flex items-center justify-center font-bold shadow-md"
+							>
+								✕
+							</button>
+						</div>
+					</div>
+				</div>
 			`).join("")
-			: `<p class="text-gray-500">No Pending Requests</p>`;
+			: `<div class="text-center py-12 bg-white rounded-lg shadow-md">
+					<div class="text-6xl mb-4">📭</div>
+					<p class="text-gray-500 text-lg">Bekleyen istek yok</p>
+				</div>`;
 		const app = document.getElementById("app");
 		if (app){
 		
-			app.innerHTML = `<div class="min-h-screen bg-gray-100 p-6">
-      <h1 class="text-3xl font-bold mb-6">Friendship Page</h1>
-			<button class="bg-blue-500 p-2 m-5 text-white" onClick="GlobalState.setPage(HOME_PAGE)" >Go Back To Home</button>
-      <div class="mb-10">
-        <h2 class="text-xl font-semibold mb-2">Send Friendship Request</h2>
-		<input
-            type="text"
-            placeholder="Username"
-			id="inp"
-            class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"/>
-			<button id="sendBtn" class="px-4 cursor-pointer py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition">
-				Send
-			</button>
-      </div>
+			app.innerHTML = `
+			<div class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8">
+				<div class="max-w-5xl mx-auto">
+					<!-- Header Section -->
+					<div class="flex justify-between items-center mb-8">
+						<div>
+							<h1 class="text-4xl font-bold text-gray-800 mb-2">👥 Friends</h1>
+							<p class="text-gray-600">Manage your friends and requests</p>
+						</div>
+						<button 
+							id="backToHomeBtn"
+							class="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 active:scale-95"
+						>
+							← Back to Home
+						</button>
+					</div>
 
-      <div>
-        <h2 class="text-xl font-semibold mb-4">Requests</h2>
-        <div class="flex flex-col gap-4">
-            ${pendingHtml}
-        </div>
-      </div>
+					<!-- Send Friend Request Section -->
+					<div class="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-100">
+						<h2 class="text-2xl font-bold text-gray-800 mb-4">✉️ Send Friend Request</h2>
+						<div class="flex gap-3">
+							<input
+								type="text"
+								placeholder="Enter username..."
+								id="inp"
+								class="flex-1 px-5 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+							/>
+							<button 
+								id="sendBtn" 
+								class="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md transform hover:scale-105 active:scale-95"
+							>
+								Send
+							</button>
+						</div>
+					</div>
 
-	  <div>
-        <h2 class="text-xl font-semibold mb-4 pt-5">Your Friends</h2>
-        ${friendsHTML}
-      </div>
-	  <button onClick="GlobalState.setPage(BLOCKED_USERS_PAGE)" class="bg-blue-500 cursor-pointer p-2 text-white">See Blocked Users</button>
-    </div>`
+					<!-- Pending Requests Section -->
+					<div class="mb-8">
+						<h2 class="text-2xl font-bold text-gray-800 mb-4">⏳ Pending Requests</h2>
+						<div class="flex flex-col gap-4">
+							${pendingHtml}
+						</div>
+					</div>
+
+					<!-- Friends List Section -->
+					<div class="mb-8">
+						<h2 class="text-2xl font-bold text-gray-800 mb-4">💚 Your Friends</h2>
+						<div class="flex flex-col gap-4">
+							${friendsHTML}
+						</div>
+					</div>
+
+					<!-- Blocked Users Button -->
+					<div class="text-center">
+						<button 
+							id="blockedUsersBtn"
+							class="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-lg shadow-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 transform hover:scale-105 active:scale-95"
+						>
+							🚫 See Blocked Users
+						</button>
+					</div>
+				</div>
+			</div>`
 		}
 	const sendButton = document.getElementById("sendBtn");
 	const rejectButton = document.getElementById("rejectBtn");
 	const acceptButton = document.getElementById("acceptBtn");
 	const blockFriendBtn = document.getElementById("blockUserBtn");
+	const backToHomeBtn = document.getElementById("backToHomeBtn");
+	const blockedUsersBtn = document.getElementById("blockedUsersBtn");
+
+	// Back to Home button
+	if (backToHomeBtn) {
+		backToHomeBtn.addEventListener("click", () => {
+			GlobalState.setPage(HOME_PAGE);
+		});
+	}
+
+	// Blocked Users button
+	if (blockedUsersBtn) {
+		blockedUsersBtn.addEventListener("click", () => {
+			GlobalState.setPage(BLOCKED_USERS_PAGE);
+		});
+	}
+
 	if(blockFriendBtn)
 	{
 		blockFriendBtn.addEventListener("click", async () => {
