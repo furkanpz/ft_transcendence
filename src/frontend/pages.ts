@@ -7,10 +7,10 @@ import { PROFILE_PAGE } from "./pages/ProfilePage"
 import { FRIENDS_PAGE, FriendsPage } from "./pages/FriendsPage"
 import { CHAT_PAGE } from "./pages/ChatPage"
 import { MATCHMAKING_PAGE } from "./pages/MatchmakingPage";
+import { FORGOT_PASSWORD_PAGE } from "./pages/ForgotPasswordPage";
 
 const PVP_GAME_PAGE: Page = {
 	title: "1V1 Game",
-	data: null,
 	render: async () => {
 		const app = document.getElementById("app");
 		if (app) {
@@ -43,7 +43,6 @@ const PVP_GAME_PAGE: Page = {
 
 const AI_GAME_PAGE: Page = {
 	title: "AI Game",
-	data: null,
 	render: async () => {
 		const app = document.getElementById("app");
 		if (app) {
@@ -81,7 +80,8 @@ const PAGES: { [key: string]: Page } = {
 	"signup": SIGNUP_PAGE,
 	"ai-game": AI_GAME_PAGE,
 	"1v1-game": PVP_GAME_PAGE,
-	"friends": FRIENDS_PAGE
+	"friends": FRIENDS_PAGE,
+	"forgot-password": FORGOT_PASSWORD_PAGE
 };
 
 export { HOME_PAGE,

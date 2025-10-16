@@ -79,16 +79,13 @@ class GlobalState {
 
 window.onpopstate = function(event) {
 	GlobalState.getcurrentPage().onUnload();
-	const path = window.location.pathname.slice(1).toLowerCase();
-	if (path === "profile") {
-		GlobalState.setPage(PROFILE_PAGE);
-	} else {
-		GlobalState.setPage(HOME_PAGE);
-	}
+	const path = window.location.pathname.toLowerCase();
+	const page = GlobalState.getPage(path);
+	GlobalState.setPage(page);
 };
 
 function init() {
-	const path = window.location.pathname;
+	const path = window.location.pathname.toLowerCase();
 	const initialPage = GlobalState.getPage(path);
 
 	GlobalState.setcurrentPage(initialPage);

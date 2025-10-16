@@ -2,7 +2,7 @@ import { GlobalState, Page, FETCH_ADDRESS } from "../main"
 import { LOGIN_PAGE } from "./LoginPage"
 
 class ForgotPasswordPage implements Page {
-	title: string = "forgot-password";
+	title: string = "recovery";
 	data: any;
 	constructor() {
 		this.data = null;
@@ -22,18 +22,34 @@ class ForgotPasswordPage implements Page {
 		if (verifyCode && email) {
 			ForgotPasswordPage.recoveryEmail = email;
 			ForgotPasswordPage.recoveryCode = verifyCode;
-			
-			setTimeout(() => {
-				const step1Area = document.getElementById("step1Area");
-				const step2Area = document.getElementById("step2Area");
-				const emailDisplay = document.getElementById("emailDisplay");
-				
-				if (step1Area && step2Area && emailDisplay) {
-					step1Area.style.display = "none";
-					step2Area.style.display = "flex";
-					emailDisplay.textContent = `Recovery code sent to: ${email}`;
+
+			// Backend'e doğrulama için GET isteği at (step 2)
+			try {
+				const response = await fetch(`${FETCH_ADDRESS}/auth/account_recovery?verify=${encodeURIComponent(verifyCode)}&email=${encodeURIComponent(email)}`, {
+					method: "GET",
+					credentials: "include"
+				});
+				const data = await response.json();
+				if (data.success === true) {
+					setTimeout(() => {
+						const step1Area = document.getElementById("step1Area");
+						const step2Area = document.getElementById("step2Area");
+						const emailDisplay = document.getElementById("emailDisplay");
+						if (step1Area && step2Area && emailDisplay) {
+							step1Area.style.display = "none";
+							step2Area.style.display = "flex";
+							emailDisplay.textContent = `Recovery code verified for: ${email}`;
+						}
+					}, 100);
+				} else {
+					alert("Invalid or expired recovery link. Please request a new one.");
+					GlobalState.setPage(LOGIN_PAGE);
 				}
-			}, 100);
+			} catch (error) {
+				console.error("Recovery verification error:", error);
+				alert("An error occurred while verifying the recovery link.");
+				GlobalState.setPage(LOGIN_PAGE);
+			}
 		}
 	}
 	public async render(): Promise<void> {
@@ -52,16 +68,15 @@ class ForgotPasswordPage implements Page {
 
 					<div id="step2Area" class="bg-green-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6" style="display: none;">
 						<h2 class="text-white text-2xl font-bold">Reset Password</h2>
-						<p class="text-white">Enter the verification code sent to your email and your new password</p>
+						<p class="text-white">Enter your new password</p>
 						<p id="emailDisplay" class="text-white font-bold"></p>
-						<input type="text" id="verifyCode" placeholder="Verification Code" maxlength="6" class="bg-white p-2 rounded"></input>
 						<input type="password" id="newPassword" placeholder="New Password" class="bg-white p-2 rounded"></input>
 						<input type="password" id="newRePassword" placeholder="Confirm New Password" class="bg-white p-2 rounded"></input>
 						<div class="flex gap-4">
 							<button id="resetPasswordBtn" class="bg-white text-black py-2 px-4 rounded">Reset Password</button>
 							<button id="cancelResetBtn" class="bg-red-500 text-white py-2 px-4 rounded">Cancel</button>
 						</div>
-						<p class="text-white text-sm">* This code will expire in 15 minutes</p>
+						<p class="text-white text-sm">* This link will expire in 15 minutes</p>
 					</div>
 				</div>
 			`;
@@ -132,15 +147,13 @@ class ForgotPasswordPage implements Page {
 
 	static async resetPassword(event: Event) {
 		event.preventDefault();
-		const verifyCodeInput = document.getElementById("verifyCode") as HTMLInputElement;
 		const newPasswordInput = document.getElementById("newPassword") as HTMLInputElement;
 		const newRePasswordInput = document.getElementById("newRePassword") as HTMLInputElement;
 
-		const verifyCode = verifyCodeInput.value;
 		const newPassword = newPasswordInput.value;
 		const newRePassword = newRePasswordInput.value;
 
-		if (!verifyCode || !newPassword || !newRePassword) {
+		if (!newPassword || !newRePassword) {
 			alert("Please fill in all fields!");
 			return;
 		}
@@ -157,7 +170,7 @@ class ForgotPasswordPage implements Page {
 				"Content-Type": "application/json"
 			},
 			body: JSON.stringify({
-				verifycode: verifyCode,
+				verifycode: ForgotPasswordPage.recoveryCode,
 				email: ForgotPasswordPage.recoveryEmail,
 				new_password: newPassword,
 				new_re_password: newRePassword
@@ -171,7 +184,6 @@ class ForgotPasswordPage implements Page {
 					GlobalState.setPage(LOGIN_PAGE);
 				} else {
 					alert("Password reset failed: " + (data.message || "Unknown error"));
-					verifyCodeInput.value = "";
 					newPasswordInput.value = "";
 					newRePasswordInput.value = "";
 				}

@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer'
+import { MAIN_URL } from '../../server'
 
 const smtp = nodemailer.createTransport( {
 	host: "smtp-relay.brevo.com",
@@ -38,7 +39,9 @@ export async function sendRecovery(email: string, otp: string){
 }
 // ENV DOMAIN GEREKLİ!
 export async function sendRecovery_2(email: string, otp: string){
-	const recoveryUrl = `https://localhost:3000/api/auth/account_recovery?verify=${otp}&email=${encodeURIComponent(email)}`;
+	// Send user to FRONTEND page, not backend API; frontend will call backend with these params
+	const base = MAIN_URL.replace(/\/+$/, '');
+	const recoveryUrl = `${base}/forgot-password?verify=${otp}&email=${encodeURIComponent(email)}`;
 
 	await smtp.sendMail({
 		from: '"ft_transcendance" <furkanvibe@gmail.com>',
