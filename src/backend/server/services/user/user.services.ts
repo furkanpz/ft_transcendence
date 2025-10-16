@@ -113,7 +113,10 @@ export async function setNewUsername(new_username: string, user_id: number): Pro
 export async function getUserWithEmail(email: string): Promise<number | undefined> {
 	const db = await getDb();
 	const user = await db.get("SELECT id FROM ft_users WHERE email = ?", email);
-	return (user);
+	if (user.id)
+		return user.id;
+	else
+		return undefined;
 }
 
 export async function setTemp2FAForRecovery(user_id: number, otp: string) {

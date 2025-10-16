@@ -81,7 +81,7 @@ export async function veriyfMailOTPController(request: FastifyRequest, response:
 	if (new_password !== new_re_password)
 		return sendError(response, 400, "Passwords do not match!");
 	const id = await getUserWithEmail(email) as number | undefined;
-	console.log(id);
+	console.log("İD BU : ", id);
 	if (!id)
 		return (sendError(response, 401, "Expired Recovery!"));
 	if (!(await userServices.getLatestValidVerifiedOTPByUser(id, verifycode)))
@@ -101,16 +101,12 @@ export async function mailAccountRecoveryController(request: FastifyRequest, res
 	if (!db_OTP)
 		return (sendError(response, 401, "Incorrect Recovery Link"));
 	const otpstatus = verifyOTP_2(verify, db_OTP.twof_secret);
-	if (otpstatus)
-		{
-			await userServices.setTemp2FAForRecovery(id ,db_OTP.twof_code);
-			sendSuccess(response, "STEPTWOAUTHREQ", {
+	if (otpstatus) {
+		await userServices.setTemp2FAForRecovery(id, db_OTP.twof_code);
+		return sendSuccess(response, "STEPTWOAUTHREQ", {
 			email: email,
 			verifycode: verify
-		}); // TAHMİN ÜZERİNE YAZILDI FRONTENDLE CHECK EDİLMELİ
+		});
 	}
-	else
-		return (sendError(response, 401, "Incorrect Recovery Link"));
-	return (sendError(response, 401, "Incorrect Recovery Link"));
-
+	return sendError(response, 401, "Incorrect Recovery Link");
 }
