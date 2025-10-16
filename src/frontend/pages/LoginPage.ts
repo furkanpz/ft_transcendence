@@ -27,11 +27,14 @@ class LoginPage implements Page {
 						<input type="text" id="username" placeholder="Username" class="bg-white p-1"></input>
 						<input type="password" id="password" placeholder="Password" class="bg-white p-1"></input>
 						<button type="submit" onclick="LoginPage.login(event)" class="bg-white text-black py-2 px-4 rounded">Login</button>
+						
+						<div class="flex flex-row w-full justify-between items-center gap-4">
+							<button id="googleLoginBtn" type="button" onclick="LoginPage.loginWithGoogle()" class="bg-white border border-gray-300 rounded-lg p-3 flex items-center gap-3 hover:shadow-lg transition-shadow">
+								<img src="google-logo.png" alt="Google" class="w-6 h-6">
+							</button>
+							<button id="forgotPasswordBtn" type="button" onclick="LoginPage.goToForgotPassword()" class="underline cursor-pointer text-white hover:text-gray-200">Forgot your password?</button>
+						</div>
 					</form>
-
-					<button id="googleLoginBtn" onclick="LoginPage.loginWithGoogle()" class="bg-blue border border-blue-1500 rounded-lg p-5 flex items-center gap-3 hover:shadow-lg transition-shadow">
-						<img src="google-logo.png" alt="Google" class="w-9 h-9">
-					</button>
 
 					<div id="twoFactorArea" class="bg-green-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6" style="display: none;">
 						<h2 class="text-white text-xl font-bold mb-4">2FA Verification</h2>
@@ -54,6 +57,11 @@ class LoginPage implements Page {
 
 	static async loginWithGoogle() {
 		window.location.href = `${FETCH_ADDRESS}/auth/login/google`;
+	}
+
+	static async goToForgotPassword() {
+		const { FORGOT_PASSWORD_PAGE } = await import("./ForgotPasswordPage");
+		GlobalState.setPage(FORGOT_PASSWORD_PAGE);
 	}
 
 	static async login(event: Event) {

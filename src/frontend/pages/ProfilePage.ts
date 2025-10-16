@@ -49,9 +49,7 @@ class ProfilePage implements Page {
 
 					<!-- Current User Info -->
 					<div class="bg-white rounded-lg shadow-md p-6 mb-6">
-						<h2 class="text-xl font-semibold mb-4">Current User Information</h2>
-						<div id="profileStatus" class="mb-4 p-3 rounded-lg bg-gray-100 text-sm text-gray-600">
-							Loading profile information...
+						<div id="profileStatus>
 						</div>
 						<div class="space-y-4">
 							<div>
@@ -204,8 +202,6 @@ class ProfilePage implements Page {
 	}
 
 	private async loadUserData(): Promise<void> {
-		this.updateProfileStatus('Loading profile information...', 'info');
-
 		try {
 			const response = await fetch(`${FETCH_ADDRESS}/user/profile`, {
 				method: 'GET',
@@ -237,7 +233,6 @@ class ProfilePage implements Page {
 				}
 
 				this.update2FAStatus(userData.twoFactorEnabled || userData['2fa_enabled'] || false);
-				this.updateProfileStatus('Profile loaded successfully', 'success');
 				console.log('User data loaded successfully');
 			} else if (response.status === 401) {
 				console.warn('User not authenticated');
