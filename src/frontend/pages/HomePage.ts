@@ -25,13 +25,18 @@ class HomePage implements Page {
 				<!-- Logo and Title -->
 				<nav id="nav" class="px-32 py-2 flex flex-row w-full bg-blue-500 rounded-b-xl justify-between">
 					<div>
-						<button onclick="GlobalState.setPage(HOME_PAGE)" class="font-bold cursor-pointer text-6xl">PONG</button>
+						<button onclick="GlobalState.setPage(HOME_PAGE)" class="font-bold cursor-pointer text-6xl" data-i18n="PONG">PONG</button>
 					</div>
 					<div class="flex items-center">
+						<!-- Language selector -->
+						<div class="mr-4 text-white">
+							<button id="lang-en" class="mr-2">EN</button>
+							<button id="lang-tr">TR</button>
+						</div>
 					${
-						this.data ? `<button id="authButton" onclick="GlobalState.setPage(PROFILE_PAGE)"
-						class="cursor-pointer text-2xl font-semibold text-white hover:text-amber-400">${this.data}</button>` : `<button id="authButton" onclick="GlobalState.setPage(LOGIN_PAGE)"
-						class="cursor-pointer text-2xl font-semibold text-white hover:text-amber-400">Login</button>`
+						this.data ? `<button id=\"authButton\" onclick=\"GlobalState.setPage(PROFILE_PAGE)\"
+						class=\"cursor-pointer text-2xl font-semibold text-white hover:text-amber-400\">${this.data}</button>` : `<button id=\"authButton\" onclick=\"GlobalState.setPage(LOGIN_PAGE)\"
+						class=\"cursor-pointer text-2xl font-semibold text-white hover:text-amber-400\" data-i18n=\"login\">Login</button>`
 					}
 						
 					</div>
@@ -41,11 +46,11 @@ class HomePage implements Page {
 				<div class="mx-32 h-[92vh] text-center items-center flex flex-col justify-center gap-6">
 					<div class="flex flex-row w-2xl justify-between gap-6">
 						<button onclick="GlobalState.setPage(MATCHMAKING_PAGE('classic'))" 
-							class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
+							class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out" data-i18n="one_v_one">
 							1v1
 						</button>
 						<button onclick="GlobalState.setPage(MATCHMAKING_PAGE('classic'))" 
-							class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
+							class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out" data-i18n="single_player">
 							Single Player
 						</button>
 					</div>
@@ -55,27 +60,27 @@ class HomePage implements Page {
 							? `
 								<button  id="1v1Online-btn" onClick=""
 									class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
-									1V1 Online
+									<span data-i18n="one_v_one_online">1V1 Online</span>
 								</button>
 
 								<button onclick="GlobalState.setPage(MATCHMAKING('tournament'))" id="tournament-btn"
 									class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
-									Tournament
+									<span data-i18n="tournament">Tournament</span>
 								</button>
 								
 								<button id="friends-btn"
 									class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
-									Friends
+									<span data-i18n="friends">Friends</span>
 								</button>
 
 								<button id="social-btn"
                 					class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-orange-700 transition duration-300 ease-in-out">
-                					Social
+									<span data-i18n="social">Social</span>
             					</button>
 
 								<button id="logout"
 									class="bg-red-500 text-white px-4 cursor-pointer py-2 rounded">
-									Logout
+									<span data-i18n="logout">Logout</span>
 								</button>
 							  `
 							: ""

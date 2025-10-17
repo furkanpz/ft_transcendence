@@ -57,26 +57,30 @@ class ForgotPasswordPage implements Page {
 		if (app) {
 			app.innerHTML = `
 				<div id="forgotPasswordArea" class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6">
-					<button id="backButton">Back to Login</button>
+					<div class="w-full flex justify-end mb-4">
+						<button id="lang-en" class="mr-2">EN</button>
+						<button id="lang-tr">TR</button>
+					</div>
+					<button id="backButton" data-i18n="back_to_home">Back to Login</button>
 					
 					<div id="step1Area" class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">
-						<h2 class="text-white text-2xl font-bold">Forgot Password</h2>
-						<p class="text-white">Enter your email to receive a recovery link</p>
-						<input type="email" id="recoveryEmail" placeholder="Email" class="bg-white p-2 rounded"></input>
-						<button id="sendRecoveryBtn" class="bg-white text-black py-2 px-4 rounded">Send Recovery Link</button>
+						<h2 class="text-white text-2xl font-bold" data-i18n="forgot_password">Forgot Password</h2>
+						<p class="text-white" data-i18n="enter_username">Enter your email to receive a recovery link</p>
+						<input type="email" id="recoveryEmail" placeholder="Email" class="bg-white p-2 rounded" data-i18n-placeholder="email"></input>
+						<button id="sendRecoveryBtn" class="bg-white text-black py-2 px-4 rounded" data-i18n="send">Send Recovery Link</button>
 					</div>
 
 					<div id="step2Area" class="bg-green-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6" style="display: none;">
-						<h2 class="text-white text-2xl font-bold">Reset Password</h2>
-						<p class="text-white">Enter your new password</p>
+						<h2 class="text-white text-2xl font-bold" data-i18n="reset_password">Reset Password</h2>
+						<p class="text-white" data-i18n="reset_password">Enter your new password</p>
 						<p id="emailDisplay" class="text-white font-bold"></p>
-						<input type="password" id="newPassword" placeholder="New Password" class="bg-white p-2 rounded"></input>
-						<input type="password" id="newRePassword" placeholder="Confirm New Password" class="bg-white p-2 rounded"></input>
+						<input type="password" id="newPassword" placeholder="New Password" class="bg-white p-2 rounded" data-i18n-placeholder="password"></input>
+						<input type="password" id="newRePassword" placeholder="Confirm New Password" class="bg-white p-2 rounded" data-i18n-placeholder="password"></input>
 						<div class="flex gap-4">
-							<button id="resetPasswordBtn" class="bg-white text-black py-2 px-4 rounded">Reset Password</button>
-							<button id="cancelResetBtn" class="bg-red-500 text-white py-2 px-4 rounded">Cancel</button>
+							<button id="resetPasswordBtn" class="bg-white text-black py-2 px-4 rounded" data-i18n="reset_password">Reset Password</button>
+							<button id="cancelResetBtn" class="bg-red-500 text-white py-2 px-4 rounded" data-i18n="cancel">Cancel</button>
 						</div>
-						<p class="text-white text-sm">* This link will expire in 15 minutes</p>
+						<p class="text-white text-sm" data-i18n="please_wait">* This link will expire in 15 minutes</p>
 					</div>
 				</div>
 			`;

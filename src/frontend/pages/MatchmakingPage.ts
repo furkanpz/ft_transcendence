@@ -20,6 +20,10 @@ class MatchmakingPage implements Page {
 		app.innerHTML = `
 			<div class="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4">
 				<div class="text-center">
+					<div class="w-full flex justify-end mb-4">
+						<button id="lang-en" class="mr-2">EN</button>
+						<button id="lang-tr">TR</button>
+					</div>
 					<!-- Animated Loading Circle -->
 					<div class="relative w-32 h-32 mx-auto mb-8">
 						<div class="absolute inset-0 border-8 border-white/20 rounded-full"></div>
@@ -27,13 +31,13 @@ class MatchmakingPage implements Page {
 					</div>
 
 					<!-- Title -->
-					<h1 class="text-5xl font-bold text-white mb-4">
+					<h1 class="text-5xl font-bold text-white mb-4" data-i18n="waiting">
 						Waiting
 					</h1>
 
 					<!-- Status Text -->
-					<p class="text-2xl text-white/90 mb-2">Searching for players...</p>
-					<p class="text-lg text-white/70 mb-8">Please wait while we find you a match</p>
+					<p class="text-2xl text-white/90 mb-2" data-i18n="searching_players">Searching for players...</p>
+					<p class="text-lg text-white/70 mb-8" data-i18n="please_wait">Please wait while we find you a match</p>
 
 					<!-- Animated Dots -->
 					<div class="flex justify-center gap-2 mb-12">
@@ -46,6 +50,7 @@ class MatchmakingPage implements Page {
 					<button 
 						id="cancelMatchmaking" 
 						class="px-8 py-3 cursor-pointer bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-lg transform transition-all duration-200 hover:scale-105 active:scale-95"
+						data-i18n="cancel"
 					>
 						Cancel
 					</button>

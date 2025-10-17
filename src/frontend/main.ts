@@ -3,6 +3,7 @@ import { BLOCKED_USERS_PAGE, BlockedUsersPage } from "./pages/BlockedUsersPage";
 import { CHAT_PAGE, ChatPage } from "./pages/ChatPage";
 import { MATCHMAKING_PAGE } from "./pages/MatchmakingPage";
 import { ProfilePage } from "./pages/ProfilePage";
+import * as i18n from "./i18n";
 
 // websocket için de kullanıyorum o yüzden sadece adres ve portu yazdım
 const FETCH_ADDRESS = "https://localhost:3000/api"
@@ -59,6 +60,8 @@ class GlobalState {
 		const path = GlobalState.getPagePath(page);
 		window.history.pushState({ pageKey: path }, page.title, path);
 		await page.render();
+		// translate newly rendered DOM according to current language
+		i18n.translateDOM();
 		await page.onLoad();
 	}
 
@@ -92,6 +95,8 @@ function init() {
 	document.title = initialPage.title;
 	initialPage.onPreLoad();
 	initialPage.render();
+	// translate initial render
+	i18n.translateDOM();
 	initialPage.onLoad();
 
 	window.history.replaceState({ pageKey: path }, initialPage.title, path);
@@ -118,4 +123,5 @@ export { Page, GlobalState, FETCH_ADDRESS, WS_ADDRESS };
 (window as any).FriendsPage = FriendsPage;
 (window as any).ChatPage = ChatPage;
 (window as any).ProfiPage = ProfilePage;
-(window as any).BlockedUsersPage = BlockedUsersPage
+(window as any).BlockedUsersPage = BlockedUsersPage;
+(window as any).i18n = i18n;

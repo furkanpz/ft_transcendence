@@ -21,32 +21,36 @@ class LoginPage implements Page {
 		const app = document.getElementById("app");
 		if (app) {
 			app.innerHTML = `
-				<div id="loginArea" class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
-					<button id="backButton" onclick="GlobalState.setPage(HOME_PAGE)">Back to Home</button>
+					<div id="loginArea" class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
+						<div class="w-full flex justify-end mb-4">
+							<button id="lang-en" class="mr-2">EN</button>
+							<button id="lang-tr">TR</button>
+						</div>
+						<button id="backButton" onclick="GlobalState.setPage(HOME_PAGE)" data-i18n="back_to_home">Back to Home</button>
 					<form method="post" id="loginForm" class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">
-						<input type="text" id="username" placeholder="Username" class="bg-white p-1"></input>
-						<input type="password" id="password" placeholder="Password" class="bg-white p-1"></input>
-						<button type="submit" onclick="LoginPage.login(event)" class="bg-white text-black py-2 px-4 rounded">Login</button>
+						<input type="text" id="username" placeholder="Username" class="bg-white p-1" data-i18n-placeholder="username"></input>
+						<input type="password" id="password" placeholder="Password" class="bg-white p-1" data-i18n-placeholder="password"></input>
+						<button type="submit" onclick="LoginPage.login(event)" class="bg-white text-black py-2 px-4 rounded" data-i18n="login">Login</button>
 						
 						<div class="flex flex-row w-full justify-between items-center gap-4">
 							<button id="googleLoginBtn" type="button" onclick="LoginPage.loginWithGoogle()" class="bg-white border border-gray-300 rounded-lg p-3 flex items-center gap-3 hover:shadow-lg transition-shadow">
 								<img src="google-logo.png" alt="Google" class="w-6 h-6">
 							</button>
-							<button id="forgotPasswordBtn" type="button" onclick="LoginPage.goToForgotPassword()" class="underline cursor-pointer text-white hover:text-gray-200">Forgot your password?</button>
+							<button id="forgotPasswordBtn" type="button" onclick="LoginPage.goToForgotPassword()" class="underline cursor-pointer text-white hover:text-gray-200" data-i18n="forgot_password">Forgot your password?</button>
 						</div>
 					</form>
 
 					<div id="twoFactorArea" class="bg-green-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6" style="display: none;">
-						<h2 class="text-white text-xl font-bold mb-4">2FA Verification</h2>
-						<p class="text-white mb-4">Enter the 6-digit code sent to your email:</p>
-						<input type="text" id="otpCode" placeholder="6-digit code" maxlength="6" class="bg-white p-2 rounded text-center text-xl tracking-widest mb-4"></input>
+						<h2 class="text-white text-xl font-bold mb-4" data-i18n="two_fa_verification">2FA Verification</h2>
+						<p class="text-white mb-4" data-i18n="enter_6_digit_code">Enter the 6-digit code sent to your email:</p>
+						<input type="text" id="otpCode" placeholder="6-digit code" data-i18n-placeholder="six_digit_code_placeholder" maxlength="6" class="bg-white p-2 rounded text-center text-xl tracking-widest mb-4"></input>
 						<div class="flex gap-4">
-							<button onclick="LoginPage.verify2FA(event)" class="bg-white text-black py-2 px-4 rounded">Verify</button>
-							<button onclick="LoginPage.cancel2FA(event)" class="bg-red-500 text-white py-2 px-4 rounded">Cancel</button>
+							<button onclick="LoginPage.verify2FA(event)" class="bg-white text-black py-2 px-4 rounded" data-i18n="verify">Verify</button>
+							<button onclick="LoginPage.cancel2FA(event)" class="bg-red-500 text-white py-2 px-4 rounded" data-i18n="cancel">Cancel</button>
 						</div>
 					</div>
 					<div class="flex flex-row w-2xl  justify-between items-center gap-4">
-						<button id="toggleSignUp" class="underline cursor-pointer" onclick="GlobalState.setPage(SIGNUP_PAGE)">Don't have an account? Sign Up</button>
+						<button id="toggleSignUp" class="underline cursor-pointer" onclick="GlobalState.setPage(SIGNUP_PAGE)" data-i18n="sign_up_prompt">Don't have an account? Sign Up</button>
 					</div>
 				</div>
 			`;

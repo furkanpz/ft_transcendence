@@ -13,9 +13,13 @@ class Game2v2Page implements Page {
         const app = document.getElementById("app");
         if (app) {
             app.innerHTML = `
+                <div class="w-full flex justify-end mb-4">
+                    <button id="lang-en" class="mr-2">EN</button>
+                    <button id="lang-tr">TR</button>
+                </div>
                 <h1>2v2 Game</h1>
                 <strong id="roomIdDisplay">Room ID: ${this.roomId}</strong>
-                <p>Welcome to the 2v2 Game!</p>
+                <p data-i18n="please_wait">Welcome to the 2v2 Game!</p>
             `;
         }
     }

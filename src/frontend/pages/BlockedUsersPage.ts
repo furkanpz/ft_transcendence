@@ -18,19 +18,26 @@ class BlockedUsersPage implements Page {
 						class="unblock-btn px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
                         data-id="${req.user_id}"
                         id="unblockBtn"
-						data-username="${req.username}">
+						data-username="${req.username}" data-i18n="unblock">
 						Unblock
 					</button>
 				</div>
 			`
                     )
                     .join("")
-                : `<p class="text-gray-500">Hiç blokladığın kullanıcı yok.</p>`;
+                : `<p class="text-gray-500" data-i18n="no_blocked_users">Hiç blokladığın kullanıcı yok.</p>`;
         const app = document.getElementById("app");
         if (app) {
             app.innerHTML = `
 			<div class="min-h-screen bg-gray-100 p-6">
-				<h1 class="text-3xl font-bold mb-6">Bloklanan Kullanıcılar</h1>
+                <div class="w-full flex justify-between items-center mb-4">
+                    <button onclick="GlobalState.setPage(HOME_PAGE)" class="text-gray-700 hover:text-gray-900 transition" data-i18n="back_to_home">← Back to Home</button>
+                    <div>
+                        <button id="lang-en" class="mr-2">EN</button>
+                        <button id="lang-tr">TR</button>
+                    </div>
+                </div>
+                <h1 class="text-3xl font-bold mb-6" data-i18n="blocked_users">Bloklanan Kullanıcılar</h1>
 				<div id="blockedList">${blockedUsersHTML}</div>
 			</div>`
         }

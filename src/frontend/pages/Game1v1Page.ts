@@ -13,9 +13,13 @@ class Game1v1Page implements Page {
         const app = document.getElementById("app");
         if (app) {
             app.innerHTML = `
-                <h1>1v1 Game</h1>
+                <div class="w-full flex justify-end mb-4">
+                    <button id="lang-en" class="mr-2">EN</button>
+                    <button id="lang-tr">TR</button>
+                </div>
+                <h1 data-i18n="one_v_one">1v1 Game</h1>
                 <strong id="roomIdDisplay">Room ID: ${this.roomId}</strong>
-                <p>Welcome to the 1v1 Game!</p>
+                <p data-i18n="please_wait">Welcome to the 1v1 Game!</p>
             `;
         }
     }

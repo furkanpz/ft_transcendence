@@ -13,9 +13,13 @@ class TournamentPage implements Page {
         const app = document.getElementById("app");
         if (app) {
             app.innerHTML = `
+                <div class="w-full flex justify-end mb-4">
+                    <button id="lang-en" class="mr-2">EN</button>
+                    <button id="lang-tr">TR</button>
+                </div>
                 <h1>Tournament</h1>
                 <strong id="tournamentIdDisplay">Tournament ID: ${this.tournamentId}</strong>
-                <p>Welcome to the Tournament!</p>
+                <p data-i18n="please_wait">Welcome to the Tournament!</p>
             `;
         }
     }

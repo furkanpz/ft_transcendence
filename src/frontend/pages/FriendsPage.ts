@@ -103,31 +103,36 @@ class FriendsPage implements Page {
 				</div>`;
 		const app = document.getElementById("app");
 		if (app){
-		
+
 			app.innerHTML = `
 			<div class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8">
 				<div class="max-w-5xl mx-auto">
 					<!-- Header Section -->
 					<div class="flex justify-between items-center mb-8">
 						<div>
-							<h1 class="text-4xl font-bold text-gray-800 mb-2">👥 Friends</h1>
-							<p class="text-gray-600">Manage your friends and requests</p>
+							<h1 class="text-4xl font-bold text-gray-800 mb-2">🥼 <span data-i18n="friends">Friends</span></h1>
+							<p class="text-gray-600" data-i18n="friends_manage_help">Manage your friends and requests</p>
 						</div>
-						<button 
+						<div class="flex items-center">
+							<button id="lang-en" class="mr-2">EN</button>
+							<button id="lang-tr">TR</button>
+							<button 
 							id="backToHomeBtn"
 							class="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 active:scale-95"
+							data-i18n="back_to_home"
 						>
 							← Back to Home
 						</button>
+						</div>
 					</div>
 
 					<!-- Send Friend Request Section -->
 					<div class="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-100">
-						<h2 class="text-2xl font-bold text-gray-800 mb-4">✉️ Send Friend Request</h2>
+						<h2 class="text-2xl font-bold text-gray-800 mb-4" data-i18n="send_friend_request">✉️ Send Friend Request</h2>
 						<div class="flex gap-3">
 							<input
 								type="text"
-								placeholder="Enter username..."
+								placeholder="Enter username..." data-i18n-placeholder="enter_username"
 								id="inp"
 								class="flex-1 px-5 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
 							/>
@@ -135,14 +140,14 @@ class FriendsPage implements Page {
 								id="sendBtn" 
 								class="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md transform hover:scale-105 active:scale-95"
 							>
-								Send
+								<span data-i18n="send">Send</span>
 							</button>
 						</div>
 					</div>
 
 					<!-- Pending Requests Section -->
 					<div class="mb-8">
-						<h2 class="text-2xl font-bold text-gray-800 mb-4">⏳ Pending Requests</h2>
+						<h2 class="text-2xl font-bold text-gray-800 mb-4">⏳ <span data-i18n="pending_requests">Pending Requests</span></h2>
 						<div class="flex flex-col gap-4">
 							${pendingHtml}
 						</div>
@@ -150,7 +155,7 @@ class FriendsPage implements Page {
 
 					<!-- Friends List Section -->
 					<div class="mb-8">
-						<h2 class="text-2xl font-bold text-gray-800 mb-4">💚 Your Friends</h2>
+						<h2 class="text-2xl font-bold text-gray-800 mb-4">💚 <span data-i18n="your_friends">Your Friends</span></h2>
 						<div class="flex flex-col gap-4">
 							${friendsHTML}
 						</div>
@@ -162,7 +167,7 @@ class FriendsPage implements Page {
 							id="blockedUsersBtn"
 							class="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-lg shadow-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 transform hover:scale-105 active:scale-95"
 						>
-							🚫 See Blocked Users
+							🚫 <span data-i18n="see_blocked_users">See Blocked Users</span>
 						</button>
 					</div>
 				</div>

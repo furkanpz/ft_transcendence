@@ -9,17 +9,21 @@ class SignUpPage implements Page {
 		const app = document.getElementById("app");
 		if (app) {
 			app.innerHTML = `
-				<div id="signUpArea" class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
-					<button id="backButton" onclick="GlobalState.setPage(HOME_PAGE)">Back to Home</button>
+					<div id="signUpArea" class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
+						<div class="w-full flex justify-end mb-4">
+							<button id="lang-en" class="mr-2">EN</button>
+							<button id="lang-tr">TR</button>
+						</div>
+						<button id="backButton" onclick="GlobalState.setPage(HOME_PAGE)" data-i18n="back_to_home">Back to Home</button>
 					<form method="post" class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">
-						<input type="text" id="username" placeholder="Username" value="erkoc" class="bg-white p-1"></input>
-						<input type="text" id="email" placeholder="Email"       value="asda@gmail.com"   class="bg-white p-1"></input>
-						<input type="password" id="password"                    value="asdasd"  placeholder="Password" class="bg-white p-1"></input>
-						<input type="password" id="confirmPassword"             value="asdasd"     placeholder="Confirm Password" class="bg-white p-1"></input>
-						<button type="submit" onclick="SignUpPage.signUp(event)" class="bg-white text-black py-2 px-4 rounded">Sign-Up</button>
+						<input type="text" id="username" placeholder="Username" value="erkoc" class="bg-white p-1" data-i18n-placeholder="username"></input>
+						<input type="text" id="email" placeholder="Email"       value="asda@gmail.com"   class="bg-white p-1" data-i18n-placeholder="email"></input>
+						<input type="password" id="password"                    value="asdasd"  placeholder="Password" class="bg-white p-1" data-i18n-placeholder="password"></input>
+						<input type="password" id="confirmPassword"             value="asdasd"     placeholder="Confirm Password" class="bg-white p-1" data-i18n-placeholder="confirm_new_password"></input>
+						<button type="submit" onclick="SignUpPage.signUp(event)" class="bg-white text-black py-2 px-4 rounded" data-i18n="sign_up">Sign-Up</button>
 					</form>
 					<div class="flex flex-row w-2xl  justify-between items-center gap-4">
-						<button id="toggleSignUp" class="underline cursor-pointer" onclick="GlobalState.setPage(LOGIN_PAGE)">Already have an account? Sign In</button>
+						<button id="toggleSignUp" class="underline cursor-pointer" onclick="GlobalState.setPage(LOGIN_PAGE)" data-i18n="already_have_account_sign_in">Already have an account? Sign In</button>
 					</div>
 				</div>
 			`;

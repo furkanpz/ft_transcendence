@@ -1,4 +1,5 @@
 import { GlobalState, Page, FETCH_ADDRESS, WS_ADDRESS } from "../main"
+import * as i18n from "../i18n";
 import { HOME_PAGE } from "./HomePage"
 
 class ChatPage implements Page {
@@ -19,11 +20,17 @@ class ChatPage implements Page {
                 <div class="min-h-screen bg-gray-50">
                     <nav class="bg-white border-b border-gray-200 px-6 py-4">
                         <div class="flex justify-between items-center">
-                            <button onclick="GlobalState.setPage(HOME_PAGE)" class="text-2xl font-bold text-blue-600 hover:text-blue-700 transition duration-200">
-                                💬 Live Chat
-                            </button>
+                            <div class="flex items-center gap-4">
+                                <button onclick="GlobalState.setPage(HOME_PAGE)" class="text-2xl font-bold text-blue-600 hover:text-blue-700 transition duration-200">
+                                    💬 <span data-i18n="chat">Live Chat</span>
+                                </button>
+                                <div class="ml-4">
+                                    <button id="lang-en" class="mr-2">EN</button>
+                                    <button id="lang-tr">TR</button>
+                                </div>
+                            </div>
                             <button onclick="GlobalState.setPage(HOME_PAGE)" class="text-gray-600 hover:text-gray-800 transition duration-200">
-                                ← Ana Sayfa
+                                ← <span data-i18n="back_to_home">Ana Sayfa</span>
                             </button>
                         </div>
                     </nav>
@@ -33,7 +40,7 @@ class ChatPage implements Page {
                         <div class="w-80 bg-white border-r border-gray-200 flex flex-col">
                             <div class="p-4 border-b border-gray-200">
                                 <div class="relative">
-                                    <input type="text" id="userSearchInput" placeholder="Kullanıcı Ara" 
+                                    <input type="text" id="userSearchInput" placeholder="Kullanıcı Ara" data-i18n-placeholder="search_user"
                                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200" 
                                            oninput="ChatPage.searchUsers()"
                                            onkeyup="ChatPage.searchUsers()"
@@ -45,8 +52,8 @@ class ChatPage implements Page {
                             <div class="flex-1 overflow-y-auto">
                                 <div id="chatsList" class="py-2">
                                     <div class="text-center text-gray-500 py-8">
-                                        <p>Henüz sohbet yok</p>
-                                        <p class="text-sm">Yukarıdaki arama ile kullanıcı bulun</p>
+                                        <p data-i18n="no_chats_yet">Henüz sohbet yok</p>
+                                        <p class="text-sm" data-i18n="find_user_above">Yukarıdaki arama ile kullanıcı bulun</p>
                                     </div>
                                 </div>
                             </div>
@@ -55,7 +62,7 @@ class ChatPage implements Page {
                         <div class="flex-1 flex flex-col">
                             <div id="chatHeader" class="bg-white border-b border-gray-200 p-4">
                                 <div class="text-center text-gray-500">
-                                    <p>Bir sohbet seçin</p>
+                                    <p data-i18n="select_chat">Bir sohbet seçin</p>
                                 </div>
                             </div>
                             
@@ -68,11 +75,11 @@ class ChatPage implements Page {
                             
                             <div class="bg-white border-t border-gray-200 p-4">
                                 <form id="messageForm" method="post" class="flex gap-3" onsubmit="ChatPage.sendChatMessage(event)">
-                                    <input type="text" id="messageInput" placeholder="Mesajını yaz..." 
+                                    <input type="text" id="messageInput" placeholder="Mesajını yaz..." data-i18n-placeholder="type_message"
                                            class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
                                            disabled>
                                     <button type="submit" id="sendButton" 
-                                            class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition duration-200 font-semibold disabled:opacity-50"
+                                            class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition duration-200 font-semibold disabled:opacity-50" data-i18n="send"
                                             disabled>
                                         Gönder
                                     </button>
@@ -82,7 +89,7 @@ class ChatPage implements Page {
                         
                         <div id="userInfoPanel" class="w-80 bg-white border-l border-gray-200 hidden">
                             <div class="text-center text-gray-500 py-16">
-                                <p>Kullanıcı bilgisi burada görünecek</p>
+                                <p data-i18n="user_profile">Kullanıcı bilgisi burada görünecek</p>
                             </div>
                         </div>
                     </div>
@@ -113,6 +120,7 @@ class ChatPage implements Page {
 
         ChatPage.connectWebSocket();
         ChatPage.updateChatsList();
+        i18n.translateDOM();
 
         const messageInput = document.getElementById("messageInput");
         if (messageInput) {
@@ -177,6 +185,7 @@ class ChatPage implements Page {
                                             });
 
                                             ChatPage.updateChatsList();
+                                            i18n.translateDOM();
                                         }
                                     }
                                     break;
@@ -232,6 +241,7 @@ class ChatPage implements Page {
                         });
 
                         ChatPage.updateChatsList();
+                        i18n.translateDOM();
                         if (ChatPage.activeChatUser) {
                             ChatPage.updateChatHeader();
                         }
@@ -244,6 +254,7 @@ class ChatPage implements Page {
                                 ChatPage.allUsers.push(data.username);
                             }
                             ChatPage.updateChatsList();
+                            i18n.translateDOM();
                             if (ChatPage.activeChatUser === data.username) {
                                 ChatPage.updateChatHeader();
                             }
@@ -334,57 +345,56 @@ class ChatPage implements Page {
             return;
         }
 
-        if (messageInput.value.trim()) {
-            const message = messageInput.value.trim();
+        const message = messageInput.value.trim();
+        if (!message) return;
 
-            if (ChatPage.blockedUsers.includes(ChatPage.activeChatUser)) {
-                ChatPage.addSystemMessage(`${ChatPage.activeChatUser} kullanıcısı bloklanmış. Mesaj gönderilemez.`);
+        if (ChatPage.blockedUsers.includes(ChatPage.activeChatUser)) {
+            ChatPage.addSystemMessage(`${ChatPage.activeChatUser} kullanıcısı bloklanmış. Mesaj gönderilemez.`);
+            return;
+        }
+
+        const roomId = ChatPage.userRoomIds[ChatPage.activeChatUser];
+        const socket = GlobalState.getSocket();
+
+        if (!roomId) {
+            ChatPage.addSystemMessage('Oda hazırlanıyor, lütfen bekleyin...');
+
+            const createdRoomId = await ChatPage.createOrJoinPrivateRoom(ChatPage.activeChatUser);
+            if (!createdRoomId) {
+                ChatPage.addSystemMessage('Oda oluşturulamadı. Lütfen tekrar deneyin.');
                 return;
             }
+        }
 
-            const roomId = ChatPage.userRoomIds[ChatPage.activeChatUser];
-            const socket = GlobalState.getSocket();
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+            ChatPage.addSystemMessage('WebSocket bağlantısı yok. Sayfa yenileniyor...');
 
-            if (!roomId) {
-                ChatPage.addSystemMessage('Oda hazırlanıyor, lütfen bekleyin...');
+            ChatPage.connectWebSocket();
 
-                const createdRoomId = await ChatPage.createOrJoinPrivateRoom(ChatPage.activeChatUser);
-                if (!createdRoomId) {
-                    ChatPage.addSystemMessage('Oda oluşturulamadı. Lütfen tekrar deneyin.');
-                    return;
+            ChatPage.addMessageToActiveChat('Siz', message, 'sent');
+            messageInput.value = '';
+            return;
+        }
+
+        const finalRoomId = ChatPage.userRoomIds[ChatPage.activeChatUser];
+        if (!finalRoomId) {
+            ChatPage.addSystemMessage('Oda ID bulunamadı. Lütfen kullanıcıyı tekrar seçin.');
+            return;
+        }
+
+        try {
+            socket.send(JSON.stringify({
+                type: 'message',
+                data: {
+                    message: message,
+                    room_id: finalRoomId
                 }
-            }
+            }));
 
-            if (!socket || socket.readyState !== WebSocket.OPEN) {
-                ChatPage.addSystemMessage('WebSocket bağlantısı yok. Sayfa yenileniyor...');
-
-                ChatPage.connectWebSocket();
-
-                ChatPage.addMessageToActiveChat('Siz', message, 'sent');
-                messageInput.value = '';
-                return;
-            }
-
-            const finalRoomId = ChatPage.userRoomIds[ChatPage.activeChatUser];
-            if (!finalRoomId) {
-                ChatPage.addSystemMessage('Oda ID bulunamadı. Lütfen kullanıcıyı tekrar seçin.');
-                return;
-            }
-
-            try {
-                socket.send(JSON.stringify({
-                    type: 'message',
-                    data: {
-                        message: message,
-                        room_id: finalRoomId
-                    }
-                }));
-
-                ChatPage.addMessageToActiveChat('Siz', message, 'sent');
-                messageInput.value = '';
-            } catch (error) {
-                ChatPage.addSystemMessage('Mesaj gönderilemedi. Lütfen tekrar deneyin.');
-            }
+            ChatPage.addMessageToActiveChat('Siz', message, 'sent');
+            messageInput.value = '';
+        } catch (error) {
+            ChatPage.addSystemMessage('Mesaj gönderilemedi. Lütfen tekrar deneyin.');
         }
     }
 

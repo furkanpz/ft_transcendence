@@ -1,6 +1,7 @@
 import { Page, GlobalState, FETCH_ADDRESS } from "../main"
 import { LOGIN_PAGE } from "./LoginPage"
 import { HOME_PAGE } from "./HomePage"
+import { t } from "../i18n"
 
 class ProfilePage implements Page {
 	title: string = "Profile";
@@ -8,10 +9,14 @@ class ProfilePage implements Page {
 
 	async render(): Promise<void> {
 		const app = document.getElementById("app");
-		if (app) {
+	if (app) {
 				app.innerHTML = `
 				<div class="container mx-auto p-6 max-w-4xl">
-					<h1 class="text-3xl font-bold mb-8 text-center">User Profile</h1>
+					<div class="w-full flex justify-end mb-4">
+						<button id="lang-en" class="mr-2">EN</button>
+						<button id="lang-tr">TR</button>
+					</div>
+		    <h1 class="text-3xl font-bold mb-8 text-center" data-i18n="user_profile">User Profile</h1>
 					
 					<!-- Success Message Container -->
 					<div id="successMessage" class="hidden mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
@@ -40,24 +45,24 @@ class ProfilePage implements Page {
 					
 
 					<div class="bg-white rounded-lg shadow-md p-6 mb-6">
-						<h2 class="text-xl font-semibold text-center mb-4">Stats</h2>
+						<h2 class="text-xl font-semibold text-center mb-4" data-i18n="stats">Stats</h2>
 						<div class="flex justify-between mx-40">
-						<div> <span class="font-bold">Win</span> <br/>1</div>
-						<div> <span class="font-bold">Lose</span> <br/>1</div>
+						<div> <span class="font-bold" data-i18n="win">Win</span> <br/>1</div>
+						<div> <span class="font-bold" data-i18n="lose">Lose</span> <br/>1</div>
 						</div>
 					</div>
 
 					<!-- Current User Info -->
 					<div class="bg-white rounded-lg shadow-md p-6 mb-6">
-						<div id="profileStatus>
+						<div id="profileStatus">
 						</div>
 						<div class="space-y-4">
 							<div>
-								<label class="block text-sm font-medium mb-2">Username:</label>
+								<label class="block text-sm font-medium mb-2" data-i18n="username_label">Username:</label>
 								<input type="text" id="currentUsername" class="w-full p-3 border rounded-lg bg-gray-100" readonly>
 							</div>
 							<div>
-								<label class="block text-sm font-medium mb-2">Email:</label>
+								<label class="block text-sm font-medium mb-2" data-i18n="email_label">Email:</label>
 								<input type="text" id="currentEmail" class="w-full p-3 border rounded-lg bg-gray-100" readonly>
 							</div>
 						</div>
@@ -65,13 +70,13 @@ class ProfilePage implements Page {
 
 					<!-- Username Change Section -->
 					<div class="bg-white rounded-lg shadow-md p-6 mb-6">
-						<h2 class="text-xl font-semibold mb-4">Change Username</h2>
+						<h2 class="text-xl font-semibold mb-4" data-i18n="change_username">Change Username</h2>
 						<div class="space-y-4">
 							<div>
-								<label class="block text-sm font-medium mb-2">New Username:</label>
-								<input type="text" id="newUsername" class="w-full p-3 border rounded-lg" placeholder="Enter new username">
+								<label class="block text-sm font-medium mb-2" data-i18n="new_username_label">New Username:</label>
+								<input type="text" id="newUsername" class="w-full p-3 border rounded-lg" placeholder="Enter new username" data-i18n-placeholder="enter_new_username">
 							</div>
-							<button id="changeUsernameBtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">
+							<button id="changeUsernameBtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition" data-i18n="update_username">
 								Update Username
 							</button>
 						</div>
@@ -79,21 +84,21 @@ class ProfilePage implements Page {
 
 					<!-- Password Change Section -->
 					<div class="bg-white rounded-lg shadow-md p-6 mb-6">
-						<h2 class="text-xl font-semibold mb-4">Change Password</h2>
+						<h2 class="text-xl font-semibold mb-4" data-i18n="change_password">Change Password</h2>
 						<div class="space-y-4">
 							<div>
-								<label class="block text-sm font-medium mb-2">Current Password:</label>
-								<input type="password" id="currentPassword" class="w-full p-3 border rounded-lg" placeholder="Enter current password">
+								<label class="block text-sm font-medium mb-2" data-i18n="current_password_label">Current Password:</label>
+								<input type="password" id="currentPassword" class="w-full p-3 border rounded-lg" placeholder="Enter current password" data-i18n-placeholder="enter_current_password">
 							</div>
 							<div>
-								<label class="block text-sm font-medium mb-2">New Password:</label>
-								<input type="password" id="newPassword" class="w-full p-3 border rounded-lg" placeholder="Enter new password">
+								<label class="block text-sm font-medium mb-2" data-i18n="new_password_label">New Password:</label>
+								<input type="password" id="newPassword" class="w-full p-3 border rounded-lg" placeholder="Enter new password" data-i18n-placeholder="enter_new_password">
 							</div>
 							<div>
-								<label class="block text-sm font-medium mb-2">Confirm New Password:</label>
-								<input type="password" id="confirmPassword" class="w-full p-3 border rounded-lg" placeholder="Confirm new password">
+								<label class="block text-sm font-medium mb-2" data-i18n="confirm_new_password_label">Confirm New Password:</label>
+								<input type="password" id="confirmPassword" class="w-full p-3 border rounded-lg" placeholder="Confirm new password" data-i18n-placeholder="confirm_new_password">
 							</div>
-							<button id="changePasswordBtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">
+							<button id="changePasswordBtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition" data-i18n="update_password">
 								Update Password
 							</button>
 						</div>
@@ -101,14 +106,14 @@ class ProfilePage implements Page {
 
 					<!-- 2FA Section -->
 					<div class="bg-white rounded-lg shadow-md p-6 mb-6">
-						<h2 class="text-xl font-semibold mb-4">Two-Factor Authentication (2FA)</h2>
+						<h2 class="text-xl font-semibold mb-4" data-i18n="two_fa_title">Two-Factor Authentication (2FA)</h2>
 						<div class="space-y-4">
 							<div class="flex items-center justify-between">
 								<div>
-									<p class="font-medium">2FA Status:</p>
-									<p id="twoFAStatus" class="text-sm text-gray-600">Disabled</p>
+									<p class="font-medium" data-i18n="two_fa_status_label">2FA Status:</p>
+									<p id="twoFAStatus" class="text-sm text-gray-600" data-i18n="disabled">Disabled</p>
 								</div>
-								<button id="toggle2FABtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">
+								<button id="toggle2FABtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition" data-i18n="enable_2fa">
 									Enable 2FA
 								</button>
 							</div>
@@ -116,17 +121,17 @@ class ProfilePage implements Page {
 							<!-- 2FA Setup Section (initially hidden) -->
 							<div id="twoFASetup" class="hidden space-y-4 border-t pt-4">
 								<div>
-									<p class="text-sm mb-2">Scan this QR code with your authenticator app:</p>
+									<p class="text-sm mb-2" data-i18n="please_check_email_for_code">Scan this QR code with your authenticator app:</p>
 									<div id="qrCodeContainer" class="bg-gray-100 p-4 rounded-lg text-center">
 										<!-- QR Code will be generated here -->
-										<p class="text-gray-500">QR Code will appear here</p>
+										<p class="text-gray-500" data-i18n="enter_code_below">QR Code will appear here</p>
 									</div>
 								</div>
 								<div>
-									<label class="block text-sm font-medium mb-2">Enter verification code:</label>
-									<input type="text" id="verificationCode" class="w-full p-3 border rounded-lg" placeholder="Enter 6-digit code">
+									<label class="block text-sm font-medium mb-2" data-i18n="enter_6_digit_code">Enter the 6-digit code sent to your email:</label>
+									<input type="text" id="verificationCode" class="w-full p-3 border rounded-lg" placeholder="Enter 6-digit code" data-i18n-placeholder="six_digit_code_placeholder">
 								</div>
-								<button id="verify2FABtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition">
+								<button id="verify2FABtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition" data-i18n="verify_enable_2fa">
 									Verify & Enable 2FA
 								</button>
 							</div>
@@ -135,7 +140,7 @@ class ProfilePage implements Page {
 
 					<!-- Navigation -->
 					<div class="text-center">
-						<button id="homeBtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">
+						<button id="homeBtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition" data-i18n="back_to_home">
 							Back to Home
 						</button>
 					</div>
@@ -192,7 +197,9 @@ class ProfilePage implements Page {
 	}
 
 	async onPreLoad(): Promise<void> {
-		console.log("Preparing to load Profile page");
+	// Sayfa başlığını mevcut dile göre ayarla
+	this.title = t('profile');
+	console.log("Preparing to load Profile page");
 	}
 
 	async onLoad(): Promise<void> {
@@ -272,14 +279,14 @@ class ProfilePage implements Page {
 
 		if (twoFAStatus && toggle2FABtn) {
 			if (isEnabled) {
-				twoFAStatus.textContent = 'Enabled';
+				twoFAStatus.textContent = t('enabled');
 				twoFAStatus.className = 'text-sm text-gray-600';
-				toggle2FABtn.textContent = 'Disable 2FA';
+				toggle2FABtn.textContent = t('disable_2fa');
 				toggle2FABtn.className = 'bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition';
 			} else {
-				twoFAStatus.textContent = 'Disabled';
+				twoFAStatus.textContent = t('disabled');
 				twoFAStatus.className = 'text-sm text-gray-600';
-				toggle2FABtn.textContent = 'Enable 2FA';
+				toggle2FABtn.textContent = t('enable_2fa');
 				toggle2FABtn.className = 'bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition';
 			}
 		}
@@ -506,13 +513,13 @@ class ProfilePage implements Page {
 
 		if (isCurrentlyEnabled) {
 			// Disable 2FA
-			const confirmDisable = confirm('Are you sure you want to disable 2FA? This will make your account less secure.');
+			const confirmDisable = confirm(t('confirm_disable_2fa'));
 			if (!confirmDisable) {
 				toggle2FABtn.disabled = false;
 				return;
 			}
 
-			toggle2FABtn.textContent = 'Disabling...';
+			toggle2FABtn.textContent = t('disabling');
 
 			try {
 				const response = await fetch(`${FETCH_ADDRESS}/auth/2fa`, {
@@ -525,10 +532,10 @@ class ProfilePage implements Page {
 				});
 
 				if (response.ok) {
-					alert('2FA disabled successfully!');
+		    alert(t('two_fa_disabled_success'));
 					this.update2FAStatus(false);
 				} else if (response.status === 401) {
-					alert('Please login to disable 2FA');
+		    alert(t('please_login_disable_2fa'));
 				} else {
 					try {
 						const error = await response.json();
@@ -552,7 +559,7 @@ class ProfilePage implements Page {
 			}
 
 			// Enable 2FA - show setup
-			toggle2FABtn.textContent = 'Setting up...';
+	    toggle2FABtn.textContent = t('setting_up');
 
 			try {
 				const response = await fetch(`${FETCH_ADDRESS}/auth/2fa`, {
@@ -567,13 +574,13 @@ class ProfilePage implements Page {
 				if (response.ok) {
 					const result = await response.json();
 					if (result.message === "OTP sent successfully") {
-						alert('A verification code has been sent to your email. Please enter it below.');
+						alert(t('verification_code_sent'));
 						this.show2FASetup();
 					} else {
 						alert(`Error: ${result.message || 'Failed to start 2FA setup'}`);
 					}
 				} else if (response.status === 401) {
-					alert('Please login to setup 2FA');
+					alert(t('please_login_setup_2fa'));
 				} else {
 					try {
 						const error = await response.json();
@@ -607,13 +614,13 @@ class ProfilePage implements Page {
 		if (qrCodeContainer) {
 			qrCodeContainer.innerHTML = `
 				<div class="text-center">
-					<p class="text-gray-700 mb-2">Please check your email for the 6-digit verification code.</p>
-					<p class="text-sm text-gray-500">Enter the code below to enable 2FA.</p>
+					<p class="text-gray-700 mb-2">${t('please_check_email_for_code')}</p>
+					<p class="text-sm text-gray-500">${t('enter_code_below')}</p>
 				</div>
 			`;
 		}
 
-		toggle2FABtn.textContent = 'Cancel Setup';
+		toggle2FABtn.textContent = t('cancel_setup');
 		toggle2FABtn.className = 'bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition';
 	}
 
@@ -622,12 +629,12 @@ class ProfilePage implements Page {
 		const verificationCode = verificationCodeInput?.value.trim();
 
 		if (!verificationCode || verificationCode.length !== 6) {
-			alert('Please enter a valid 6-digit verification code');
+			alert(t('enter_valid_6_digit_code'));
 			return;
 		}
 
 		if (!/^\d{6}$/.test(verificationCode)) {
-			alert('Verification code must be 6 digits');
+			alert(t('verification_code_must_be_6_digits'));
 			return;
 		}
 
@@ -635,7 +642,7 @@ class ProfilePage implements Page {
 		const verify2FABtn = document.getElementById('verify2FABtn') as HTMLButtonElement;
 		const originalText = verify2FABtn.textContent;
 		verify2FABtn.disabled = true;
-		verify2FABtn.textContent = 'Verifying...';
+	verify2FABtn.textContent = t('verifying');
 
 		try {
 			const response = await fetch(`${FETCH_ADDRESS}/auth/2fa/verify`, {
@@ -648,7 +655,7 @@ class ProfilePage implements Page {
 			});
 
 			if (response.ok) {
-				alert('2FA enabled successfully!');
+				alert(t('two_fa_enabled_success'));
 				this.update2FAStatus(true);
 
 				// Hide setup section
@@ -660,15 +667,15 @@ class ProfilePage implements Page {
 				// Clear verification code
 				verificationCodeInput.value = '';
 			} else if (response.status === 401) {
-				alert('Please login to verify 2FA');
+				alert(t('please_login_verify_2fa'));
 			} else if (response.status === 400) {
-				alert('Invalid verification code. Please try again.');
+				alert(t('invalid_verification_code'));
 			} else {
 				try {
 					const error = await response.json();
 					alert(`Error: ${error.message || 'Invalid verification code'}`);
 				} catch {
-					alert('Invalid verification code. Please try again.');
+					alert(t('invalid_verification_code'));
 				}
 			}
 		} catch (error) {
