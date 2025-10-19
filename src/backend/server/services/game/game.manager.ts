@@ -1,119 +1,105 @@
 import { WebSocket } from "ws"
-import { GameType, GameRoom, GameEvent, GameResult} from "../../types/game.types"
-
-class QueueManager {
-	public classicGameQueue : number[] = new Array();
-	public tournamentGameQueue : number[] = new Array();
-	public multiplayerGameQueue : number[] = new Array();
-	public playerSockets : Map<number, WebSocket> = new Map(); 
-
-	public addQueue(userId: number, socket: WebSocket, gameType : GameType) : void
-	{
-		if (this.classicGameQueue.find((value) => value == userId) ||
-			this.tournamentGameQueue.find((value) => value == userId) ||
-			this.multiplayerGameQueue.find((value) => value == userId)) {
-				console.log("Player already in one queue.!");
-		}
-		
-		this.playerSockets.set(userId, socket);
-
-		socket.on("close", () => {
-			this.removeFromQueue(userId);
-			this.playerSockets.delete(userId);
-			console.log(`Player ${userId} disconnected and removed from queues`);
-		});
-
-		if (gameType == GameType.Classic)
-		{
-			this.classicGameQueue.push(userId);
-			if (this.classicGameQueue.length >= 2)
-			{
-				this.classicGameQueue.splice(0, 2).forEach((value) => 
-					{
-						this.playerSockets.get(value)?.send(JSON.stringify({action: "matchFound", queueType: "1v1"}));
-						this.playerSockets.delete(value);
-					}
-				);
-			}
-		}
-		else if (gameType == GameType.Multiplayer)
-		{
-			this.multiplayerGameQueue.push(userId);
-			if (this.multiplayerGameQueue.length >= 4)
-			{
-				this.multiplayerGameQueue.splice(0, 4).forEach((value) => 
-					{
-						this.playerSockets.get(value)?.send(JSON.stringify({action: "matchFound", queueType: "2v2"}));
-						this.playerSockets.delete(value)
-					}
-				);
-			}
-			
-		}
-		else // turnuva
-		{
-			this.tournamentGameQueue.push(userId);
-			if (this.tournamentGameQueue.length >= 8)
-			{
-				this.tournamentGameQueue.splice(0, 8).forEach((value) => 
-					{
-						this.playerSockets.get(value)?.send(JSON.stringify({action: "matchFound", queueType: "tournament"})); 
-						this.playerSockets.delete(value);
-					}
-				);
-			}
-		}
-
-	}
-
-	public removeFromQueue(userId : number) : void 
-	{
-		let a;
-		if ((a = this.classicGameQueue.find((num) => num == userId))) {this.classicGameQueue.splice(a, 1);}
-		if ((a = this.tournamentGameQueue.find((num) => num == userId))) {this.classicGameQueue.splice(a, 1);}
-		if ((a = this.multiplayerGameQueue.find((num) => num == userId))) {this.classicGameQueue.splice(a, 1);}
-		
-	}
-}
+import { GameType, GameRoom, ClassicGameResult, PlayerState} from "../../types/game.types"
+import { ClassicGameInstance } from "./game.instance";
+import { classicGameResultInit } from "./game.services";
 
 class ClassicGameManager
 {
 	public gameRooms: Map<string, GameRoom> = new Map();
+	public gamesInstances: Map<string, ClassicGameInstance> = new Map();
 	public playerSockets: Map<number, WebSocket> = new Map();
 	public playerRoom: Map<number, string> = new Map();
-	public roomRuntimes: Map<string, NodeJS.Timeout> = new Map();
+	public playersState: Map<number, PlayerState> = new Map();
 	
 	public addPlayer(userId: number, socket: WebSocket) : void {
 		this.playerSockets.set(userId, socket);
 
-		socket.on("open", async (data: string) => {
-			const roomId = this.playerRoom.get(userId);
-			if (!roomId) {
-				console.log("Player not in a room");
-				return;
-			}
-			const room = this.gameRooms.get(roomId);
-			if (!room) {
-				console.log("Room not found");
-				return;
-			}
-			socket.send(JSON.stringify({players : room.players}));
+		const roomId = this.playerRoom.get(userId);
+		if (!roomId) {
+			console.log("Player not in a room");
+			return;
 		}
-		);
+		const room = this.gameRooms.get(roomId);
+		if (!room) {
+			console.log("Room not found");
+			return;
+		}
+		this.playersState.set(userId, PlayerState.PLAYING);
+		if (room.players.every((id) => this.playersState.get(id) === PlayerState.PLAYING)) {
+			const game = this.gamesInstances.get(roomId);
+			room.players.forEach((playerId) => {
+				game?.setSocketForPlayer(playerId, this.playerSockets.get(playerId)!);
+			});
+			game?.startGame();
+			console.log(`All players in room ${roomId} are ready. Starting game...`);
+		}
+		socket.send(JSON.stringify({players : room.players}));
+
+		socket.on("close", () => {
+			this.playerSockets.delete(userId);
+			this.playersState.set(userId, PlayerState.LEFT);
+			console.log(`Player ${userId} disconnected from room`);
+			const roomId = this.playerRoom.get(userId);
+			if (roomId) {
+				const room = this.gameRooms.get(roomId);
+				if (room) {
+					room.players = room.players.filter((id) => this.playersState.get(id) !== PlayerState.LEFT);
+					if (room.players.length === 0) {
+						this.removeRoom(roomId);
+						console.log(`Room ${roomId} deleted as all players left`);
+					}
+				}
+			}
+		});
 	}
 
 	public createRoom(userIds : number[], gameType : GameType) : string
 	{
-
+		const roomId = this.generateRoomId();
 		const room : GameRoom = {
-			id: this.generateRoomId(),
+			id: roomId,
 			players: userIds,
 			roomType: gameType,
-		}
+			gameResult: null,
+		};
 		this.gameRooms.set(room.id, room);
+		userIds.forEach((value) => this.playersState.set(value, PlayerState.WAITING));
 		userIds.forEach((value) => this.playerRoom.set(value, room.id));
-		console.log("created room with id: " + room.id);
-		return room.id;	
+		this.gamesInstances.set(roomId, new ClassicGameInstance(room.players[0], room.players[1], room));
+		console.log("Created room with id: " + room.id + " for players: " + userIds.join(", "));
+		return room.id;
+	}
+
+	public finishGame(roomId: string) : void
+	{
+		this.removeRoom(roomId);
+	}
+
+	public removeRoom(roomId : string) : void
+	{
+		const room = this.gameRooms.get(roomId);
+		const gameInstance = this.gamesInstances.get(roomId);
+		if (gameInstance) {
+			gameInstance.forceStop();
+			this.gamesInstances.delete(roomId);
+			console.log(`Game instance for room ${roomId} stopped and removed`);
+		}
+		if (room) {
+			if (room.gameResult) {
+				const gameResult = room.gameResult as ClassicGameResult;
+				console.log(`Game result for room ${roomId}: Player 1 (ID: ${gameResult.player1Id}) Score: ${gameResult.player1Score}, Player 2 (ID: ${gameResult.player2Id}) Score: ${gameResult.player2Score}`);
+				// Burada Databse eklenecek ama ben beceremedim.
+			}
+			else {
+				console.log(`Game ended for room ${roomId} with no result recorded.`);
+			}
+			room.players.forEach((value) => {
+				this.playerRoom.delete(value);
+				this.playersState.delete(value);
+			});
+			this.gameRooms.delete(roomId);
+			console.log(`Room ${roomId} removed`);
+		}
 	}
 
 	public generateRoomId() : string
@@ -122,5 +108,4 @@ class ClassicGameManager
 	}
 }
 
-export const queueManager = new QueueManager();
 export const classicGameManager = new ClassicGameManager();

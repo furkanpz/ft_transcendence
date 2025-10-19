@@ -63,8 +63,8 @@ class MatchmakingPage implements Page {
 		if (cancelButton) {
 			cancelButton.addEventListener("click", () => {
 				GlobalState.setPage(HOME_PAGE);
-			});
-		}
+				});
+			}
 		}
 	}
 
@@ -74,9 +74,10 @@ class MatchmakingPage implements Page {
 
 	async onLoad(): Promise<void> {
 	const socket = new WebSocket(`wss://localhost:3000/queue/${this.gameType}`);
-
+	
 	socket.onopen = () => {
-	  console.log("WebSocket connection established");
+		GlobalState.setSocket(socket);
+		console.log("WebSocket connection established");
 	};
 
 	socket.onmessage = (event) => {
@@ -107,11 +108,9 @@ class MatchmakingPage implements Page {
   async onUnload(): Promise<void> {
 	const socket = GlobalState.getSocket();
 	if (socket) {
-		socket.send(JSON.stringify({ action: "leaveQueue" }));
 		socket.close();
 		GlobalState.setSocket(null);
 	}
-
 	console.log("Matchmaking Page unloaded");
   }
 

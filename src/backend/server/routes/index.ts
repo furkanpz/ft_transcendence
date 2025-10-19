@@ -58,7 +58,7 @@ export default async function setRoutes(server: FastifyInstance) {
 	}, tournamentQueueController);
 	});
 	await server.register(async function (fastify) {
-	fastify.get('/game', {
+	fastify.get('/room/:roomId', {
 		websocket: true,
 		config: {
 			rateLimit: {

@@ -1,3 +1,6 @@
+import { tournamentQueueController } from "../controller/game.controller";
+import { ClassicGameInstance } from "../services/game/game.instance";
+
 enum GameType {
 	Classic = "classic",
 	Tournament = "tournament",
@@ -7,7 +10,8 @@ enum GameType {
 interface GameRoom {
 	id: string;
 	players: number[];
-	roomType: GameType
+	roomType: GameType;
+	gameResult: ClassicGameResult | TournamentGameResult | MultiplayerGameResult | null;
 }
 
 interface GameEvent {
@@ -15,13 +19,30 @@ interface GameEvent {
 	roomType: GameType;
 }
 
-interface GameResult {
-	player1_id: number;
-	player2_id: number;
-	winner_id: number;
-	loser_id: number;
-	p1_score: number;
-	p2_score: number;
+interface ClassicGameResult {
+	player1Id: number;
+	player2Id: number;
+	player1Score: number;
+	player2Score: number;
+};
+
+interface TournamentGameResult {
+	tournamentId: number;
+	playerId: number;
+	score: number;
+};
+
+interface MultiplayerGameResult {
+	team1Ids: number[];
+	team2Ids: number[];
+	team1Score: number;
+	team2Score: number;
+};
+
+enum PlayerState {
+	WAITING = "waiting",
+	PLAYING = "playing",
+	LEFT = "left",
 }
 
-export { GameRoom, GameEvent, GameResult, GameType };
+export { GameRoom, GameEvent, ClassicGameResult, TournamentGameResult, MultiplayerGameResult, GameType, PlayerState };
