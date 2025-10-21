@@ -119,7 +119,13 @@ class ChatPage implements Page {
         await ChatPage.loadExistingChats();
 
         ChatPage.connectWebSocket();
-        ChatPage.updateChatsList();
+        
+        // Update chat list after a small delay to ensure DOM is ready
+        setTimeout(() => {
+            console.log('🕐 Delayed updateChatsList call');
+            ChatPage.updateChatsList();
+        }, 100);
+        
         i18n.translateDOM();
 
         const messageInput = document.getElementById("messageInput");
@@ -159,36 +165,63 @@ class ChatPage implements Page {
 
             socket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
+                console.log('📨 WebSocket message received:', data.type, data);
 
                 switch (data.type) {
                     case 'message':
                         const msgData = data.data;
+                        console.log('💬 Message data:', msgData);
                         const senderUsername = msgData.username;
 
                         if (senderUsername !== ChatPage.getCurrentUsername()) {
+                            // Check if we have this room in our userRoomIds
+                            let foundUser = null;
                             for (const [user, roomId] of Object.entries(ChatPage.userRoomIds)) {
                                 if (roomId === msgData.room_id) {
-                                    if (!ChatPage.blockedUsers.includes(user)) {
-                                        if (ChatPage.activeChatUser === user) {
-                                            ChatPage.addMessageToActiveChat(senderUsername, msgData.message, 'received');
-                                        } else {
-                                            ChatPage.unreadCounts[user] = (ChatPage.unreadCounts[user] || 0) + 1;
-                                            if (!ChatPage.userChats[user]) {
-                                                ChatPage.userChats[user] = [];
-                                            }
-                                            ChatPage.userChats[user].push({
-                                                sender: senderUsername,
-                                                message: msgData.message,
-                                                type: 'received',
-                                                timestamp: new Date(msgData.timestamp),
-                                                messageType: 'text'
-                                            });
-
-                                            ChatPage.updateChatsList();
-                                            i18n.translateDOM();
-                                        }
-                                    }
+                                    foundUser = user;
                                     break;
+                                }
+                            }
+                            
+                            // If not found, this is a new conversation - add the sender
+                            if (!foundUser) {
+                                foundUser = senderUsername;
+                                ChatPage.userRoomIds[senderUsername] = msgData.room_id;
+                                
+                                // Add sender to allUsers if not already there
+                                if (!ChatPage.allUsers.includes(senderUsername)) {
+                                    ChatPage.allUsers.push(senderUsername);
+                                }
+                                
+                                // Join the room so we can receive future messages
+                                const socket = GlobalState.getSocket();
+                                if (socket && socket.readyState === WebSocket.OPEN) {
+                                    console.log(`📥 Auto-joining room ${msgData.room_id} for conversation with ${senderUsername}`);
+                                    socket.send(JSON.stringify({
+                                        type: 'join_room',
+                                        data: { room_id: msgData.room_id }
+                                    }));
+                                }
+                            }
+                            
+                            if (!ChatPage.blockedUsers.includes(foundUser)) {
+                                if (ChatPage.activeChatUser === foundUser) {
+                                    ChatPage.addMessageToActiveChat(senderUsername, msgData.message, 'received');
+                                } else {
+                                    ChatPage.unreadCounts[foundUser] = (ChatPage.unreadCounts[foundUser] || 0) + 1;
+                                    if (!ChatPage.userChats[foundUser]) {
+                                        ChatPage.userChats[foundUser] = [];
+                                    }
+                                    ChatPage.userChats[foundUser].push({
+                                        sender: senderUsername,
+                                        message: msgData.message,
+                                        type: 'received',
+                                        timestamp: new Date(msgData.timestamp),
+                                        messageType: 'text'
+                                    });
+
+                                    ChatPage.updateChatsList();
+                                    i18n.translateDOM();
                                 }
                             }
                         }
@@ -290,6 +323,7 @@ class ChatPage implements Page {
 
     static async loadExistingChats() {
         try {
+            console.log('🔄 Loading existing chats...');
             const response = await fetch(`${FETCH_ADDRESS}/chat/rooms`, {
                 credentials: 'include'
             });
@@ -297,10 +331,19 @@ class ChatPage implements Page {
             if (response.ok) {
                 const data = await response.json();
                 const rooms = data.rooms || data || [];
+                console.log(`📦 Fetched ${rooms.length} rooms from backend`);
 
                 for (const room of rooms) {
                     if (room.is_private && room.name.startsWith('private_')) {
-                        const username = room.name.replace('private_', '');
+                        // Extract other user's username from room name
+                        // Room format: private_user1_user2 (alphabetically sorted)
+                        const roomNameParts = room.name.replace('private_', '').split('_');
+                        const currentUser = ChatPage.getCurrentUsername();
+                        
+                        // Find the username that is NOT the current user
+                        const username = roomNameParts.find((u: string) => u !== currentUser) || roomNameParts[0];
+                        
+                        console.log(`📂 Room: ${room.name} → Other user: ${username}`);
 
                         ChatPage.userRoomIds[username] = room.id;
 
@@ -312,6 +355,7 @@ class ChatPage implements Page {
                             if (historyResponse.ok) {
                                 const historyData = await historyResponse.json();
                                 const messages = historyData.messages || historyData || [];
+                                console.log(`📨 Room ${room.name} has ${messages.length} messages`);
 
                                 ChatPage.userChats[username] = messages.map((msg: any) => ({
                                     sender: msg.username === ChatPage.getCurrentUsername() ? 'Siz' : msg.username,
@@ -320,8 +364,11 @@ class ChatPage implements Page {
                                     timestamp: new Date(msg.timestamp),
                                     messageType: msg.message_type || 'text'
                                 }));
+                                
+                                console.log(`✅ Stored ${ChatPage.userChats[username].length} messages for user: ${username}`);
                             }
                         } catch (historyError) {
+                            console.error(`❌ Error loading history for room ${room.id}:`, historyError);
                         }
 
                         if (!ChatPage.allUsers.includes(username)) {
@@ -330,9 +377,12 @@ class ChatPage implements Page {
                     }
                 }
 
+                console.log('📊 Final userChats:', Object.keys(ChatPage.userChats));
+                console.log('📊 UserChats object:', ChatPage.userChats);
                 ChatPage.updateChatsList();
             }
         } catch (error) {
+            console.error('❌ Error loading existing chats:', error);
         }
     }
 
@@ -525,6 +575,14 @@ class ChatPage implements Page {
 
     static async createOrJoinPrivateRoom(username: string): Promise<string | null> {
         try {
+            // Generate consistent room name (alphabetically sorted)
+            const currentUser = ChatPage.getCurrentUsername();
+            console.log(`🔍 Current user: "${currentUser}", Target user: "${username}"`);
+            const users = [currentUser, username].sort();
+            console.log(`🔍 Sorted users:`, users);
+            const roomName = `private_${users[0]}_${users[1]}`;
+            
+            console.log(`🔍 Looking for room: ${roomName}`);
             const roomsResponse = await fetch(`${FETCH_ADDRESS}/chat/rooms`, {
                 credentials: 'include'
             });
@@ -532,13 +590,16 @@ class ChatPage implements Page {
             if (roomsResponse.ok) {
                 const roomsData = await roomsResponse.json();
                 const rooms = roomsData.rooms || roomsData.data?.rooms || roomsData || [];
+                console.log(`📋 Found ${rooms.length} rooms:`, rooms);
 
                 for (const room of rooms) {
-                    if (room.is_private && room.name === `private_${username}`) {
+                    if (room.is_private && room.name === roomName) {
                         ChatPage.userRoomIds[username] = room.id;
+                        console.log(`✅ Found existing room: ${room.id}`);
 
                         const socket = GlobalState.getSocket();
                         if (socket && socket.readyState === WebSocket.OPEN) {
+                            console.log(`📤 Sending join_room for: ${room.id}`);
                             socket.send(JSON.stringify({
                                 type: 'join_room',
                                 data: { room_id: room.id }
@@ -548,20 +609,24 @@ class ChatPage implements Page {
                         return room.id;
                     }
                 }
+            } else {
+                console.error(`❌ Failed to fetch rooms: ${roomsResponse.status}`);
             }
 
+            console.log(`🆕 Creating new room: ${roomName}`);
             const createResponse = await fetch(`${FETCH_ADDRESS}/chat/rooms`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    name: `private_${username}`,
+                    name: roomName,
                     isPrivate: true
                 })
             });
 
             if (createResponse.ok) {
                 const createData = await createResponse.json();
+                console.log(`✅ Room created:`, createData);
 
                 const roomId = createData.room?.id || createData.data?.room?.id || createData.id;
 
@@ -570,6 +635,7 @@ class ChatPage implements Page {
 
                     const socket = GlobalState.getSocket();
                     if (socket && socket.readyState === WebSocket.OPEN) {
+                        console.log(`📤 Sending join_room for new room: ${roomId}`);
                         socket.send(JSON.stringify({
                             type: 'join_room',
                             data: { room_id: roomId }
@@ -579,6 +645,21 @@ class ChatPage implements Page {
                     return roomId;
                 }
             } else {
+                const errorData = await createResponse.json().catch(() => ({}));
+                console.error(`❌ Failed to create room: ${createResponse.status}`, errorData);
+                
+                // If room already exists (created by other user), try to find it by name
+                if (createResponse.status === 500 && errorData.message?.includes('already exists')) {
+                    console.log(`🔄 Room exists, fetching all rooms to find it...`);
+                    
+                    // Fetch all rooms (not just user's rooms) - we'll need a new endpoint or workaround
+                    // For now, try to join the room by sending join_room to WebSocket with expected room_id
+                    // But we don't have room_id... so we need backend to return it or handle this differently
+                    
+                    ChatPage.addSystemMessage('Oda zaten mevcut. Lütfen sayfayı yenileyin.');
+                    return null;
+                }
+                
                 const tempRoomId = `temp_${username}_${Date.now()}`;
                 ChatPage.userRoomIds[username] = tempRoomId;
                 return tempRoomId;
@@ -586,6 +667,7 @@ class ChatPage implements Page {
 
             return null;
         } catch (error) {
+            console.error(`❌ createOrJoinPrivateRoom error:`, error);
             return null;
         }
     }
@@ -816,6 +898,9 @@ class ChatPage implements Page {
     }
 
     static updateChatsList() {
+        console.log('🔄 updateChatsList called');
+        console.log('📊 Current userChats keys:', Object.keys(ChatPage.userChats));
+        
         const chatsList = document.getElementById("chatsList");
         if (chatsList) {
             const chatUsers = Object.keys(ChatPage.userChats).sort((a, b) => {
@@ -824,7 +909,10 @@ class ChatPage implements Page {
                 return new Date(lastMessageB).getTime() - new Date(lastMessageA).getTime();
             });
 
+            console.log(`📋 Sorted chat users (${chatUsers.length}):`, chatUsers);
+
             if (chatUsers.length === 0) {
+                console.log('⚠️ No chat users found, showing empty state');
                 chatsList.innerHTML = `
                 <div class="text-center text-gray-500 py-8">
                     <p>Henüz sohbet yok</p>
@@ -834,6 +922,7 @@ class ChatPage implements Page {
                 return;
             }
 
+            console.log('✅ Rendering chat list with users:', chatUsers);
             chatsList.innerHTML = chatUsers.map(user => {
                 const isActive = ChatPage.activeChatUser === user;
                 const isOnline = ChatPage.onlineUsers.includes(user);

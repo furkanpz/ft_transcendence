@@ -12,17 +12,32 @@ import server from '../server';
 
 export async function createRoomController(request: FastifyRequest, response: FastifyReply) {
     const user = request.user as jwtUser;
-	const isAdmin = user.role === userRole.admin;
-	if (!isAdmin) {
-		return sendError(response, 403, 'Only admins can create rooms');
-	}
     const { name, isPrivate } = request.body as { name: string; isPrivate?: boolean };
+    
+    if (!isPrivate) {
+        const isAdmin = user.role === userRole.admin;
+        if (!isAdmin) {
+            return sendError(response, 403, 'Only admins can create public rooms');
+        }
+    }
+    
     if (!name || name.trim().length === 0) {
         return sendError(response, 400, 'Room name is required');
     }
-    const checkRoom = await getRoomWithName(name);
-    if (checkRoom)
-        return sendError(response, 500, "Such a room already exists");
+    
+    if (isPrivate) {
+        const existingRoom = await getRoomWithName(name);
+        if (existingRoom) {
+            await joinRoom(existingRoom.id, user.id);
+            return sendSuccess(response, 'Joined existing chat room', { room: existingRoom });
+        }
+    } else {
+        const checkRoom = await getRoomWithName(name);
+        if (checkRoom) {
+            return sendError(response, 500, "Such a room already exists");
+        }
+    }
+    
     const room = await createChatRoom(name.trim(), user.id, isPrivate || false);
     if (!room) {
         return sendError(response, 500, 'Failed to create chat room');

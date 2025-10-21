@@ -52,12 +52,19 @@ export async function getRoom(roomId: string) : Promise<boolean> {
     return true;
 }
 
-export async function getRoomWithName(roomName: string) : Promise<boolean> {
+export async function getRoomWithName(roomName: string) : Promise<ChatRoom | null> {
     const db = await getDb();
-    const chat = await db.get("SELECT * FROM ft_chat_rooms WHERE name = ?", roomName) as ChatRoom | undefined;
+    const chat = await db.get("SELECT * FROM ft_chat_rooms WHERE name = ?", roomName) as any;
     if (chat == undefined)
-        return false;
-    return true;
+        return null;
+    return {
+        id: chat.id,
+        name: chat.name,
+        created_by: chat.created_by,
+        created_at: new Date(chat.created_at),
+        is_private: chat.is_private,
+        participants: []
+    };
 }
 
 export async function leaveRoom(roomId: string, userId: number): Promise<boolean> {

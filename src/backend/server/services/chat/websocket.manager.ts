@@ -57,6 +57,11 @@ class ChatManager {
             case 'message':
                 await this.broadcastMessage(userId, event.data);
                 break;
+            case 'get_online_users':
+                this.sendOnlineUsers(userId);
+                break;
+            case 'get_offline_messages':
+                break;
             default:
                 this.sendError(user.socket, 'Unknown event type');
         }
@@ -76,6 +81,9 @@ class ChatManager {
         
         this.rooms.get(roomId)!.add(userId);
         user.current_room = roomId;
+        
+        console.log(`✅ User ${user.username} joined room ${roomId}. Room now has ${this.rooms.get(roomId)?.size} users`);
+        
         const history = await getChatHistory(roomId);
         this.sendToUser(userId, {
             type: 'chat_history',
@@ -110,7 +118,10 @@ class ChatManager {
 
     async broadcastMessage(userId: number, messageData: any): Promise<void> {
         const user = this.connectedUsers.get(userId);
-        if (!user || !user.current_room) return;
+        if (!user || !user.current_room) {
+            console.log(`❌ broadcastMessage failed: user=${userId}, current_room=${user?.current_room}`);
+            return;
+        }
 
         const message: ChatMessage = {
             user_id: userId,
@@ -127,10 +138,12 @@ class ChatManager {
             return;
         }
 
+        console.log(`📨 Broadcasting message to room ${user.current_room}, users in room:`, this.rooms.get(user.current_room)?.size);
+        
         this.broadcastToRoom(user.current_room, {
             type: 'message',
             data: savedMessage
-        });
+        }, userId);
     }
 
     broadcastToRoom(roomId: string, event: ChatEvent, excludeUserId?: number): void {
@@ -161,6 +174,17 @@ class ChatManager {
         }}catch (err) {
         console.error('sendError failed:', err);
     }
+    }
+
+    sendOnlineUsers(userId: number): void {
+        const user = this.connectedUsers.get(userId);
+        if (!user) return;
+
+        const onlineUsernames = Array.from(this.connectedUsers.values()).map(u => u.username);
+        this.sendToUser(userId, {
+            type: 'online_users',
+            data: { users: onlineUsernames }
+        });
     }
 
     getConnectedUsersCount(): number {

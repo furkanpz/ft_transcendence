@@ -98,6 +98,7 @@ class LoginPage implements Page {
 						}
 					} else {
 						window.localStorage.setItem("isAuthenticated", "1");
+						window.localStorage.setItem("username", usernameInput.value);
 						GlobalState.setPage(HOME_PAGE);
 					}
 				}
@@ -138,6 +139,7 @@ class LoginPage implements Page {
 				console.log(data);
 				if (data.success == true) {
 					window.localStorage.setItem("isAuthenticated", "1");
+					window.localStorage.setItem("username", LoginPage.currentUsername);
 					GlobalState.setPage(HOME_PAGE);
 				} else {
 					alert("2FA Verification Failed: " + data.message);
