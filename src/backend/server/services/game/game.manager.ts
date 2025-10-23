@@ -1,7 +1,6 @@
 import { WebSocket } from "ws"
 import { GameType, GameRoom, ClassicGameResult, PlayerState} from "../../types/game.types"
 import { ClassicGameInstance } from "./game.instance";
-import { classicGameResultInit } from "./game.services";
 
 class ClassicGameManager
 {
@@ -72,6 +71,15 @@ class ClassicGameManager
 
 	public finishGame(roomId: string) : void
 	{
+		this.playerSockets.forEach((socket, userId) => {
+			socket.send(JSON.stringify({action: "gameEnded",
+				result: {
+					player1Id: this.gameRooms.get(this.playerRoom.get(userId)!)!.players[0],
+					player2Id: this.gameRooms.get(this.playerRoom.get(userId)!)!.players[1],
+					player1Score: this.gamesInstances.get(this.playerRoom.get(userId)!)!.player1.score,
+					player2Score: this.gamesInstances.get(this.playerRoom.get(userId)!)!.player2.score,
+				} as ClassicGameResult}));
+		});
 		this.removeRoom(roomId);
 	}
 

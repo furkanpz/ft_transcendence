@@ -9,144 +9,153 @@ class ProfilePage implements Page {
 
 	async render(): Promise<void> {
 		const app = document.getElementById("app");
-	if (app) {
-				app.innerHTML = `
-				<div class="container mx-auto p-6 max-w-4xl">
-					<div class="w-full flex justify-end mb-4">
-						<button id="lang-en" class="mr-2">EN</button>
-						<button id="lang-tr">TR</button>
-					</div>
-		    <h1 class="text-3xl font-bold mb-8 text-center" data-i18n="user_profile">User Profile</h1>
-					
-					<!-- Success Message Container -->
-					<div id="successMessage" class="hidden mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
-						<div class="flex items-center">
-							<svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-								<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-							</svg>
-							<span id="successMessageText"></span>
+		if (app) {
+					app.innerHTML = `
+					<div class="container mx-auto p-6 max-w-4xl">
+						<div class="w-full flex justify-end mb-4">
+							<button id="lang-en" class="mr-2">EN</button>
+							<button id="lang-tr">TR</button>
 						</div>
-					</div>
-					
-					<!-- Profile Picture Section -->
-					<div class="bg-white rounded-lg shadow-md p-6 mb-6">
-						<div class="flex justify-center">
-							<div class="relative">
-								<img id="profilePicture" src="Portrait_Placeholder.png" alt="Profile Picture" class="w-32 h-32 rounded-full object-cover border-4 border-gray-200">
-								<button id="changePictureBtn" class="absolute bottom-2 right-2 bg-gray-500 text-white p-2 rounded-full hover:bg-gray-600 transition">
-									<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-									</svg>
-								</button>
+				<h1 class="text-3xl font-bold mb-8 text-center" data-i18n="user_profile">User Profile</h1>
+						
+						<!-- Success Message Container -->
+						<div id="successMessage" class="hidden mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+							<div class="flex items-center">
+								<svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+									<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+								</svg>
+								<span id="successMessageText"></span>
 							</div>
 						</div>
-					</div>
-					
-
-					<div class="bg-white rounded-lg shadow-md p-6 mb-6">
-						<h2 class="text-xl font-semibold text-center mb-4" data-i18n="stats">Stats</h2>
-						<div class="flex justify-between mx-40">
-						<div> <span class="font-bold" data-i18n="win">Win</span> <br/>1</div>
-						<div> <span class="font-bold" data-i18n="lose">Lose</span> <br/>1</div>
-						</div>
-					</div>
-
-					<!-- Current User Info -->
-					<div class="bg-white rounded-lg shadow-md p-6 mb-6">
-						<div id="profileStatus">
-						</div>
-						<div class="space-y-4">
-							<div>
-								<label class="block text-sm font-medium mb-2" data-i18n="username_label">Username:</label>
-								<input type="text" id="currentUsername" class="w-full p-3 border rounded-lg bg-gray-100" readonly>
-							</div>
-							<div>
-								<label class="block text-sm font-medium mb-2" data-i18n="email_label">Email:</label>
-								<input type="text" id="currentEmail" class="w-full p-3 border rounded-lg bg-gray-100" readonly>
-							</div>
-						</div>
-					</div>
-
-					<!-- Username Change Section -->
-					<div class="bg-white rounded-lg shadow-md p-6 mb-6">
-						<h2 class="text-xl font-semibold mb-4" data-i18n="change_username">Change Username</h2>
-						<div class="space-y-4">
-							<div>
-								<label class="block text-sm font-medium mb-2" data-i18n="new_username_label">New Username:</label>
-								<input type="text" id="newUsername" class="w-full p-3 border rounded-lg" placeholder="Enter new username" data-i18n-placeholder="enter_new_username">
-							</div>
-							<button id="changeUsernameBtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition" data-i18n="update_username">
-								Update Username
-							</button>
-						</div>
-					</div>
-
-					<!-- Password Change Section -->
-					<div class="bg-white rounded-lg shadow-md p-6 mb-6">
-						<h2 class="text-xl font-semibold mb-4" data-i18n="change_password">Change Password</h2>
-						<div class="space-y-4">
-							<div>
-								<label class="block text-sm font-medium mb-2" data-i18n="current_password_label">Current Password:</label>
-								<input type="password" id="currentPassword" class="w-full p-3 border rounded-lg" placeholder="Enter current password" data-i18n-placeholder="enter_current_password">
-							</div>
-							<div>
-								<label class="block text-sm font-medium mb-2" data-i18n="new_password_label">New Password:</label>
-								<input type="password" id="newPassword" class="w-full p-3 border rounded-lg" placeholder="Enter new password" data-i18n-placeholder="enter_new_password">
-							</div>
-							<div>
-								<label class="block text-sm font-medium mb-2" data-i18n="confirm_new_password_label">Confirm New Password:</label>
-								<input type="password" id="confirmPassword" class="w-full p-3 border rounded-lg" placeholder="Confirm new password" data-i18n-placeholder="confirm_new_password">
-							</div>
-							<button id="changePasswordBtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition" data-i18n="update_password">
-								Update Password
-							</button>
-						</div>
-					</div>
-
-					<!-- 2FA Section -->
-					<div class="bg-white rounded-lg shadow-md p-6 mb-6">
-						<h2 class="text-xl font-semibold mb-4" data-i18n="two_fa_title">Two-Factor Authentication (2FA)</h2>
-						<div class="space-y-4">
-							<div class="flex items-center justify-between">
-								<div>
-									<p class="font-medium" data-i18n="two_fa_status_label">2FA Status:</p>
-									<p id="twoFAStatus" class="text-sm text-gray-600" data-i18n="disabled">Disabled</p>
+						
+						<!-- Profile Picture Section -->
+						<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+							<div class="flex justify-center">
+								<div class="relative">
+									<img id="profilePicture" src="Portrait_Placeholder.png" alt="Profile Picture" class="w-32 h-32 rounded-full object-cover border-4 border-gray-200">
+									<button id="changePictureBtn" class="absolute bottom-2 right-2 bg-gray-500 text-white p-2 rounded-full hover:bg-gray-600 transition">
+										<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+										</svg>
+									</button>
 								</div>
-								<button id="toggle2FABtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition" data-i18n="enable_2fa">
-									Enable 2FA
+							</div>
+						</div>
+						
+
+						<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+							<h2 class="text-xl font-semibold text-center mb-4" data-i18n="stats">Stats</h2>
+							<div class="flex justify-between mx-40">
+							<div> <span class="font-bold" data-i18n="win">Win</span> <br/>1</div>
+							<div> <span class="font-bold" data-i18n="lose">Lose</span> <br/>1</div>
+							</div>
+						</div>
+
+						<!-- Current User Info -->
+						<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+							<div id="profileStatus">
+							</div>
+							<div class="space-y-4">
+								<div>
+									<label class="block text-sm font-medium mb-2" data-i18n="username_label">Username:</label>
+									<input type="text" id="currentUsername" class="w-full p-3 border rounded-lg bg-gray-100" readonly>
+								</div>
+								<div>
+									<label class="block text-sm font-medium mb-2" data-i18n="email_label">Email:</label>
+									<input type="text" id="currentEmail" class="w-full p-3 border rounded-lg bg-gray-100" readonly>
+								</div>
+							</div>
+						</div>
+
+						<!-- Username Change Section -->
+						<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+							<h2 class="text-xl font-semibold mb-4" data-i18n="change_username">Change Username</h2>
+							<div class="space-y-4">
+								<div>
+									<label class="block text-sm font-medium mb-2" data-i18n="new_username_label">New Username:</label>
+									<input type="text" id="newUsername" class="w-full p-3 border rounded-lg" placeholder="Enter new username" data-i18n-placeholder="enter_new_username">
+								</div>
+								<button id="changeUsernameBtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition" data-i18n="update_username">
+									Update Username
 								</button>
 							</div>
-							
-							<!-- 2FA Setup Section (initially hidden) -->
-							<div id="twoFASetup" class="hidden space-y-4 border-t pt-4">
+						</div>
+
+						<!-- Password Change Section -->
+						<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+							<h2 class="text-xl font-semibold mb-4" data-i18n="change_password">Change Password</h2>
+							<div class="space-y-4">
 								<div>
-									<p class="text-sm mb-2" data-i18n="please_check_email_for_code">Scan this QR code with your authenticator app:</p>
-									<div id="qrCodeContainer" class="bg-gray-100 p-4 rounded-lg text-center">
-										<!-- QR Code will be generated here -->
-										<p class="text-gray-500" data-i18n="enter_code_below">QR Code will appear here</p>
+									<label class="block text-sm font-medium mb-2" data-i18n="current_password_label">Current Password:</label>
+									<input type="password" id="currentPassword" class="w-full p-3 border rounded-lg" placeholder="Enter current password" data-i18n-placeholder="enter_current_password">
+								</div>
+								<div>
+									<label class="block text-sm font-medium mb-2" data-i18n="new_password_label">New Password:</label>
+									<input type="password" id="newPassword" class="w-full p-3 border rounded-lg" placeholder="Enter new password" data-i18n-placeholder="enter_new_password">
+								</div>
+								<div>
+									<label class="block text-sm font-medium mb-2" data-i18n="confirm_new_password_label">Confirm New Password:</label>
+									<input type="password" id="confirmPassword" class="w-full p-3 border rounded-lg" placeholder="Confirm new password" data-i18n-placeholder="confirm_new_password">
+								</div>
+								<button id="changePasswordBtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition" data-i18n="update_password">
+									Update Password
+								</button>
+							</div>
+						</div>
+
+						<!-- 2FA Section -->
+						<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+							<h2 class="text-xl font-semibold mb-4" data-i18n="two_fa_title">Two-Factor Authentication (2FA)</h2>
+							<div class="space-y-4">
+								<div class="flex items-center justify-between">
+									<div>
+										<p class="font-medium" data-i18n="two_fa_status_label">2FA Status:</p>
+										<p id="twoFAStatus" class="text-sm text-gray-600" data-i18n="disabled">Disabled</p>
 									</div>
+									<button id="toggle2FABtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition" data-i18n="enable_2fa">
+										Enable 2FA
+									</button>
 								</div>
-								<div>
-									<label class="block text-sm font-medium mb-2" data-i18n="enter_6_digit_code">Enter the 6-digit code sent to your email:</label>
-									<input type="text" id="verificationCode" class="w-full p-3 border rounded-lg" placeholder="Enter 6-digit code" data-i18n-placeholder="six_digit_code_placeholder">
+								
+								<!-- 2FA Setup Section (initially hidden) -->
+								<div id="twoFASetup" class="hidden space-y-4 border-t pt-4">
+									<div>
+										<p class="text-sm mb-2" data-i18n="please_check_email_for_code">Scan this QR code with your authenticator app:</p>
+										<div id="qrCodeContainer" class="bg-gray-100 p-4 rounded-lg text-center">
+											<!-- QR Code will be generated here -->
+											<p class="text-gray-500" data-i18n="enter_code_below">QR Code will appear here</p>
+										</div>
+									</div>
+									<div>
+										<label class="block text-sm font-medium mb-2" data-i18n="enter_6_digit_code">Enter the 6-digit code sent to your email:</label>
+										<input type="text" id="verificationCode" class="w-full p-3 border rounded-lg" placeholder="Enter 6-digit code" data-i18n-placeholder="six_digit_code_placeholder">
+									</div>
+									<button id="verify2FABtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition" data-i18n="verify_enable_2fa">
+										Verify & Enable 2FA
+									</button>
 								</div>
-								<button id="verify2FABtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition" data-i18n="verify_enable_2fa">
-									Verify & Enable 2FA
-								</button>
 							</div>
 						</div>
-					</div>
 
-					<!-- Navigation -->
-					<div class="text-center">
-						<button id="homeBtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition" data-i18n="back_to_home">
-							Back to Home
-						</button>
+						<!-- Navigation -->
+						<div class="text-center">
+							<button id="homeBtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition" data-i18n="back_to_home">
+								Back to Home
+							</button>
+						</div>
 					</div>
-				</div>
-			`;
+				`;
 		}
+	}
+
+	async onPreLoad(): Promise<void> {
+		// Sayfa başlığını mevcut dile göre ayarla
+		this.title = t('profile');
+		console.log("Preparing to load Profile page");
+	}
+
+	async onLoad(): Promise<void> {
 		const changePictureBtn = document.getElementById("changePictureBtn");
 		if (changePictureBtn) {
 			changePictureBtn.addEventListener("click", () => {
@@ -194,17 +203,9 @@ class ProfilePage implements Page {
 				});
 			})
 		}
-	}
 
-	async onPreLoad(): Promise<void> {
-	// Sayfa başlığını mevcut dile göre ayarla
-	this.title = t('profile');
-	console.log("Preparing to load Profile page");
-	}
-
-	async onLoad(): Promise<void> {
 		await this.loadUserData();
-
+		
 		this.setupEventListeners();
 	}
 

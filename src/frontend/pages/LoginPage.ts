@@ -5,6 +5,8 @@ import { SIGNUP_PAGE } from "./SignUpPage"
 class LoginPage implements Page {
 	title: string = "login";
 	data: any;
+	static currentUsername: string = "";
+
 	constructor() {
 		this.data = null;
 	}
@@ -56,8 +58,6 @@ class LoginPage implements Page {
 			`;
 		}
 	}
-
-	static currentUsername: string = "";
 
 	static async loginWithGoogle() {
 		window.location.href = `${FETCH_ADDRESS}/auth/login/google`;

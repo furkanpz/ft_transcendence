@@ -10,14 +10,6 @@ class HomePage implements Page {
 	title: string = "Home";
 	data: any;
 	async render() : Promise<void> {
-		const response =  await fetch(`${FETCH_ADDRESS}/auth/check`, {credentials: "include"});
-		if (response.ok)
-		{
-			const dataWeHave = await response.json();
-			console.log("datawehabe: ", dataWeHave);
-			this.data = dataWeHave.username;
-		}
-		else{ this.data = null;}
 		const app = document.getElementById("app");
 		if (app) {
 			app.innerHTML = `
@@ -89,45 +81,51 @@ class HomePage implements Page {
 				
 			</div>
 			`;
-			const PVPBtn = document.getElementById("1v1Online-btn");
-			if (PVPBtn)
-			{
-				PVPBtn.addEventListener("click", () => {GlobalState.setPage(MATCHMAKING_PAGE('classic'))});
-			}
-			
-			const friendsBtn = document.getElementById("friends-btn");
-			if (friendsBtn)
-			{
-				friendsBtn.addEventListener("click", async () => {
-					GlobalState.setPage(FRIENDS_PAGE);
-				})
-			}
-
-			const socialBtn = document.getElementById("social-btn");
-			if (socialBtn) {
-				socialBtn.addEventListener("click", async () => {
-					GlobalState.setPage(CHAT_PAGE);
-				});
-			}
-
-			const logoutBtn = document.getElementById("logout");
-			if (logoutBtn) {
-				logoutBtn.addEventListener("click", async () => {
-					await fetch(`${FETCH_ADDRESS}/auth/logout`, {credentials: "include"});
-					window.location.reload();
-				});
-			}
 		}
 	}
 
 	async onPreLoad(): Promise<void> {
-		
-		
+		console.log("Home page preloading");
+		const response =  await fetch(`${FETCH_ADDRESS}/auth/check`, {credentials: "include"});
+		if (response.ok)
+		{
+			const dataWeHave = await response.json();
+			console.log("datawehabe: ", dataWeHave);
+			this.data = dataWeHave.username;
+		}
+		else{ this.data = null;}
 	}
 
 	async onLoad() : Promise<void> {
-		
 		console.log("Home page loaded");
+		const PVPBtn = document.getElementById("1v1Online-btn");
+		if (PVPBtn)
+		{
+			PVPBtn.addEventListener("click", () => {GlobalState.setPage(MATCHMAKING_PAGE('classic'))});
+		}
+		
+		const friendsBtn = document.getElementById("friends-btn");
+		if (friendsBtn)
+		{
+			friendsBtn.addEventListener("click", async () => {
+				GlobalState.setPage(FRIENDS_PAGE);
+			})
+		}
+
+		const socialBtn = document.getElementById("social-btn");
+		if (socialBtn) {
+			socialBtn.addEventListener("click", async () => {
+				GlobalState.setPage(CHAT_PAGE);
+			});
+		}
+
+		const logoutBtn = document.getElementById("logout");
+		if (logoutBtn) {
+			logoutBtn.addEventListener("click", async () => {
+				await fetch(`${FETCH_ADDRESS}/auth/logout`, {credentials: "include"});
+				window.location.reload();
+			});
+		}
 	}
 
 	async onUnload(): Promise<void> {

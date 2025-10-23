@@ -1,5 +1,5 @@
 import { GlobalState, Page } from "../main";
-import { GAME_1V1_PAGE } from "./Game1v1Page";
+import { CLASSIC_GAME_PAGE } from "./ClassicGamePage";
 import { GAME_2V2_PAGE } from "./Game2v2Page";
 import { GAME_TOURNAMENT_PAGE } from "./TournamentPage";
 import { HOME_PAGE } from "./HomePage";
@@ -87,7 +87,7 @@ class MatchmakingPage implements Page {
 		switch (message.queueType)
 		{
 			case "1v1":
-				GlobalState.setPage(GAME_1V1_PAGE(message.roomId));
+				GlobalState.setPage(CLASSIC_GAME_PAGE(message.roomId));
 				break;
 			case "2v2":
 				GlobalState.setPage(GAME_2V2_PAGE(message.roomId));

@@ -4,9 +4,9 @@ import { LOGIN_PAGE } from "./LoginPage"
 class ForgotPasswordPage implements Page {
 	title: string = "recovery";
 	data: any;
-	constructor() {
-		this.data = null;
-	}
+	static recoveryEmail: string = "";
+	static recoveryCode: string = "";
+
 	public async onUnload(): Promise<void> {
 		console.log("Forgot Password page unloaded");
 	}
@@ -14,6 +14,25 @@ class ForgotPasswordPage implements Page {
 		console.log("Preparing to load Forgot Password page");
 	}
 	public async onLoad(): Promise<void> {
+		
+		const backButton = document.getElementById("backButton");
+		const sendRecoveryBtn = document.getElementById("sendRecoveryBtn");
+		const resetPasswordBtn = document.getElementById("resetPasswordBtn");
+		const cancelResetBtn = document.getElementById("cancelResetBtn");
+
+		if (backButton) {
+			backButton.addEventListener("click", () => GlobalState.setPage(LOGIN_PAGE));
+		}
+		if (sendRecoveryBtn) {
+			sendRecoveryBtn.addEventListener("click", (e) => ForgotPasswordPage.sendRecoveryCode(e));
+		}
+		if (resetPasswordBtn) {
+			resetPasswordBtn.addEventListener("click", (e) => ForgotPasswordPage.resetPassword(e));
+		}
+		if (cancelResetBtn) {
+			cancelResetBtn.addEventListener("click", (e) => ForgotPasswordPage.cancelReset(e));
+		}
+
 		console.log("Forgot Password page loaded");
 		const urlParams = new URLSearchParams(window.location.search);
 		const verifyCode = urlParams.get('verify');
@@ -84,28 +103,9 @@ class ForgotPasswordPage implements Page {
 					</div>
 				</div>
 			`;
-			const backButton = document.getElementById("backButton");
-			const sendRecoveryBtn = document.getElementById("sendRecoveryBtn");
-			const resetPasswordBtn = document.getElementById("resetPasswordBtn");
-			const cancelResetBtn = document.getElementById("cancelResetBtn");
-
-			if (backButton) {
-				backButton.addEventListener("click", () => GlobalState.setPage(LOGIN_PAGE));
-			}
-			if (sendRecoveryBtn) {
-				sendRecoveryBtn.addEventListener("click", (e) => ForgotPasswordPage.sendRecoveryCode(e));
-			}
-			if (resetPasswordBtn) {
-				resetPasswordBtn.addEventListener("click", (e) => ForgotPasswordPage.resetPassword(e));
-			}
-			if (cancelResetBtn) {
-				cancelResetBtn.addEventListener("click", (e) => ForgotPasswordPage.cancelReset(e));
-			}
+			
 		}
 	}
-
-	static recoveryEmail: string = "";
-	static recoveryCode: string = "";
 
 	static async sendRecoveryCode(event: Event) {
 		event.preventDefault();

@@ -1,4 +1,3 @@
-import { gameStart } from "../game";
 import { Page } from "../main";
 
 class TournamentPage implements Page {

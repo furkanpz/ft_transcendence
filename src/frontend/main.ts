@@ -1,9 +1,13 @@
-import { HOME_PAGE, PROFILE_PAGE, PAGES, SIGNUP_PAGE, AI_GAME_PAGE, PVP_GAME_PAGE, FRIENDS_PAGE, LOGIN_PAGE, LoginPage, SignUpPage, FriendsPage} from "./pages";
 import { BLOCKED_USERS_PAGE, BlockedUsersPage } from "./pages/BlockedUsersPage";
 import { CHAT_PAGE, ChatPage } from "./pages/ChatPage";
 import { MATCHMAKING_PAGE } from "./pages/MatchmakingPage";
-import { ProfilePage } from "./pages/ProfilePage";
+import { PROFILE_PAGE, ProfilePage } from "./pages/ProfilePage";
 import * as i18n from "./i18n";
+import { FORGOT_PASSWORD_PAGE } from "./pages/ForgotPasswordPage";
+import { HOME_PAGE } from "./pages/HomePage";
+import { LOGIN_PAGE, LoginPage } from "./pages/LoginPage";
+import { SIGNUP_PAGE, SignUpPage } from "./pages/SignUpPage";
+import { FRIENDS_PAGE, FriendsPage } from "./pages/FriendsPage";
 
 // websocket için de kullanıyorum o yüzden sadece adres ve portu yazdım
 const FETCH_ADDRESS = "https://localhost:3000/api"
@@ -16,6 +20,16 @@ interface Page {
 	render: () => Promise<void>;
 	onLoad: () => Promise<void>;
 };
+
+const PAGES: { [key: string]: Page } = {
+	"home": HOME_PAGE,
+	"profile": PROFILE_PAGE,
+	"login": LOGIN_PAGE,
+	"signup": SIGNUP_PAGE,
+	"friends": FRIENDS_PAGE,
+	"forgot-password": FORGOT_PASSWORD_PAGE
+};
+
 
 class GlobalState {
 	private static currentPage: Page = HOME_PAGE;
@@ -87,32 +101,30 @@ window.onpopstate = function(event) {
 	GlobalState.setPage(page);
 };
 
-function init() {
+async function init() {
 	const path = window.location.pathname.toLowerCase();
 	const initialPage = GlobalState.getPage(path);
 
 	GlobalState.setcurrentPage(initialPage);
 	document.title = initialPage.title;
-	initialPage.onPreLoad();
-	initialPage.render();
+	await initialPage.onPreLoad();
+	await initialPage.render();
 	// translate initial render
 	i18n.translateDOM();
-	initialPage.onLoad();
+	await initialPage.onLoad();
 
 	window.history.replaceState({ pageKey: path }, initialPage.title, path);
 }
 
 init();
 
-export { Page, GlobalState, FETCH_ADDRESS, WS_ADDRESS };
+export { Page, GlobalState, FETCH_ADDRESS, WS_ADDRESS, PAGES };
 
 (window as any).GlobalState = GlobalState;
 (window as any).PROFILE_PAGE = PROFILE_PAGE;
 (window as any).HOME_PAGE = HOME_PAGE;
 (window as any).LOGIN_PAGE = LOGIN_PAGE;
 (window as any).SIGNUP_PAGE = SIGNUP_PAGE;
-(window as any).AI_GAME_PAGE = AI_GAME_PAGE;
-(window as any).PVP_GAME_PAGE = PVP_GAME_PAGE;
 (window as any).FRIENDS_PAGE = FRIENDS_PAGE;
 (window as any).BLOCKED_USERS_PAGE = BLOCKED_USERS_PAGE;
 (window as any).MATCHMAKING_PAGE = MATCHMAKING_PAGE;

@@ -1,6 +1,6 @@
 import { GlobalState, Page, FETCH_ADDRESS} from "../main"
-import { HOME_PAGE } from "../pages"
 import { BLOCKED_USERS_PAGE } from "./BlockedUsersPage"
+import { HOME_PAGE } from "./HomePage";
 
 class FriendsPage implements Page {
 	title: string = "Friends"

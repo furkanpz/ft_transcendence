@@ -1,4 +1,3 @@
-import { gameStart } from "../game";
 import { Page } from "../main";
 
 class Game2v2Page implements Page {
@@ -42,7 +41,6 @@ class Game2v2Page implements Page {
     }
 
     async onLoad(): Promise<void> {
-        gameStart(true);
         console.log("2v2 Game Page loaded");
     }
 
