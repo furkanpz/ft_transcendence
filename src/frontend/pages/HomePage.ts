@@ -5,6 +5,7 @@ import { SIGNUP_PAGE } from "./SignUpPage";
 import { MATCHMAKING_PAGE } from "./MatchmakingPage";
 import { CHAT_PAGE } from "./ChatPage";
 import { PROFILE_PAGE } from "./ProfilePage";
+import { GAME_TOURNAMENT_PAGE } from "./TournamentPage";
 
 class HomePage implements Page {
 	title: string = "Home";
@@ -55,9 +56,9 @@ class HomePage implements Page {
 									<span data-i18n="one_v_one_online">1V1 Online</span>
 								</button>
 
-								<button onclick="GlobalState.setPage(MATCHMAKING('tournament'))" id="tournament-btn"
-									class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
-									<span data-i18n="tournament">Tournament</span>
+								<button id="tournament-btn"
+									class="bg-purple-600 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-purple-800 transition duration-300 ease-in-out">
+									<span data-i18n="tournament">🏆 Tournament</span>
 								</button>
 								
 								<button id="friends-btn"
@@ -98,10 +99,24 @@ class HomePage implements Page {
 
 	async onLoad() : Promise<void> {
 		console.log("Home page loaded");
+		
+		const activeTournament = localStorage.getItem('activeTournament');
+		if (activeTournament && this.data) {
+			console.log("Found active tournament, redirecting:", activeTournament);
+			GlobalState.setPage(GAME_TOURNAMENT_PAGE(activeTournament));
+			return;
+		}
+		
 		const PVPBtn = document.getElementById("1v1Online-btn");
 		if (PVPBtn)
 		{
 			PVPBtn.addEventListener("click", () => {GlobalState.setPage(MATCHMAKING_PAGE('classic'))});
+		}
+		
+		const tournamentBtn = document.getElementById("tournament-btn");
+		if (tournamentBtn)
+		{
+			tournamentBtn.addEventListener("click", () => {GlobalState.setPage(MATCHMAKING_PAGE('tournament'))});
 		}
 		
 		const friendsBtn = document.getElementById("friends-btn");
@@ -123,6 +138,7 @@ class HomePage implements Page {
 		if (logoutBtn) {
 			logoutBtn.addEventListener("click", async () => {
 				await fetch(`${FETCH_ADDRESS}/auth/logout`, {credentials: "include"});
+				localStorage.removeItem('activeTournament');
 				window.location.reload();
 			});
 		}

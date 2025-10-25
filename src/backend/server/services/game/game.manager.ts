@@ -1,6 +1,8 @@
 import { WebSocket } from "ws"
 import { GameType, GameRoom, ClassicGameResult, PlayerState} from "../../types/game.types"
 import { ClassicGameInstance } from "./game.instance";
+import { tournamentManager } from "./tournament.manager";
+import { getDb } from "../../db/db.get";
 
 class ClassicGameManager
 {
@@ -69,17 +71,48 @@ class ClassicGameManager
 		return room.id;
 	}
 
-	public finishGame(roomId: string) : void
+	public async finishGame(roomId: string) : Promise<void>
 	{
+		const room = this.gameRooms.get(roomId);
+		if (!room) return;
+
+		const gameInstance = this.gamesInstances.get(roomId);
+		if (!gameInstance) return;
+
+		const player1Id = room.players[0];
+		const player2Id = room.players[1];
+		const player1Score = gameInstance.player1.score;
+		const player2Score = gameInstance.player2.score;
+
 		this.playerSockets.forEach((socket, userId) => {
-			socket.send(JSON.stringify({action: "gameEnded",
-				result: {
-					player1Id: this.gameRooms.get(this.playerRoom.get(userId)!)!.players[0],
-					player2Id: this.gameRooms.get(this.playerRoom.get(userId)!)!.players[1],
-					player1Score: this.gamesInstances.get(this.playerRoom.get(userId)!)!.player1.score,
-					player2Score: this.gamesInstances.get(this.playerRoom.get(userId)!)!.player2.score,
-				} as ClassicGameResult}));
+			if (room.players.includes(userId)) {
+				socket.send(JSON.stringify({
+					action: "gameEnded",
+					result: {
+						player1Id,
+						player2Id,
+						player1Score,
+						player2Score,
+					} as ClassicGameResult
+				}));
+			}
 		});
+
+		if (room.roomType === GameType.Tournament) {
+			await tournamentManager.handleMatchResult(roomId, player1Id, player2Id, player1Score, player2Score);
+		} else if (room.roomType === GameType.Classic) {
+			const db = await getDb();
+			const winnerId = player1Score > player2Score ? player1Id : player2Id;
+			const loserId = player1Score > player2Score ? player2Id : player1Id;
+			
+			await db.run(
+				`INSERT INTO ft_match_history 
+				 (player1_id, player2_id, winner_id, loser_id, p1_score, p2_score, match_type) 
+				 VALUES (?, ?, ?, ?, ?, ?, 'classic')`,
+				[player1Id, player2Id, winnerId, loserId, player1Score, player2Score]
+			);
+		}
+
 		this.removeRoom(roomId);
 	}
 
@@ -96,7 +129,6 @@ class ClassicGameManager
 			if (room.gameResult) {
 				const gameResult = room.gameResult as ClassicGameResult;
 				console.log(`Game result for room ${roomId}: Player 1 (ID: ${gameResult.player1Id}) Score: ${gameResult.player1Score}, Player 2 (ID: ${gameResult.player2Id}) Score: ${gameResult.player2Score}`);
-				// Burada Databse eklenecek ama ben beceremedim.
 			}
 			else {
 				console.log(`Game ended for room ${roomId} with no result recorded.`);

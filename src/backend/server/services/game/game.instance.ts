@@ -150,7 +150,6 @@ class ClassicGameInstance {
 	}
 
 	updatePlayer(player: Player) {
-		console.log(`${this.playerKeys.get(player.id)?.has("w")} | ${this.playerKeys.get(player.id)?.has("s")}`);
 		if (this.playerKeys.get(player.id)?.has("w")) {
 			if (player.pos.y - player.dim.y / 2 <= 0)
 				player.pos.y = player.dim.y / 2;
