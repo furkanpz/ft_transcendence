@@ -1,6 +1,7 @@
 import WebSocket from "ws";
 import { GameType } from "../../types/game.types";
 import { gameManager } from "./game.manager";
+import { tournamentManager } from "./tournament.manager";
 
 class QueueManager {
 	public classicGameQueue : number[] = new Array();

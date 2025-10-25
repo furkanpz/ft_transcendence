@@ -1,6 +1,6 @@
 import { WebSocket } from "ws";
 import { getDb } from "../../db/db.get";
-import { classicGameManager } from "./game.manager";
+import { gameManager } from "./game.manager";
 import { GameType } from "../../types/game.types";
 
 interface TournamentPlayer {
@@ -180,7 +180,7 @@ class TournamentManager {
             return;
         }
 
-        const roomId = classicGameManager.createRoom([match.player1Id, match.player2Id], GameType.Tournament);
+        const roomId = gameManager.createRoom([match.player1Id, match.player2Id], GameType.Tournament);
         match.roomId = roomId;
         match.status = 'in_progress';
 
