@@ -60,14 +60,39 @@ class QueueManager {
 		else if (gameType == GameType.Tournament)
 		{
 			this.tournamentGameQueue.push(userId);
+			
+			this.tournamentGameQueue.forEach((id) => {
+				const playerSocket = this.playerSockets.get(id);
+				if (playerSocket) {
+					playerSocket.send(JSON.stringify({
+						action: "queueUpdate",
+						queueType: "tournament",
+						currentPlayers: this.tournamentGameQueue.length,
+						requiredPlayers: 8
+					}));
+				}
+			});
+			
 			if (this.tournamentGameQueue.length >= 8)
 			{
-				this.tournamentGameQueue.splice(0, 8).forEach((value) => 
-					{
-						this.playerSockets.get(value)?.send(JSON.stringify({action: "matchFound", queueType: "tournament"})); 
-						this.playerSockets.delete(value);
-					}
-				);
+				const players = this.tournamentGameQueue.splice(0, 8);
+				
+				tournamentManager.createTournament(players).then(tournamentId => {
+					players.forEach((value) => 
+						{
+							this.playerSockets.get(value)?.send(JSON.stringify({
+								action: "matchFound", 
+								queueType: "tournament",
+								tournamentId: tournamentId
+							}));
+							this.playerSockets.delete(value);
+						}
+					);
+					
+					setTimeout(() => {
+						tournamentManager.startTournament(tournamentId);
+					}, 5000);
+				});
 			}
 		}
 		return true;

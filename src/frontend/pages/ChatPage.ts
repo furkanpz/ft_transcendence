@@ -334,15 +334,15 @@ class ChatPage implements Page {
                 console.log(`📦 Fetched ${rooms.length} rooms from backend`);
 
                 for (const room of rooms) {
-                    if (room.is_private && room.name.startsWith('private_')) {
-                        // Extract other user's username from room name
-                        // Room format: private_user1_user2 (alphabetically sorted)
-                        const roomNameParts = room.name.replace('private_', '').split('_');
-                        const currentUser = ChatPage.getCurrentUsername();
-                        
-                        // Find the username that is NOT the current user
-                        const username = roomNameParts.find((u: string) => u !== currentUser) || roomNameParts[0];
-                        
+                    if (room.is_private) {
+                        let username: string | undefined = room.peer_username;
+                        if (!username && room.name && room.name.startsWith('private_')) {
+                            const parts = room.name.replace('private_', '').split('_');
+                            const currentUser = ChatPage.getCurrentUsername();
+                            username = parts.find((u: string) => u !== currentUser) || parts[0];
+                        }
+                        if (!username) continue;
+
                         console.log(`📂 Room: ${room.name} → Other user: ${username}`);
 
                         ChatPage.userRoomIds[username] = room.id;
@@ -593,7 +593,7 @@ class ChatPage implements Page {
                 console.log(`📋 Found ${rooms.length} rooms:`, rooms);
 
                 for (const room of rooms) {
-                    if (room.is_private && room.name === roomName) {
+                    if (room.is_private && (room.peer_username === username)) {
                         ChatPage.userRoomIds[username] = room.id;
                         console.log(`✅ Found existing room: ${room.id}`);
 
@@ -613,58 +613,7 @@ class ChatPage implements Page {
                 console.error(`❌ Failed to fetch rooms: ${roomsResponse.status}`);
             }
 
-            console.log(`🆕 Creating new room: ${roomName}`);
-            const createResponse = await fetch(`${FETCH_ADDRESS}/chat/rooms`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: roomName,
-                    isPrivate: true
-                })
-            });
-
-            if (createResponse.ok) {
-                const createData = await createResponse.json();
-                console.log(`✅ Room created:`, createData);
-
-                const roomId = createData.room?.id || createData.data?.room?.id || createData.id;
-
-                if (roomId) {
-                    ChatPage.userRoomIds[username] = roomId;
-
-                    const socket = GlobalState.getSocket();
-                    if (socket && socket.readyState === WebSocket.OPEN) {
-                        console.log(`📤 Sending join_room for new room: ${roomId}`);
-                        socket.send(JSON.stringify({
-                            type: 'join_room',
-                            data: { room_id: roomId }
-                        }));
-                    }
-
-                    return roomId;
-                }
-            } else {
-                const errorData = await createResponse.json().catch(() => ({}));
-                console.error(`❌ Failed to create room: ${createResponse.status}`, errorData);
-                
-                // If room already exists (created by other user), try to find it by name
-                if (createResponse.status === 500 && errorData.message?.includes('already exists')) {
-                    console.log(`🔄 Room exists, fetching all rooms to find it...`);
-                    
-                    // Fetch all rooms (not just user's rooms) - we'll need a new endpoint or workaround
-                    // For now, try to join the room by sending join_room to WebSocket with expected room_id
-                    // But we don't have room_id... so we need backend to return it or handle this differently
-                    
-                    ChatPage.addSystemMessage('Oda zaten mevcut. Lütfen sayfayı yenileyin.');
-                    return null;
-                }
-                
-                const tempRoomId = `temp_${username}_${Date.now()}`;
-                ChatPage.userRoomIds[username] = tempRoomId;
-                return tempRoomId;
-            }
-
+            ChatPage.addSystemMessage('Sadece arkadaşlarla özel sohbet mümkündür. Arkadaş olunca sohbet odası otomatik oluşur.');
             return null;
         } catch (error) {
             console.error(`❌ createOrJoinPrivateRoom error:`, error);

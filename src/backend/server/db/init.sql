@@ -74,5 +74,60 @@ CREATE TABLE IF NOT EXISTS ft_match_history (
     winner_id   INTEGER NOT NULL,
     loser_id    INTEGER NOT NULL,
     p1_score    INTEGER NOT NULL,
-    p2_score    INTEGER NOT NULL
+    p2_score    INTEGER NOT NULL,
+    match_type  TEXT CHECK(match_type IN ('classic', 'tournament', 'multiplayer')) DEFAULT 'classic',
+    tournament_id TEXT,
+    played_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (player1_id) REFERENCES ft_users(id),
+    FOREIGN KEY (player2_id) REFERENCES ft_users(id),
+    FOREIGN KEY (winner_id) REFERENCES ft_users(id),
+    FOREIGN KEY (loser_id) REFERENCES ft_users(id)
+);
+
+CREATE TABLE IF NOT EXISTS ft_tournaments (
+    id              TEXT PRIMARY KEY,
+    status          TEXT CHECK(status IN ('waiting', 'in_progress', 'completed', 'cancelled')) DEFAULT 'waiting',
+    required_players INTEGER DEFAULT 8,
+    current_round   INTEGER DEFAULT 1,
+    max_rounds      INTEGER DEFAULT 3,
+    winner_id       INTEGER,
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    started_at      DATETIME,
+    completed_at    DATETIME,
+    FOREIGN KEY (winner_id) REFERENCES ft_users(id)
+);
+
+CREATE TABLE IF NOT EXISTS ft_tournament_participants (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    tournament_id   TEXT NOT NULL,
+    user_id         INTEGER NOT NULL,
+    seed_position   INTEGER NOT NULL,
+    current_round   INTEGER DEFAULT 1,
+    is_eliminated   BOOLEAN DEFAULT FALSE,
+    eliminated_at   DATETIME,
+    final_position  INTEGER,
+    joined_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (tournament_id, user_id),
+    FOREIGN KEY (tournament_id) REFERENCES ft_tournaments(id),
+    FOREIGN KEY (user_id) REFERENCES ft_users(id)
+);
+
+CREATE TABLE IF NOT EXISTS ft_tournament_matches (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    tournament_id   TEXT NOT NULL,
+    round_number    INTEGER NOT NULL,
+    match_number    INTEGER NOT NULL,
+    player1_id      INTEGER,
+    player2_id      INTEGER,
+    winner_id       INTEGER,
+    player1_score   INTEGER DEFAULT 0,
+    player2_score   INTEGER DEFAULT 0,
+    status          TEXT CHECK(status IN ('pending', 'in_progress', 'completed')) DEFAULT 'pending',
+    room_id         TEXT,
+    started_at      DATETIME,
+    completed_at    DATETIME,
+    FOREIGN KEY (tournament_id) REFERENCES ft_tournaments(id),
+    FOREIGN KEY (player1_id) REFERENCES ft_users(id),
+    FOREIGN KEY (player2_id) REFERENCES ft_users(id),
+    FOREIGN KEY (winner_id) REFERENCES ft_users(id)
 )

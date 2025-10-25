@@ -2,6 +2,7 @@ import { ClassicGame } from "./ClassicGame";
 import { GlobalState, Page } from "../main";
 import { HOME_PAGE } from "./HomePage";
 import { CLASSIC_GAME_PAGE_RESULT } from "./ClassicGameResult";
+import { GAME_TOURNAMENT_PAGE } from "./TournamentPage";
 
 class ClassicGamePage implements Page {
     title: string = "1v1 Game";
@@ -87,7 +88,14 @@ class ClassicGamePage implements Page {
                 const message = JSON.parse(event.data);
                 this.game!.handleEvents(message);
                 if (message.action == "gameEnded") {
-                    GlobalState.setPage(CLASSIC_GAME_PAGE_RESULT(message.result));
+                    const activeTournament = localStorage.getItem('activeTournament');
+                    if (activeTournament) {
+                        setTimeout(() => {
+                            GlobalState.setPage(GAME_TOURNAMENT_PAGE(activeTournament));
+                        }, 3000);
+                    } else {
+                        GlobalState.setPage(CLASSIC_GAME_PAGE_RESULT(message.result));
+                    }
                 }
             };
         });

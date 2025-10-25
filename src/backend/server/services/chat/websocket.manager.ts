@@ -1,6 +1,6 @@
 import { WebSocket } from 'ws';
 import { ChatMessage, ChatEvent, WebSocketUser } from '../../types/chat.types';
-import { saveMessage, getChatHistory } from '../chat/chat.services';
+import { saveMessage, getChatHistory, canAccessRoom } from '../chat/chat.services';
 import chatLimiter from '../../helpers/chat.limiter';
 class ChatManager {
     private connectedUsers: Map<number, WebSocketUser> = new Map();
@@ -75,6 +75,12 @@ class ChatManager {
             this.leaveRoom(userId, user.current_room);
         }
 
+        const allowed = await canAccessRoom(userId, roomId);
+        if (!allowed) {
+            this.sendError(user.socket, 'Access denied for this room');
+            return;
+        }
+
         if (!this.rooms.has(roomId)) {
             this.rooms.set(roomId, new Set());
         }
@@ -120,6 +126,12 @@ class ChatManager {
         const user = this.connectedUsers.get(userId);
         if (!user || !user.current_room) {
             console.log(`❌ broadcastMessage failed: user=${userId}, current_room=${user?.current_room}`);
+            return;
+        }
+
+        const allowed = await canAccessRoom(userId, user.current_room);
+        if (!allowed) {
+            this.sendError(user.socket, 'Access denied for this room');
             return;
         }
 

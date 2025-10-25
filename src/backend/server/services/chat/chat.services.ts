@@ -1,10 +1,10 @@
 import { getDb } from '../../db/db.get';
 import { ChatMessage, ChatRoom } from '../../types/chat.types';
-import { v4 as uuidv4 } from 'uuid';
+import * as userServices from '../user/user.services';
 
 export async function createChatRoom(name: string, createdBy: number, isPrivate: boolean = false): Promise<ChatRoom | null> {
     const db = await getDb();
-    const roomId = uuidv4();
+    const roomId = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
     
     try {
         await db.run(
@@ -50,6 +50,13 @@ export async function getRoom(roomId: string) : Promise<boolean> {
     if (chat == undefined)
         return false;
     return true;
+}
+
+export async function getRoomInfo(roomId: string): Promise<{ id: string, name: string, is_private: boolean } | null> {
+    const db = await getDb();
+    const row = await db.get('SELECT id, name, is_private FROM ft_chat_rooms WHERE id = ?', roomId) as any;
+    if (!row) return null;
+    return { id: row.id, name: row.name, is_private: !!row.is_private };
 }
 
 export async function getRoomWithName(roomName: string) : Promise<ChatRoom | null> {
@@ -115,7 +122,7 @@ export async function getChatHistory(roomId: string, limit: number = 50): Promis
             LIMIT ?
         `, roomId, limit);
         
-        return messages.reverse().map(msg => ({
+    return messages.reverse().map((msg: any) => ({
             id: msg.id.toString(),
             user_id: msg.user_id,
             username: msg.username,
@@ -138,33 +145,58 @@ export async function getRoomParticipants(roomId: string): Promise<number[]> {
             'SELECT user_id FROM ft_chat_participants WHERE room_id = ?',
             roomId
         );
-        return participants.map(p => p.user_id);
+    return participants.map((p: any) => p.user_id);
     } catch (error) {
         console.error('Error getting room participants:', error);
         return [];
     }
 }
 
-export async function getUserRooms(userId: number): Promise<ChatRoom[]> {
+export async function getUserRooms(userId: number): Promise<any[]> {
     const db = await getDb();
-    
     try {
-        const rooms = await db.all(`
-            SELECT cr.* 
-            FROM ft_chat_rooms cr
-            JOIN ft_chat_participants cp ON cr.id = cp.room_id
-            WHERE cp.user_id = ?
-        `, userId);
-        
-        return rooms.map(room => ({
-            id: room.id,
-            name: room.name,
-            created_by: room.created_by,
-            created_at: new Date(room.created_at),
-            is_private: room.is_private,
-            participants: []
-        }));
-    } catch (error) {
+        const rooms = await db.all(
+            `SELECT cr.* FROM ft_chat_rooms cr
+             JOIN ft_chat_participants cp ON cr.id = cp.room_id
+             WHERE cp.user_id = ?`,
+            userId
+        );
+
+        const result: any[] = [];
+        for (const room of rooms) {
+            if (room.is_private) {
+                const otherIdRow = await db.get(
+                    `SELECT user_id FROM ft_chat_participants WHERE room_id = ? AND user_id != ? LIMIT 1`,
+                    room.id, userId
+                ) as { user_id: number } | undefined;
+                const otherId = otherIdRow?.user_id;
+                if (!otherId) continue;
+                const ok = await friendshipAccepted(userId, otherId);
+                if (!ok) continue;
+                const otherUser = await userServices.userIdFindInDb(otherId);
+                const peer_username = otherUser?.username;
+                result.push({
+                    id: room.id,
+                    name: room.name,
+                    created_by: room.created_by,
+                    created_at: new Date(room.created_at),
+                    is_private: room.is_private,
+                    participants: [],
+                    peer_username
+                });
+                continue;
+            }
+            result.push({
+                id: room.id,
+                name: room.name,
+                created_by: room.created_by,
+                created_at: new Date(room.created_at),
+                is_private: room.is_private,
+                participants: []
+            });
+        }
+        return result;
+    } catch {
         return [];
     }
 }
@@ -181,4 +213,78 @@ export async function deleteChatRoom(roomId: string): Promise<boolean> {
 		console.error('Error deleting chat room:', error);
 		return false;
 	}
+}
+
+export function dmRoomNameFromIds(a: number, b: number): string {
+    const [x, y] = a < b ? [a, b] : [b, a];
+    return `dm_${x}_${y}`;
+}
+
+export async function friendshipAccepted(a: number, b: number): Promise<boolean> {
+    const db = await getDb();
+    const rows = await db.all(
+        `SELECT stat FROM ft_friendship WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)`,
+        a, b, b, a
+    ) as Array<{ stat: string }>;
+    if (!rows || rows.length < 2) return false;
+    return rows.every(r => r.stat === 'Accepted');
+}
+
+export async function ensureDmRoom(userId: number, friendId: number): Promise<ChatRoom | null> {
+    if (userId === friendId) return null;
+    const db = await getDb();
+
+    const [u1, u2] = userId < friendId ? [userId, friendId] : [friendId, userId];
+    const name = dmRoomNameFromIds(u1, u2);
+    const byParticipants = await db.get(
+        `SELECT cr.id, cr.name FROM ft_chat_rooms cr
+         JOIN ft_chat_participants p1 ON p1.room_id = cr.id AND p1.user_id = ?
+         JOIN ft_chat_participants p2 ON p2.room_id = cr.id AND p2.user_id = ?
+         WHERE cr.is_private = 1
+         LIMIT 1`,
+        u1, u2
+    ) as { id: string, name: string } | undefined;
+
+    if (byParticipants && byParticipants.name !== name) {
+        const nameTaken = await db.get(`SELECT id FROM ft_chat_rooms WHERE name = ?`, name) as { id: string } | undefined;
+        if (!nameTaken) {
+            await db.run(`UPDATE ft_chat_rooms SET name = ? WHERE id = ?`, name, byParticipants.id);
+        }
+    }
+
+    const existing = await db.get(`SELECT * FROM ft_chat_rooms WHERE name = ? AND is_private = 1`, name) as any;
+    let roomId: string;
+    if (!existing) {
+        const created = await createChatRoom(name, u1, true);
+        if (!created) return null;
+        roomId = created.id;
+    } else {
+        roomId = existing.id;
+    }
+    await db.run('INSERT OR IGNORE INTO ft_chat_participants (room_id, user_id) VALUES (?, ?)', roomId, u1);
+    await db.run('INSERT OR IGNORE INTO ft_chat_participants (room_id, user_id) VALUES (?, ?)', roomId, u2);
+
+    return {
+        id: roomId,
+        name,
+        created_by: u1,
+        created_at: new Date(),
+        is_private: true,
+        participants: [u1, u2]
+    };
+}
+
+export async function canAccessRoom(userId: number, roomId: string): Promise<boolean> {
+    const db = await getDb();
+    const room = await db.get('SELECT * FROM ft_chat_rooms WHERE id = ?', roomId) as { id: string, is_private: number } | undefined;
+    if (!room) return false;
+    const part = await db.get('SELECT 1 FROM ft_chat_participants WHERE room_id = ? AND user_id = ?', roomId, userId);
+    if (!part) return false;
+    if (room.is_private) {
+        const other = await db.get('SELECT user_id FROM ft_chat_participants WHERE room_id = ? AND user_id != ? LIMIT 1', roomId, userId) as { user_id: number } | undefined;
+        if (!other) return false;
+        const ok = await friendshipAccepted(userId, other.user_id);
+        if (!ok) return false;
+    }
+    return true;
 }
