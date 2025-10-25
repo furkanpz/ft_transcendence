@@ -3,7 +3,7 @@ import {
         createChatRoom, getUserRooms,
         getChatHistory, joinRoom,
         deleteChatRoom, getRoom,
-        getRoomWithName
+        getRoomWithName, canAccessRoom, getRoomInfo
     } from '../services/chat/chat.services';
 import { sendSuccess, sendError } from '../helpers/response';
 import { jwtUser, userRole } from '../types/user.types';
@@ -13,29 +13,21 @@ import server from '../server';
 export async function createRoomController(request: FastifyRequest, response: FastifyReply) {
     const user = request.user as jwtUser;
     const { name, isPrivate } = request.body as { name: string; isPrivate?: boolean };
-    
-    if (!isPrivate) {
-        const isAdmin = user.role === userRole.admin;
-        if (!isAdmin) {
-            return sendError(response, 403, 'Only admins can create public rooms');
-        }
+    if (isPrivate) {
+        return sendError(response, 403, 'Private rooms are created automatically for friends');
     }
-    
+
+    const isAdmin = user.role === userRole.admin;
+    if (!isAdmin) {
+        return sendError(response, 403, 'Only admins can create public rooms');
+    }
+
     if (!name || name.trim().length === 0) {
         return sendError(response, 400, 'Room name is required');
     }
-    
-    if (isPrivate) {
-        const existingRoom = await getRoomWithName(name);
-        if (existingRoom) {
-            await joinRoom(existingRoom.id, user.id);
-            return sendSuccess(response, 'Joined existing chat room', { room: existingRoom });
-        }
-    } else {
-        const checkRoom = await getRoomWithName(name);
-        if (checkRoom) {
-            return sendError(response, 500, "Such a room already exists");
-        }
+    const checkRoom = await getRoomWithName(name);
+    if (checkRoom) {
+        return sendError(response, 500, "Such a room already exists");
     }
     
     const room = await createChatRoom(name.trim(), user.id, isPrivate || false);
@@ -68,9 +60,16 @@ export async function deleteRoomController(request: FastifyRequest, response: Fa
 export async function joinRoomController(request: FastifyRequest, response: FastifyReply) {
     const user = request.user as jwtUser;
     const { roomId } = request.params as { roomId: string };
-    const checkRoom = await getRoom(roomId);
-    if (!checkRoom)
+    const info = await getRoomInfo(roomId);
+    if (!info)
         return sendError(response, 500, "There's no room like this");
+
+    if (info.is_private) {
+        const allowed = await canAccessRoom(user.id, roomId);
+        if (!allowed)
+            return sendError(response, 403, 'Access denied for this room');
+        return sendSuccess(response, 'Joined room successfully');
+    }
 
     const success = await joinRoom(roomId, user.id);
     if (!success)
@@ -87,9 +86,11 @@ export async function getUserRoomsController(request: FastifyRequest, response: 
 }
 
 export async function getRoomHistoryController(request: FastifyRequest, response: FastifyReply) {
+    const user = request.user as jwtUser;
     const { roomId } = request.params as { roomId: string };
     const { limit } = request.query as { limit?: string };
-
+    const allowed = await canAccessRoom(user.id, roomId);
+    if (!allowed) return sendError(response, 403, 'Access denied for this room');
     const messages = await getChatHistory(roomId, limit ? parseInt(limit) : 50);
     return sendSuccess(response, 'Chat history retrieved successfully', { messages });
 }
@@ -110,7 +111,6 @@ export async function chatController(connection: any, req: any) {
           data: { message: 'Connected to chat server' }
         }));
       } catch (error) {
-        console.log(error); // debug
         connection.close(1008, 'Invalid token');
       }
 }

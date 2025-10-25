@@ -4,6 +4,7 @@ import * as userServices from '../services/user/user.services';
 import * as userFriendsUtils from '../services/user/friends.services';
 import { sendSuccess, sendError } from '../helpers/response';
 import * as authServices from '../services/auth/auth.services';
+import { ensureDmRoom } from '../services/chat/chat.services';
 
 export async function friendsDetailsController(request: FastifyRequest, response: FastifyReply) {
     const body = request.body as { friends: number[] };
@@ -115,6 +116,7 @@ export async function friendRequestController(request: FastifyRequest, response:
     switch (request_type) {
         case friendstat.Accepted:
             message = "Friend is added!";
+            try { await ensureDmRoom(targetUserId, friend_id); } catch {}
             break;
         case friendstat.Remove:
             message = "Friendship Removed";
