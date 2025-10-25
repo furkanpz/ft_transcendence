@@ -1,12 +1,11 @@
-import { ClassicGame } from "./ClassicGame";
 import { GlobalState, Page } from "../main";
-import { HOME_PAGE } from "./HomePage";
-import { CLASSIC_GAME_PAGE_RESULT } from "./ClassicGameResult";
+import { MultiplayerGame } from "./MultiplayerGame";
+import { MULTIPLAYER_GAME_PAGE_RESULT } from "./MultiplayerGameResult";
 
-class ClassicGamePage implements Page {
-    title: string = "1v1 Game";
+class MultiplayerGamePage implements Page {
+    title: string = "Multiplayer Game";
     roomId: string;
-    game: ClassicGame | undefined = undefined;
+    game: MultiplayerGame | undefined = undefined;
 
     constructor(roomId: string) {
         this.roomId = roomId;
@@ -16,9 +15,9 @@ class ClassicGamePage implements Page {
         const app = document.getElementById("app");
         if (app) {
             app.innerHTML = `
-
             <style>
                 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
                 .neon-text-cyan {
                     text-shadow: 0 0 5px #00BFFF, 0 0 10px #00BFFF, 0 0 20px #00BFFF;
                 }
@@ -57,7 +56,7 @@ class ClassicGamePage implements Page {
                     </div>
 
                     <div class="flex-grow">
-                        <canvas id="game" width="800" height="600" class="w-full h-auto aspect-[4/3] rounded-lg neon-shadow-magenta"></canvas>
+                        <canvas id="game" width="800" height="1200" class="w-full h-auto aspect-[2/3] rounded-lg neon-shadow-magenta"></canvas>
                     </div>
 
                     <div class="text-center w-1/6">
@@ -79,15 +78,16 @@ class ClassicGamePage implements Page {
             socket.onopen = () => {
                 GlobalState.setSocket(socket);
                 socket.send(JSON.stringify({ action: "joinGame", roomId: this.roomId }));
-                this.game = new ClassicGame(socket);
+                this.game = new MultiplayerGame(socket);
                 resolve();
             };
 
             socket.onmessage = (event) => {
                 const message = JSON.parse(event.data);
+                console.log("MultiplayerGamePage received message:", message);
                 this.game!.handleEvents(message);
                 if (message.action == "gameEnded") {
-                    GlobalState.setPage(CLASSIC_GAME_PAGE_RESULT(message.result));
+                    GlobalState.setPage(MULTIPLAYER_GAME_PAGE_RESULT(message.result));
                 }
             };
         });
@@ -124,6 +124,6 @@ class ClassicGamePage implements Page {
     }
 }
 
-const CLASSIC_GAME_PAGE = (roomID : string) => new ClassicGamePage(roomID);
+const MULTIPLAYER_GAME_PAGE = (roomID : string) => new MultiplayerGamePage(roomID);
 
-export { CLASSIC_GAME_PAGE, ClassicGamePage };
+export { MULTIPLAYER_GAME_PAGE, MultiplayerGamePage };

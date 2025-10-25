@@ -1,6 +1,6 @@
 import WebSocket from "ws";
 import { GameType } from "../../types/game.types";
-import { classicGameManager } from "./game.manager";
+import { gameManager } from "./game.manager";
 
 class QueueManager {
 	public classicGameQueue : number[] = new Array();
@@ -8,14 +8,16 @@ class QueueManager {
 	public multiplayerGameQueue : number[] = new Array();
 	public playerSockets : Map<number, WebSocket> = new Map(); 
 
-	public addQueue(userId: number, socket: WebSocket, gameType : GameType) : void
+	public addQueue(userId: number, socket: WebSocket, gameType : GameType) : boolean
 	{
-		if (this.classicGameQueue.find((value) => value == userId) ||
+		if (this.playerSockets.has(userId) ||
+			this.classicGameQueue.find((value) => value == userId) ||
 			this.tournamentGameQueue.find((value) => value == userId) ||
 			this.multiplayerGameQueue.find((value) => value == userId)) {
-				console.log("Player already in one queue.!");
+				console.log("Player already in one queue.");
+				socket.send(JSON.stringify({type: "error", data: { message: "Player already in one queue."}}));
+				return false;
 		}
-		
 		this.playerSockets.set(userId, socket);
 
 		socket.on("close", () => {
@@ -30,7 +32,7 @@ class QueueManager {
 			if (this.classicGameQueue.length >= 2)
 			{
 				const players = this.classicGameQueue.splice(0, 2);
-				const roomId = classicGameManager.createRoom(players, GameType.Classic);
+				const roomId = gameManager.createRoom(players, GameType.Classic);
 				players.forEach((value) => 
 					{
 						this.playerSockets.get(value)?.send(JSON.stringify({action: "matchFound", queueType: "1v1", roomId: roomId}));
@@ -44,14 +46,16 @@ class QueueManager {
 			this.multiplayerGameQueue.push(userId);
 			if (this.multiplayerGameQueue.length >= 4)
 			{
-				this.multiplayerGameQueue.splice(0, 4).forEach((value) => 
+
+				const players = this.multiplayerGameQueue.splice(0, 4);
+				const roomId = gameManager.createRoom(players, GameType.Multiplayer);
+				players.forEach((value) => 
 					{
-						this.playerSockets.get(value)?.send(JSON.stringify({action: "matchFound", queueType: "2v2"}));
-						this.playerSockets.delete(value)
+						this.playerSockets.get(value)?.send(JSON.stringify({action: "matchFound", queueType: "2v2", roomId: roomId}));
+						this.playerSockets.delete(value);
 					}
 				);
 			}
-			
 		}
 		else if (gameType == GameType.Tournament)
 		{
@@ -66,6 +70,7 @@ class QueueManager {
 				);
 			}
 		}
+		return true;
 	}
 
 	public removeFromQueue(userId : number) : void 

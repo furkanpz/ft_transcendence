@@ -3,6 +3,7 @@ import { CLASSIC_GAME_PAGE } from "./ClassicGamePage";
 import { GAME_2V2_PAGE } from "./Game2v2Page";
 import { GAME_TOURNAMENT_PAGE } from "./TournamentPage";
 import { HOME_PAGE } from "./HomePage";
+import { MULTIPLAYER_GAME_PAGE } from "./MultiplayerGamePage";
 
 class MatchmakingPage implements Page {
 
@@ -24,29 +25,24 @@ class MatchmakingPage implements Page {
 						<button id="lang-en" class="mr-2">EN</button>
 						<button id="lang-tr">TR</button>
 					</div>
-					<!-- Animated Loading Circle -->
 					<div class="relative w-32 h-32 mx-auto mb-8">
 						<div class="absolute inset-0 border-8 border-white/20 rounded-full"></div>
 						<div class="absolute inset-0 border-8 border-t-white border-r-white border-b-transparent border-l-transparent rounded-full animate-spin"></div>
 					</div>
 
-					<!-- Title -->
 					<h1 class="text-5xl font-bold text-white mb-4" data-i18n="waiting">
 						Waiting
 					</h1>
 
-					<!-- Status Text -->
 					<p class="text-2xl text-white/90 mb-2" data-i18n="searching_players">Searching for players...</p>
 					<p class="text-lg text-white/70 mb-8" data-i18n="please_wait">Please wait while we find you a match</p>
 
-					<!-- Animated Dots -->
 					<div class="flex justify-center gap-2 mb-12">
 						<div class="w-3 h-3 bg-white rounded-full animate-bounce" style="animation-delay: 0ms"></div>
 						<div class="w-3 h-3 bg-white rounded-full animate-bounce" style="animation-delay: 150ms"></div>
 						<div class="w-3 h-3 bg-white rounded-full animate-bounce" style="animation-delay: 300ms"></div>
 					</div>
 
-					<!-- Cancel Button -->
 					<button 
 						id="cancelMatchmaking" 
 						class="px-8 py-3 cursor-pointer bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-lg transform transition-all duration-200 hover:scale-105 active:scale-95"
@@ -58,7 +54,6 @@ class MatchmakingPage implements Page {
 			</div>
 		`;
 
-		// Add event listener for cancel button
 		const cancelButton = document.getElementById("cancelMatchmaking");
 		if (cancelButton) {
 			cancelButton.addEventListener("click", () => {
@@ -75,6 +70,27 @@ class MatchmakingPage implements Page {
 	async onLoad(): Promise<void> {
 	const socket = new WebSocket(`wss://localhost:3000/queue/${this.gameType}`);
 	
+	socket.onerror = (error) => {
+		console.error("WebSocket error:", error);
+		document.getElementById("app")!.innerHTML = `
+			<div class="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4">
+				<div class="text-center">
+					<h1 class="text-5xl font-bold text-white mb-4">Connection Error</h1>
+					<p class="text-2xl text-white/90 mb-8">Unable to connect to the game server. Please try again later.</p>
+					<button 
+						id="backHome" 
+						class="px-8 py-3 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg transform transition-all duration-200 hover:scale-105 active:scale-95"
+					>
+						Back to Home
+					</button>
+				</div>
+			</div>
+		`;
+		document.getElementById("backHome")!.onclick = () => {
+			GlobalState.setPage(HOME_PAGE);
+		};
+	};
+
 	socket.onopen = () => {
 		GlobalState.setSocket(socket);
 		console.log("WebSocket connection established");
@@ -90,7 +106,7 @@ class MatchmakingPage implements Page {
 				GlobalState.setPage(CLASSIC_GAME_PAGE(message.roomId));
 				break;
 			case "2v2":
-				GlobalState.setPage(GAME_2V2_PAGE(message.roomId));
+				GlobalState.setPage(MULTIPLAYER_GAME_PAGE(message.roomId));
 				break;
 			case "Tournament":
 				GlobalState.setPage(GAME_TOURNAMENT_PAGE(message.tournamentId));
@@ -98,7 +114,26 @@ class MatchmakingPage implements Page {
 			default:
 				console.error("Unknown queue type:", message.queueType);
 		}
-		alert(`Match found! Opponent: ${message.opponent}`);
+	  }
+	  if (message.type === "error") {
+		console.error("Error from server:", message.data.message);
+		document.getElementById("app")!.innerHTML = `
+			<div class="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4">
+				<div class="text-center">
+					<h1 class="text-5xl font-bold text-white mb-4">Error</h1>
+					<p class="text-2xl text-white/90 mb-8">${message.data.message}</p>
+					<button 
+						id="backHome" 
+						class="px-8 py-3 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg transform transition-all duration-200 hover:scale-105 active:scale-95"
+					>
+						Back to Home
+					</button>
+				</div>
+			</div>
+		`;
+		document.getElementById("backHome")!.onclick = () => {
+			GlobalState.setPage(HOME_PAGE);
+		};
 	  }
 	};
 

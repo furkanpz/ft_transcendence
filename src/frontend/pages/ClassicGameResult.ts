@@ -3,7 +3,12 @@ import { HOME_PAGE } from "./HomePage";
 
 class ClassicGameResult implements Page {
 	title: string = "Game Result";
-	result: any;
+	result: {
+		players: {
+			id: number;
+			score: number;
+			}[];
+	};
 	constructor(result: any) {
 		this.result = result;
 	}

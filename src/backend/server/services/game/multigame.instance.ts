@@ -1,17 +1,16 @@
-import { Ball, GameRoom, HEIGHT, Player, WIDTH, BALL_FIRST_HIT_SPEED, BALL_START_SPEED, BALL_MAX_SPEED, BALL_SPEED_INC, PLAYER_GAP, PLAYER_HEIGHT, PLAYER_SPEED, PLAYER_WIDTH, PlayerKeys, ClassicGameResult} from "../../types/game.types";
+import { Ball, BALL_FIRST_HIT_SPEED, BALL_MAX_SPEED, BALL_SPEED_INC, BALL_START_SPEED, GameRoom, MULTI_HEIGHT, MULTI_PLAYER_GAP, MULTI_PLAYER_HEIGHT, MULTI_PLAYER_WIDTH, MULTI_WIDTH, Player, PLAYER_SPEED } from "../../types/game.types";
 import { Vector2 } from "../../types/vector.types";
+import { GameInstance } from "./game.instance";
 import { gameManager } from "./game.manager";
 import { WebSocket } from "ws";
 
-export interface GameInstance {
-    setSocketForPlayer(playerId: number, socket: WebSocket) : void;
-    startGame() : void;
-    endGame() : void;
-    forceStop() : void;
-    storeResult() : void;
-}
+const HEIGHT: number = MULTI_HEIGHT;
+const WIDTH: number = MULTI_WIDTH;
+const PLAYER_HEIGHT: number = MULTI_PLAYER_HEIGHT;
+const PLAYER_WIDTH: number = MULTI_PLAYER_WIDTH;
+const PLAYER_GAP: number = MULTI_PLAYER_GAP;
 
-class ClassicGameInstance {
+class MultiplayerGameInstance implements GameInstance {
 
     private ball: Ball = {
         pos: new Vector2(WIDTH / 2, HEIGHT / 2),
@@ -32,20 +31,37 @@ class ClassicGameInstance {
     public runtimeId: NodeJS.Timeout | null = null;
 
     constructor(players: number[], room: GameRoom) {
-        this.playerKeys.set(players[0], new Set<string>());
-        this.playerKeys.set(players[1], new Set<string>());
+        players.forEach((p) => {
+            this.playerKeys.set(p, new Set<string>());
+        });
         this.room = room;
         this.players.push({
-            id: players[0], 
-            pos: new Vector2(PLAYER_GAP + PLAYER_WIDTH, HEIGHT / 2),
+            id: players[0], // Team 1
+            pos: new Vector2(PLAYER_GAP + PLAYER_WIDTH, HEIGHT / 4),
             dim: new Vector2(PLAYER_WIDTH, PLAYER_HEIGHT),
             speed: PLAYER_SPEED,
             score: 0,
             started: false,
         });
         this.players.push({
-            id: players[1], 
-            pos: new Vector2(WIDTH - PLAYER_GAP - PLAYER_WIDTH, HEIGHT / 2),
+            id: players[1], // Team 2
+            pos: new Vector2(WIDTH - PLAYER_GAP - PLAYER_WIDTH, HEIGHT / 4),
+            dim: new Vector2(PLAYER_WIDTH, PLAYER_HEIGHT),
+            speed: PLAYER_SPEED,
+            score: 0,
+            started: false,
+        });
+        this.players.push({
+            id: players[2], // Team 1
+            pos: new Vector2(PLAYER_GAP + PLAYER_WIDTH, 3 * HEIGHT / 4),
+            dim: new Vector2(PLAYER_WIDTH, PLAYER_HEIGHT),
+            speed: PLAYER_SPEED,
+            score: 0,
+            started: false,
+        });
+        this.players.push({
+            id: players[3], // Team 2
+            pos: new Vector2(WIDTH - PLAYER_GAP - PLAYER_WIDTH, 3 * HEIGHT / 4),
             dim: new Vector2(PLAYER_WIDTH, PLAYER_HEIGHT),
             speed: PLAYER_SPEED,
             score: 0,
@@ -83,12 +99,10 @@ class ClassicGameInstance {
             this.deltaTime = (currentTime - this.lastTime) / 1000;
             this.lastTime = currentTime;
 
-
             const maxDeltaTime = 1 / 30;
             if (this.deltaTime > maxDeltaTime) {
                 this.deltaTime = maxDeltaTime;
             }
-
 
             this.updateGame();
         }, 1000 / 60);
@@ -112,7 +126,7 @@ class ClassicGameInstance {
                 ball: {
                     pos: this.ball.pos,
                 },
-            }));
+             }));
         });
     }
 
@@ -125,6 +139,7 @@ class ClassicGameInstance {
         gameManager.removeRoom(this.room.id);
     }
 
+
     public forceStop() {
         if (this.runtimeId) {
             clearInterval(this.runtimeId);
@@ -133,19 +148,35 @@ class ClassicGameInstance {
     }
 
     private updatePlayer(player: Player) {
-        if (this.playerKeys.get(player.id)?.has("up")) {
-            if (player.pos.y - player.dim.y / 2 <= 0)
-                player.pos.y = player.dim.y / 2;
-            else
-                player.pos = player.pos.sub(Vector2.J().mul(player.speed * this.deltaTime));
-        }
-        if (this.playerKeys.get(player.id)?.has("down")) {
-
-            if (player.pos.y + player.dim.y / 2 >= HEIGHT)
-                player.pos.y = HEIGHT - player.dim.y / 2;
-            else
-                player.pos = player.pos.add(Vector2.J().mul(player.speed * this.deltaTime));
-        }
+		if (this.players.findIndex(p => p.id === player.id) === 0 || this.players.findIndex(p => p.id === player.id) === 1) {
+			if (this.playerKeys.get(player.id)?.has("up")) {
+				if (player.pos.y - player.dim.y / 2 <= 0)
+					player.pos.y = player.dim.y / 2;
+				else
+					player.pos = player.pos.sub(Vector2.J().mul(player.speed * this.deltaTime));
+			}
+			if (this.playerKeys.get(player.id)?.has("down")) {
+	
+				if (player.pos.y + player.dim.y / 2 >= HEIGHT / 2)
+					player.pos.y = HEIGHT / 2 - player.dim.y / 2;
+				else
+					player.pos = player.pos.add(Vector2.J().mul(player.speed * this.deltaTime));
+			}
+		} else {
+			if (this.playerKeys.get(player.id)?.has("up")) {
+				if (player.pos.y - player.dim.y / 2 <= HEIGHT / 2)
+					player.pos.y = HEIGHT / 2 + player.dim.y / 2;
+				else
+					player.pos = player.pos.sub(Vector2.J().mul(player.speed * this.deltaTime));
+			}
+			if (this.playerKeys.get(player.id)?.has("down")) {
+	
+				if (player.pos.y + player.dim.y / 2 >= HEIGHT)
+					player.pos.y = HEIGHT - player.dim.y / 2;
+				else
+					player.pos = player.pos.add(Vector2.J().mul(player.speed * this.deltaTime));
+			}
+		}
     }
 
     private isCircleRectColliding(ball: Ball, player: Player): boolean {
@@ -181,17 +212,18 @@ class ClassicGameInstance {
     }
 
     private updateBall() : void {
+
         const maxBounceAngle = Math.PI / 3;
 
         this.ball.pos = this.ball.pos.add(this.ball.dir.mul(this.deltaTime * this.ball.speed));
-
+        
         let didBounce = false;
         for (const player of this.players) {
             if (this.isCircleRectColliding(this.ball, player)) {
                 
                 let relativeHitPos = (this.ball.pos.y - player.pos.y) / (player.dim.y / 2);
                 relativeHitPos = Math.max(-1, Math.min(1, relativeHitPos));
-                
+
                 let bounceAngle = relativeHitPos * maxBounceAngle;
 
                 let newDirX: number;
@@ -199,8 +231,7 @@ class ClassicGameInstance {
 
                 if (player.pos.x < WIDTH / 2) {
                     newDirX = Math.cos(bounceAngle);
-
-                    correctionX = (player.pos.x + (player.dim.x / 2)) + this.ball.radius; 
+                    correctionX = (player.pos.x + (player.dim.x / 2)) + this.ball.radius;
                 } else {
                     newDirX = -Math.cos(bounceAngle);
                     correctionX = (player.pos.x - (player.dim.x / 2)) - this.ball.radius;
@@ -225,14 +256,13 @@ class ClassicGameInstance {
 
         if (!didBounce) {
             if (this.ball.pos.x + this.ball.radius > WIDTH) {
-                this.setScore(this.players[0]);
+                this.setScore(this.players[0]); 
                 return;
             } else if (this.ball.pos.x - this.ball.radius < 0) {
                 this.setScore(this.players[1]);
                 return;
             }
         }
-
 
         if (this.ball.pos.y + this.ball.radius > HEIGHT) {
             this.ball.pos.y = HEIGHT - this.ball.radius;
@@ -243,13 +273,33 @@ class ClassicGameInstance {
         }
     }
 
-    private setScore(player: Player) {
+    private setScore(scoringPlayer: Player) {
         this.scored = true;
-        player.score++;
-        if (player.score >= 5) {
+
+        let team1Scored = (scoringPlayer.id === this.players[0].id || scoringPlayer.id === this.players[2].id);
+
+        let teamToUpdate: Player[];
+        let otherTeamScore: number;
+
+        if (team1Scored) {
+            teamToUpdate = [this.players[0], this.players[2]];
+            otherTeamScore = this.players[1].score;
+        } else {
+            teamToUpdate = [this.players[1], this.players[3]];
+            otherTeamScore = this.players[0].score;
+        }
+
+        let newScore = 0;
+        teamToUpdate.forEach(p => {
+            p.score++;
+            newScore = p.score;
+        });
+
+        if (newScore >= 5) {
             this.endGame();
             return;
         }
+
         this.ball.pos = new Vector2(WIDTH / 2, HEIGHT / 2);
         setTimeout(() => {
             this.scored = false;
@@ -257,7 +307,7 @@ class ClassicGameInstance {
         }, 2000);
     }
 
-    public storeResult() : void {
+    public storeResult() {
         this.players.forEach((player) => {
             player.socket?.send(JSON.stringify({
                 action: "gameEnded",
@@ -265,11 +315,11 @@ class ClassicGameInstance {
                     players: this.players.map((p) => ({
                         id: p.id,
                         score: p.score,
-                    })),
+                    }))
                 }
             }));
         });
     }
 }
 
-export { ClassicGameInstance };
+export { MultiplayerGameInstance };

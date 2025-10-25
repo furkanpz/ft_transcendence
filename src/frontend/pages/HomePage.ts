@@ -55,6 +55,11 @@ class HomePage implements Page {
 									<span data-i18n="one_v_one_online">1V1 Online</span>
 								</button>
 
+								<button id="multiplayer-btn" onClick=""
+									class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
+									<span data-i18n="multiplayer">Multiplayer</span>
+								</button>
+
 								<button onclick="GlobalState.setPage(MATCHMAKING('tournament'))" id="tournament-btn"
 									class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
 									<span data-i18n="tournament">Tournament</span>
@@ -102,6 +107,12 @@ class HomePage implements Page {
 		if (PVPBtn)
 		{
 			PVPBtn.addEventListener("click", () => {GlobalState.setPage(MATCHMAKING_PAGE('classic'))});
+		}
+
+		const multiplayerBtn = document.getElementById("multiplayer-btn");
+		if (multiplayerBtn)
+		{
+			multiplayerBtn.addEventListener("click", () => {GlobalState.setPage(MATCHMAKING_PAGE('multiplayer'))});
 		}
 		
 		const friendsBtn = document.getElementById("friends-btn");

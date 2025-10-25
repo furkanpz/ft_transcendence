@@ -89,6 +89,12 @@ const BALL_FIRST_HIT_SPEED: number = 450;
 const BALL_SPEED_INC: number = 25;
 const BALL_MAX_SPEED: number = 700;
 
+const MULTI_HEIGHT: number = 1200;
+const MULTI_WIDTH: number = 800;
+const MULTI_PLAYER_HEIGHT: number = 70;
+const MULTI_PLAYER_WIDTH: number = 15;
+const MULTI_PLAYER_GAP: number = 10;
+
 export {
 	GameRoom,
 	GameEvent,
@@ -111,5 +117,10 @@ export {
 	BALL_START_SPEED,
 	BALL_FIRST_HIT_SPEED,
 	BALL_SPEED_INC,
-	BALL_MAX_SPEED
+	BALL_MAX_SPEED,
+	MULTI_HEIGHT,
+	MULTI_WIDTH,
+	MULTI_PLAYER_HEIGHT,
+	MULTI_PLAYER_WIDTH,
+	MULTI_PLAYER_GAP,
 };
