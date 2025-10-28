@@ -61,25 +61,18 @@ class ChatPage implements Page {
                         
                         <div class="flex-1 flex flex-col">
                             <div id="chatHeader" class="bg-white border-b border-gray-200 p-4">
-                                <div class="text-center text-gray-500">
-                                    <p data-i18n="select_chat">Bir sohbet seçin</p>
-                                </div>
                             </div>
                             
                             <div id="chatMessages" class="flex-1 overflow-y-auto p-4 bg-gray-50">
-                                <div class="text-center text-gray-500 py-16">
-                                    <div class="text-6xl mb-4">💬</div>
-                                    <p class="text-lg">Mesajlaşmaya başlamak için bir kullanıcı seçin</p>
-                                </div>
                             </div>
                             
                             <div class="bg-white border-t border-gray-200 p-4">
                                 <form id="messageForm" method="post" class="flex gap-3" onsubmit="ChatPage.sendChatMessage(event)">
-                                    <input type="text" id="messageInput" placeholder="Mesajını yaz..." data-i18n-placeholder="type_message"
-                                           class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                                    <input type="text" id="messageInput" placeholder="Önce bir kullanıcı seçin..." data-i18n-placeholder="select_user_first"
+                                           class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 bg-gray-50"
                                            disabled>
                                     <button type="submit" id="sendButton" 
-                                            class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition duration-200 font-semibold disabled:opacity-50" data-i18n="send"
+                                            class="bg-gray-400 text-white px-6 py-2 rounded-lg transition duration-200 font-semibold opacity-50 cursor-not-allowed" data-i18n="send"
                                             disabled>
                                         Gönder
                                     </button>
@@ -103,6 +96,9 @@ class ChatPage implements Page {
     }
 
     async onLoad(): Promise<void> {
+        // Reset active chat state
+        ChatPage.activeChatUser = null;
+        
         try {
             const response = await fetch(`${FETCH_ADDRESS}/user/friends/block`, {
                 credentials: 'include'
@@ -145,6 +141,13 @@ class ChatPage implements Page {
             socket.close();
             GlobalState.setSocket(null);
         }
+        
+        // Reset all chat related states
+        ChatPage.activeChatUser = null;
+        ChatPage.chatHistory = [];
+        ChatPage.onlineUsers = [];
+        ChatPage.unreadCounts = {};
+        ChatPage.userChats = {};
     }
 
     static getCurrentUsername(): string {
