@@ -11,6 +11,18 @@ class QueueManager {
 
 	public addQueue(userId: number, socket: WebSocket, gameType : GameType) : boolean
 	{
+		// Check if player is already in an active tournament
+		if (gameType === GameType.Tournament && tournamentManager.isPlayerInTournament(userId)) {
+			console.log(`Player ${userId} is already in an active tournament`);
+			const tournamentId = tournamentManager.getTournamentIdForPlayer(userId);
+			socket.send(JSON.stringify({
+				action: "matchFound", 
+				queueType: "tournament",
+				tournamentId: tournamentId
+			}));
+			return true;
+		}
+		
 		if (this.playerSockets.has(userId) ||
 			this.classicGameQueue.find((value) => value == userId) ||
 			this.tournamentGameQueue.find((value) => value == userId) ||
@@ -69,14 +81,14 @@ class QueueManager {
 						action: "queueUpdate",
 						queueType: "tournament",
 						currentPlayers: this.tournamentGameQueue.length,
-						requiredPlayers: 8
+						requiredPlayers: 4
 					}));
 				}
 			});
 			
-			if (this.tournamentGameQueue.length >= 8)
+			if (this.tournamentGameQueue.length >= 4)
 			{
-				const players = this.tournamentGameQueue.splice(0, 8);
+				const players = this.tournamentGameQueue.splice(0, 4);
 				
 				tournamentManager.createTournament(players).then(tournamentId => {
 					players.forEach((value) => 
@@ -90,9 +102,10 @@ class QueueManager {
 						}
 					);
 					
+					// Give players time to navigate to tournament page and connect websockets
 					setTimeout(() => {
 						tournamentManager.startTournament(tournamentId);
-					}, 5000);
+					}, 8000);
 				});
 			}
 		}

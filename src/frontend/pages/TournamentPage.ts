@@ -193,6 +193,7 @@ class TournamentPage implements Page {
                             <div class="flex justify-between items-center p-3 bg-gray-700 rounded-lg">
                                 <div class="flex items-center gap-2">
                                     <div class="w-2 h-2 rounded-full ${p.isConnected ? 'bg-green-500' : 'bg-gray-500'}"></div>
+                                    ${p.hasJoined ? '<span class="text-xs text-green-400">✓</span>' : '<span class="text-xs text-yellow-400">⏳</span>'}
                                     <span class="font-medium">${p.username}</span>
                                 </div>
                                 <span class="text-xs text-gray-400">Seed #${p.seedPosition}</span>
@@ -246,6 +247,16 @@ class TournamentPage implements Page {
 
         this.socket.onopen = () => {
             console.log("Connected to tournament");
+            
+            // Wait a moment for UI to render, then send join event
+            setTimeout(() => {
+                if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                    this.socket.send(JSON.stringify({
+                        action: 'joinTournament'
+                    }));
+                    console.log("Sent joinTournament event");
+                }
+            }, 500);
         };
 
         this.socket.onmessage = (event) => {

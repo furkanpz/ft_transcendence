@@ -74,7 +74,8 @@ class GameManager
 				this.gamesInstances.set(roomId, new MultiplayerGameInstance(room.players, room));
 				break;
 			case GameType.Tournament:
-				// Tournament game instance eklenecek
+				// Tournament uses classic game instance (1v1)
+				this.gamesInstances.set(roomId, new ClassicGameInstance(room.players, room));
 				break;
 			}
 		console.log("Created room with id: " + room.id + " for players: " + userIds.join(", "));

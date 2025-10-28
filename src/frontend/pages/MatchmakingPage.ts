@@ -35,13 +35,13 @@ class MatchmakingPage implements Page {
 									TOURNAMENT
 								</h1>
 								<p class="text-2xl text-gray-300 mb-2">Waiting for Players...</p>
-								<p class="text-lg text-gray-400">8 players needed to start</p>
+								<p class="text-lg text-gray-400">4 players needed to start</p>
 							</div>
 
 							<div class="mb-8">
 								<div class="flex justify-between text-sm text-gray-400 mb-2">
 									<span>Players in queue</span>
-									<span id="playerCount">0 / 8</span>
+									<span id="playerCount">0 / 4</span>
 								</div>
 								<div class="w-full bg-gray-700 rounded-full h-6 overflow-hidden">
 									<div id="progressBar" class="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500 flex items-center justify-center text-white text-sm font-bold" style="width: 0%">
@@ -51,7 +51,7 @@ class MatchmakingPage implements Page {
 							</div>
 
 							<div class="grid grid-cols-4 gap-4 mb-8">
-								${Array.from({length: 8}, (_, i) => `
+								${Array.from({length: 4}, (_, i) => `
 									<div id="slot-${i}" class="aspect-square bg-gray-700 rounded-xl border-2 border-gray-600 flex items-center justify-center transition-all">
 										<div class="text-4xl text-gray-500">?</div>
 									</div>
@@ -75,8 +75,8 @@ class MatchmakingPage implements Page {
 							<div class="mt-6 p-4 bg-gray-900 rounded-lg">
 								<h3 class="text-xl font-bold text-yellow-400 mb-2">Tournament Rules</h3>
 								<ul class="text-sm text-gray-300 space-y-1">
-									<li>• 8 players single elimination bracket</li>
-									<li>• 3 rounds: Quarter-Finals → Semi-Finals → Final</li>
+									<li>• 4 players single elimination bracket</li>
+									<li>• 2 rounds: Semi-Finals → Final</li>
 									<li>• Best of 1 matches</li>
 									<li>• Winner takes all the glory! 🏆</li>
 								</ul>
@@ -209,13 +209,38 @@ class MatchmakingPage implements Page {
 				case "2v2":
 					GlobalState.setPage(MULTIPLAYER_GAME_PAGE(message.roomId));
 					break;
-				case "Tournament":
-					GlobalState.setPage(GAME_TOURNAMENT_PAGE(message.tournamentId));
+				case "tournament":
+					// Show "Match found" message briefly before navigating
+					const app = document.getElementById("app");
+					if (app && this.gameType === 'tournament') {
+						app.innerHTML = `
+							<div class="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-gray-900 flex items-center justify-center p-4">
+								<div class="text-center">
+									<div class="text-8xl mb-4 animate-bounce">🎮</div>
+									<h1 class="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-4">
+										Tournament Starting!
+									</h1>
+									<p class="text-2xl text-gray-300 mb-2">Entering tournament...</p>
+									<div class="flex justify-center gap-2 mt-8">
+										<div class="w-3 h-3 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+										<div class="w-3 h-3 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+										<div class="w-3 h-3 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+									</div>
+								</div>
+							</div>
+						`;
+					}
+					// Give UI time to render, then navigate
+					setTimeout(() => {
+						GlobalState.setPage(GAME_TOURNAMENT_PAGE(message.tournamentId));
+					}, 1500);
 					break;
 				default:
 					console.error("Unknown queue type:", message.queueType);
 			}
-			alert(`Match found! Opponent: ${message.opponent}`);
+			if (message.queueType !== 'tournament') {
+				alert(`Match found! Opponent: ${message.opponent}`);
+			}
 	  	}
 		if (message.type === "error") {
 			console.error("Error from server:", message.data.message);

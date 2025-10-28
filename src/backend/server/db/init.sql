@@ -87,9 +87,9 @@ CREATE TABLE IF NOT EXISTS ft_match_history (
 CREATE TABLE IF NOT EXISTS ft_tournaments (
     id              TEXT PRIMARY KEY,
     status          TEXT CHECK(status IN ('waiting', 'in_progress', 'completed', 'cancelled')) DEFAULT 'waiting',
-    required_players INTEGER DEFAULT 8,
+    required_players INTEGER DEFAULT 4,
     current_round   INTEGER DEFAULT 1,
-    max_rounds      INTEGER DEFAULT 3,
+    max_rounds      INTEGER DEFAULT 2,
     winner_id       INTEGER,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
     started_at      DATETIME,

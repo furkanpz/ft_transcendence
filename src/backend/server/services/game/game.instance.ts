@@ -1,6 +1,7 @@
-import { Ball, GameRoom, HEIGHT, Player, WIDTH, BALL_FIRST_HIT_SPEED, BALL_START_SPEED, BALL_MAX_SPEED, BALL_SPEED_INC, PLAYER_GAP, PLAYER_HEIGHT, PLAYER_SPEED, PLAYER_WIDTH, PlayerKeys, ClassicGameResult} from "../../types/game.types";
+import { Ball, GameRoom, HEIGHT, Player, WIDTH, BALL_FIRST_HIT_SPEED, BALL_START_SPEED, BALL_MAX_SPEED, BALL_SPEED_INC, PLAYER_GAP, PLAYER_HEIGHT, PLAYER_SPEED, PLAYER_WIDTH, PlayerKeys, ClassicGameResult, GameType} from "../../types/game.types";
 import { Vector2 } from "../../types/vector.types";
 import { gameManager } from "./game.manager";
+import { tournamentManager } from "./tournament.manager";
 import { WebSocket } from "ws";
 
 export interface GameInstance {
@@ -258,6 +259,19 @@ class ClassicGameInstance {
     }
 
     public storeResult() : void {
+        // If this is a tournament game, notify tournament manager
+        if (this.room.roomType === GameType.Tournament && this.players.length === 2) {
+            const player1 = this.players[0];
+            const player2 = this.players[1];
+            tournamentManager.handleMatchResult(
+                this.room.id, 
+                player1.id, 
+                player2.id, 
+                player1.score, 
+                player2.score
+            );
+        }
+        
         this.players.forEach((player) => {
             player.socket?.send(JSON.stringify({
                 action: "gameEnded",

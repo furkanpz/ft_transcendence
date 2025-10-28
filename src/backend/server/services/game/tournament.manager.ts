@@ -10,6 +10,7 @@ interface TournamentPlayer {
     seedPosition: number;
     currentRound: number;
     isEliminated: boolean;
+    hasJoined: boolean; // Track if player has sent join event
 }
 
 interface TournamentMatch {
@@ -41,38 +42,28 @@ interface Tournament {
 class TournamentManager {
     private tournaments: Map<string, Tournament> = new Map();
     private playerTournaments: Map<number, string> = new Map();
+    private nextMatchId: number = 1; // in-memory match id generator
 
     public async createTournament(playerIds: number[]): Promise<string> {
-        if (playerIds.length !== 8) {
-            throw new Error("Tournament requires exactly 8 players");
+        if (playerIds.length !== 4) {
+            throw new Error("Tournament requires exactly 4 players");
         }
 
         const db = await getDb();
         const tournamentId = crypto.randomUUID();
-
-        await db.run(
-            `INSERT INTO ft_tournaments (id, status, required_players, current_round, max_rounds) 
-             VALUES (?, 'waiting', 8, 1, 3)`,
-            [tournamentId]
-        );
 
         const players = new Map<number, TournamentPlayer>();
         for (let i = 0; i < playerIds.length; i++) {
             const userId = playerIds[i];
             const user = await db.get(`SELECT username FROM ft_users WHERE id = ?`, [userId]);
             
-            await db.run(
-                `INSERT INTO ft_tournament_participants (tournament_id, user_id, seed_position, current_round) 
-                 VALUES (?, ?, ?, 1)`,
-                [tournamentId, userId, i + 1]
-            );
-
             players.set(userId, {
                 id: userId,
                 username: user?.username || `Player${userId}`,
                 seedPosition: i + 1,
                 currentRound: 1,
-                isEliminated: false
+                isEliminated: false,
+                hasJoined: false
             });
 
             this.playerTournaments.set(userId, tournamentId);
@@ -81,9 +72,9 @@ class TournamentManager {
         const tournament: Tournament = {
             id: tournamentId,
             status: 'waiting',
-            requiredPlayers: 8,
+            requiredPlayers: 4,
             currentRound: 1,
-            maxRounds: 3,
+            maxRounds: 2,
             winnerId: null,
             players,
             matches: new Map(),
@@ -100,7 +91,6 @@ class TournamentManager {
         const tournament = this.tournaments.get(tournamentId);
         if (!tournament) return;
 
-        const db = await getDb();
         const activePlayers = Array.from(tournament.players.values()).filter(p => !p.isEliminated);
         
         const matchesInRound: TournamentMatch[] = [];
@@ -110,15 +100,8 @@ class TournamentManager {
             const player1 = activePlayers[i * 2];
             const player2 = activePlayers[i * 2 + 1];
 
-            const result = await db.run(
-                `INSERT INTO ft_tournament_matches 
-                 (tournament_id, round_number, match_number, player1_id, player2_id, status) 
-                 VALUES (?, ?, ?, ?, ?, 'pending')`,
-                [tournamentId, round, i + 1, player1.id, player2.id]
-            );
-
             matchesInRound.push({
-                id: result.lastID!,
+                id: this.nextMatchId++,
                 tournamentId,
                 roundNumber: round,
                 matchNumber: i + 1,
@@ -139,12 +122,6 @@ class TournamentManager {
         const tournament = this.tournaments.get(tournamentId);
         if (!tournament || tournament.status !== 'waiting') return;
 
-        const db = await getDb();
-        await db.run(
-            `UPDATE ft_tournaments SET status = 'in_progress', started_at = CURRENT_TIMESTAMP WHERE id = ?`,
-            [tournamentId]
-        );
-
         tournament.status = 'in_progress';
         await this.startRoundMatches(tournamentId, 1);
         this.broadcastTournamentState(tournamentId);
@@ -157,11 +134,17 @@ class TournamentManager {
         const matches = tournament.matches.get(round);
         if (!matches) return;
 
+        // Wait a bit to ensure all players are connected to tournament page
+        await new Promise(resolve => setTimeout(resolve, 3000));
+
         for (let i = 0; i < matches.length; i++) {
             const match = matches[i];
             if (match.player1Id && match.player2Id) {
                 await this.startMatch(tournamentId, match);
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Small delay between matches for UX
+                if (i < matches.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
             }
         }
     }
@@ -174,9 +157,44 @@ class TournamentManager {
 
         const player1Socket = tournament.sockets.get(match.player1Id);
         const player2Socket = tournament.sockets.get(match.player2Id);
+        const player1 = tournament.players.get(match.player1Id);
+        const player2 = tournament.players.get(match.player2Id);
 
-        if (!player1Socket || !player2Socket) {
-            console.error(`Cannot start match ${match.matchNumber}: Players not connected`);
+        // Check if players are connected AND have sent join event
+        const player1Ready = player1Socket && player1?.hasJoined;
+        const player2Ready = player2Socket && player2?.hasJoined;
+
+        if (!player1Ready || !player2Ready) {
+            console.error(`Cannot start match ${match.matchNumber}: Players not ready`);
+            
+            // Auto-forfeit: Give win to connected player or cancel match
+            if (player1Ready && !player2Ready) {
+                console.log(`Player ${match.player2Id} forfeited, ${match.player1Id} wins by default`);
+                if (player2) {
+                    player2.isEliminated = true;
+                    this.playerTournaments.delete(match.player2Id);
+                }
+                await this.handleMatchResult('', match.player1Id, match.player2Id, 5, 0);
+            } else if (player2Ready && !player1Ready) {
+                console.log(`Player ${match.player1Id} forfeited, ${match.player2Id} wins by default`);
+                if (player1) {
+                    player1.isEliminated = true;
+                    this.playerTournaments.delete(match.player1Id);
+                }
+                await this.handleMatchResult('', match.player1Id, match.player2Id, 0, 5);
+            } else {
+                console.log(`Both players not ready, cancelling match ${match.matchNumber}`);
+                // Cancel this match - both players eliminated
+                if (player1) {
+                    player1.isEliminated = true;
+                    this.playerTournaments.delete(match.player1Id);
+                }
+                if (player2) {
+                    player2.isEliminated = true;
+                    this.playerTournaments.delete(match.player2Id);
+                }
+                match.status = 'completed';
+            }
             return;
         }
 
@@ -184,13 +202,8 @@ class TournamentManager {
         match.roomId = roomId;
         match.status = 'in_progress';
 
-        const db = await getDb();
-        await db.run(
-            `UPDATE ft_tournament_matches 
-             SET status = 'in_progress', room_id = ?, started_at = CURRENT_TIMESTAMP 
-             WHERE id = ?`,
-            [roomId, match.id]
-        );
+        // Do not persist 'in_progress' state to DB; keep it in memory only.
+        // This ensures players can reconnect/join without being blocked by DB state.
 
         console.log(`Starting tournament match: Round ${match.roundNumber}, Match ${match.matchNumber}, Room: ${roomId}`);
 
@@ -241,27 +254,7 @@ class TournamentManager {
         match.player2Score = player2Score;
         match.status = 'completed';
 
-        const db = await getDb();
-        await db.run(
-            `UPDATE ft_tournament_matches 
-             SET winner_id = ?, player1_score = ?, player2_score = ?, status = 'completed', completed_at = CURRENT_TIMESTAMP 
-             WHERE id = ?`,
-            [winnerId, player1Score, player2Score, match.id]
-        );
-
-        await db.run(
-            `UPDATE ft_tournament_participants 
-             SET is_eliminated = TRUE, eliminated_at = CURRENT_TIMESTAMP 
-             WHERE tournament_id = ? AND user_id = ?`,
-            [tournamentId, loserId]
-        );
-
-        await db.run(
-            `INSERT INTO ft_match_history 
-             (player1_id, player2_id, winner_id, loser_id, p1_score, p2_score, match_type, tournament_id) 
-             VALUES (?, ?, ?, ?, ?, ?, 'tournament', ?)`,
-            [player1Id, player2Id, winnerId, loserId, player1Score, player2Score, tournamentId]
-        );
+        // Do not persist per-match results until tournament completes.
 
         const tournament = this.tournaments.get(tournamentId);
         if (!tournament) return;
@@ -269,6 +262,9 @@ class TournamentManager {
         const loserPlayer = tournament.players.get(loserId);
         if (loserPlayer) {
             loserPlayer.isEliminated = true;
+            // Remove eliminated player from active tournament tracking
+            this.playerTournaments.delete(loserId);
+            console.log(`Player ${loserId} eliminated from tournament ${tournamentId}`);
         }
 
         this.broadcastTournamentState(tournamentId);
@@ -294,11 +290,7 @@ class TournamentManager {
 
         tournament.currentRound++;
         
-        const db = await getDb();
-        await db.run(
-            `UPDATE ft_tournaments SET current_round = ? WHERE id = ?`,
-            [tournament.currentRound, tournamentId]
-        );
+        // Keep current round only in memory; no DB writes until completion
 
         await this.generateRoundMatches(tournamentId, tournament.currentRound);
         
@@ -317,19 +309,45 @@ class TournamentManager {
         tournament.winnerId = winnerId;
 
         const db = await getDb();
+        // Persist entire tournament only now
         await db.run(
-            `UPDATE ft_tournaments 
-             SET status = 'completed', winner_id = ?, completed_at = CURRENT_TIMESTAMP 
-             WHERE id = ?`,
-            [winnerId, tournamentId]
+            `INSERT INTO ft_tournaments (id, status, required_players, current_round, max_rounds, winner_id, completed_at)
+             VALUES (?, 'completed', ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+            [tournamentId, tournament.requiredPlayers, tournament.currentRound, tournament.maxRounds, winnerId]
         );
 
-        await db.run(
-            `UPDATE ft_tournament_participants 
-             SET final_position = 1 
-             WHERE tournament_id = ? AND user_id = ?`,
-            [tournamentId, winnerId]
-        );
+        // Persist participants (with minimal info; mark winner position=1)
+        for (const p of tournament.players.values()) {
+            await db.run(
+                `INSERT INTO ft_tournament_participants (tournament_id, user_id, seed_position, current_round, is_eliminated, final_position)
+                 VALUES (?, ?, ?, ?, ?, ?)`,
+                [tournamentId, p.id, p.seedPosition, p.currentRound, p.isEliminated ? 1 : 0, p.id === winnerId ? 1 : null]
+            );
+        }
+
+        // Persist all matches with final scores and winners
+        for (const matches of tournament.matches.values()) {
+            for (const m of matches) {
+                await db.run(
+                    `INSERT INTO ft_tournament_matches (
+                        tournament_id, round_number, match_number, player1_id, player2_id,
+                        winner_id, player1_score, player2_score, status, completed_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'completed', CURRENT_TIMESTAMP)`,
+                    [tournamentId, m.roundNumber, m.matchNumber, m.player1Id, m.player2Id, m.winnerId, m.player1Score, m.player2Score]
+                );
+
+                // Also persist into match history
+                if (m.player1Id && m.player2Id && m.winnerId !== null) {
+                    const loserId = m.winnerId === m.player1Id ? m.player2Id! : m.player1Id!;
+                    await db.run(
+                        `INSERT INTO ft_match_history 
+                         (player1_id, player2_id, winner_id, loser_id, p1_score, p2_score, match_type, tournament_id) 
+                         VALUES (?, ?, ?, ?, ?, ?, 'tournament', ?)`,
+                        [m.player1Id, m.player2Id, m.winnerId, loserId, m.player1Score, m.player2Score, tournamentId]
+                    );
+                }
+            }
+        }
 
         this.broadcastTournamentState(tournamentId);
 
@@ -352,11 +370,72 @@ class TournamentManager {
         this.sendTournamentState(tournamentId, userId);
 
         socket.on('close', () => {
+            console.log(`Player ${userId} disconnected from tournament ${tournamentId}`);
             tournament.sockets.delete(userId);
             if (player) {
                 player.socket = undefined;
+                // If tournament is in progress and player hasn't finished their match, eliminate them
+                if (tournament.status === 'in_progress' && !player.isEliminated) {
+                    this.handlePlayerDisconnect(tournamentId, userId);
+                }
             }
         });
+    }
+
+    public handlePlayerJoin(tournamentId: string, userId: number): void {
+        const tournament = this.tournaments.get(tournamentId);
+        if (!tournament) return;
+
+        const player = tournament.players.get(userId);
+        if (player) {
+            player.hasJoined = true;
+            console.log(`Player ${userId} joined tournament ${tournamentId}`);
+            
+            // Check if all players have joined
+            const allJoined = Array.from(tournament.players.values()).every(p => p.hasJoined);
+            if (allJoined && tournament.status === 'waiting') {
+                console.log(`All players joined tournament ${tournamentId}, starting soon...`);
+            }
+            
+            this.broadcastTournamentState(tournamentId);
+        }
+    }
+
+    private handlePlayerDisconnect(tournamentId: string, userId: number): void {
+        const tournament = this.tournaments.get(tournamentId);
+        if (!tournament) return;
+
+        const player = tournament.players.get(userId);
+        if (!player || player.isEliminated) return;
+
+        console.log(`Eliminating disconnected player ${userId} from tournament ${tournamentId}`);
+        player.isEliminated = true;
+        this.playerTournaments.delete(userId);
+
+        // Find if this player is in an active match
+        const currentRoundMatches = tournament.matches.get(tournament.currentRound);
+        if (currentRoundMatches) {
+            const activeMatch = currentRoundMatches.find(m => 
+                (m.player1Id === userId || m.player2Id === userId) && 
+                m.status === 'in_progress'
+            );
+
+            if (activeMatch) {
+                // Award the match to the opponent
+                const opponentId = activeMatch.player1Id === userId ? activeMatch.player2Id : activeMatch.player1Id;
+                if (opponentId) {
+                    console.log(`Awarding match to player ${opponentId} due to opponent disconnect`);
+                    this.handleMatchResult(activeMatch.roomId || '', 
+                        activeMatch.player1Id!, 
+                        activeMatch.player2Id!, 
+                        activeMatch.player1Id === userId ? 0 : 5,
+                        activeMatch.player2Id === userId ? 0 : 5
+                    );
+                }
+            }
+        }
+
+        this.broadcastTournamentState(tournamentId);
     }
 
     private broadcastTournamentState(tournamentId: string): void {
@@ -398,7 +477,8 @@ class TournamentManager {
             seedPosition: p.seedPosition,
             currentRound: p.currentRound,
             isEliminated: p.isEliminated,
-            isConnected: tournament.sockets.has(p.id)
+            isConnected: tournament.sockets.has(p.id),
+            hasJoined: p.hasJoined
         }));
 
         const allMatches: any[] = [];
