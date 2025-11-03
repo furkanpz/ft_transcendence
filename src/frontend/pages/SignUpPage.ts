@@ -1,6 +1,8 @@
 import { GlobalState, Page, FETCH_ADDRESS } from "../main"
 import { LOGIN_PAGE } from "./LoginPage"
 
+declare const Notification: typeof import("../components/Notification").Notification;
+
 class SignUpPage implements Page {
 	title: string = "Sign Up";
 	data: any = null;
@@ -9,21 +11,25 @@ class SignUpPage implements Page {
 		const app = document.getElementById("app");
 		if (app) {
 			app.innerHTML = `
-					<div id="signUpArea" class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
-						<div class="w-full flex justify-end mb-4">
-							<button id="lang-en" class="mr-2">EN</button>
-							<button id="lang-tr">TR</button>
+				<div id="signUpArea" style="min-height: calc(100vh - 80px); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem;">
+					<form method="post" class="glass-card animate-scale-in" style="min-width: 400px; max-width: 500px; width: 100%;">
+						<h2 style="margin-bottom: 2rem; font-size: 2rem;" class="neon-text-cyan">Sign Up</h2>
+						
+						<div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 1.5rem;">
+							<input type="text" id="username" placeholder="Username" data-i18n-placeholder="username" style="width: 100%;">
+							<input type="email" id="email" placeholder="Email" data-i18n-placeholder="email" style="width: 100%;">
+							<input type="password" id="password" placeholder="Password" data-i18n-placeholder="password" style="width: 100%;">
+							<input type="password" id="confirmPassword" placeholder="Confirm Password" data-i18n-placeholder="confirm_new_password" style="width: 100%;">
 						</div>
-						<button id="backButton" onclick="GlobalState.setPage(HOME_PAGE)" data-i18n="back_to_home">Back to Home</button>
-					<form method="post" class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">
-						<input type="text" id="username" placeholder="Username" value="erkoc" class="bg-white p-1" data-i18n-placeholder="username"></input>
-						<input type="text" id="email" placeholder="Email"       value="asda@gmail.com"   class="bg-white p-1" data-i18n-placeholder="email"></input>
-						<input type="password" id="password"                    value="asdasd"  placeholder="Password" class="bg-white p-1" data-i18n-placeholder="password"></input>
-						<input type="password" id="confirmPassword"             value="asdasd"     placeholder="Confirm Password" class="bg-white p-1" data-i18n-placeholder="confirm_new_password"></input>
-						<button type="submit" onclick="SignUpPage.signUp(event)" class="bg-white text-black py-2 px-4 rounded" data-i18n="sign_up">Sign-Up</button>
+						
+						<button type="submit" onclick="SignUpPage.signUp(event)" class="btn-primary" 
+							style="width: 100%; margin-bottom: 1.5rem;" data-i18n="sign_up">Sign Up</button>
 					</form>
-					<div class="flex flex-row w-2xl  justify-between items-center gap-4">
-						<button id="toggleSignUp" class="underline cursor-pointer" onclick="GlobalState.setPage(LOGIN_PAGE)" data-i18n="already_have_account_sign_in">Already have an account? Sign In</button>
+					
+					<div style="margin-top: 2rem;">
+						<button id="toggleSignUp" onclick="GlobalState.setPage(LOGIN_PAGE)" 
+							style="background: none; border: none; color: var(--neon-cyan); cursor: pointer; text-decoration: underline;"
+							data-i18n="already_have_account_sign_in">Already have an account? Sign In</button>
 					</div>
 				</div>
 			`;
@@ -49,7 +55,7 @@ class SignUpPage implements Page {
 		const password = document.getElementById("password") as HTMLInputElement;
 		const confirmPassword = document.getElementById("confirmPassword") as HTMLInputElement;
 		if (password.value !== confirmPassword.value) {
-			alert("Passwords do not match!");
+			Notification.error("Passwords do not match!");
 			return;
 		}
 		await fetch(`${FETCH_ADDRESS}/auth/sign-up`, {
@@ -67,11 +73,11 @@ class SignUpPage implements Page {
 			.then(response => response.json())
 			.then(data => {
 				if (data.success == true) {
-					alert("Sign-up Success! You can now log in.");
+					Notification.success("Sign-up Success! You can now log in.");
 					GlobalState.setPage(LOGIN_PAGE);
 				}
 				else {
-					alert("Sign-up Failed: " + data.message);
+					Notification.error("Sign-up Failed: " + data.message);
 				}
 			});
 	}

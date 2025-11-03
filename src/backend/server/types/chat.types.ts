@@ -25,6 +25,6 @@ export interface WebSocketUser {
 }
 
 export interface ChatEvent {
-  type: 'message' | 'join_room' | 'leave_room' | 'user_joined' | 'user_left' | 'error' | 'chat_history' | 'get_online_users' | 'get_offline_messages' | 'online_users';
+  type: 'message' | 'join_room' | 'leave_room' | 'user_joined' | 'user_left' | 'error' | 'chat_history' | 'get_online_users' | 'get_offline_messages' | 'online_users' | 'avatar_updated';
   data: any;
 }

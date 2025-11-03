@@ -10,86 +10,68 @@ import { GAME_TOURNAMENT_PAGE } from "./TournamentPage";
 class HomePage implements Page {
 	title: string = "Home";
 	data: any;
-	async render() : Promise<void> {
+		async render() : Promise<void> {
 		const app = document.getElementById("app");
 		if (app) {
 			app.innerHTML = `
-			<div class="mx-32">
-				<!-- Logo and Title -->
-				<nav id="nav" class="px-32 py-2 flex flex-row w-full bg-blue-500 rounded-b-xl justify-between">
-					<div>
-						<button onclick="GlobalState.setPage(HOME_PAGE)" class="font-bold cursor-pointer text-6xl" data-i18n="PONG">PONG</button>
-					</div>
-					<div class="flex items-center">
-						<!-- Language selector -->
-						<div class="mr-4 text-white">
-							<button id="lang-en" class="mr-2">EN</button>
-							<button id="lang-tr">TR</button>
-						</div>
-					${
-						this.data ? `<button id=\"authButton\" onclick=\"GlobalState.setPage(PROFILE_PAGE)\"
-						class=\"cursor-pointer text-2xl font-semibold text-white hover:text-amber-400\">${this.data}</button>` : `<button id=\"authButton\" onclick=\"GlobalState.setPage(LOGIN_PAGE)\"
-						class=\"cursor-pointer text-2xl font-semibold text-white hover:text-amber-400\" data-i18n=\"login\">Login</button>`
-					}
+			<style>
+				.home-container {
+					max-width: 1400px;
+					margin: 0 auto;
+					padding: 0 2rem;
+				}
+				.game-buttons-grid {
+					display: grid;
+					grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+					gap: 1.5rem;
+					width: 100%;
+					max-width: 900px;
+				}
+			</style>
+			
+			<div class="home-container animate-fade-in">
+				<div style="min-height: calc(100vh - 80px); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 3rem 0;">
+					<div class="game-buttons-grid animate-scale-in">
+						${!this.data ? `
+							<button onclick="GlobalState.setPage(MATCHMAKING_PAGE('classic'))" class="btn-primary" data-i18n="one_v_one" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
+								1v1
+							</button>
+							<button onclick="GlobalState.setPage(MATCHMAKING_PAGE('classic'))" class="btn-primary" data-i18n="single_player" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
+								Single Player
+							</button>
+						` : ''}
 						
-					</div>
-				</nav>
+						${
+							this.data != null
+								? `
+									<button id="1v1Online-btn" class="btn-primary" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
+										<span data-i18n="one_v_one_online">1V1 Online</span>
+									</button>
 
-				<!-- main body -->
-				<div class="mx-32 h-[92vh] text-center items-center flex flex-col justify-center gap-6">
-					<div class="flex flex-row w-2xl justify-between gap-6">
-						<button onclick="GlobalState.setPage(MATCHMAKING_PAGE('classic'))" 
-							class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out" data-i18n="one_v_one">
-							1v1
-						</button>
-						<button onclick="GlobalState.setPage(MATCHMAKING_PAGE('classic'))" 
-							class="bg-blue-500 w-[50%] text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out" data-i18n="single_player">
-							Single Player
-						</button>
-					</div>
-					${
-						
-						this.data != null
-							? `
-								<button  id="1v1Online-btn" onClick=""
-									class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
-									<span data-i18n="one_v_one_online">1V1 Online</span>
-								</button>
+									<button id="multiplayer-btn" class="btn-secondary" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
+										<span data-i18n="multiplayer">Multiplayer</span>
+									</button>
 
-								<button id="multiplayer-btn" onClick=""
-									class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
-									<span data-i18n="multiplayer">Multiplayer</span>
-								</button>
+									<button id="tournament-btn" class="btn-secondary" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
+										<span data-i18n="tournament">🏆 Tournament</span>
+									</button>
+									
+									<button id="friends-btn" class="btn-primary" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
+										<span data-i18n="friends">Friends</span>
+									</button>
 
-								<button id="multiplayer-btn" onClick=""
-									class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
-									<span data-i18n="multiplayer">Multiplayer</span>
-								</button>
+									<button id="social-btn" class="btn-success" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
+										<span data-i18n="social">Social</span>
+									</button>
 
-								<button id="tournament-btn"
-									class="bg-purple-600 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-purple-800 transition duration-300 ease-in-out">
-									<span data-i18n="tournament">🏆 Tournament</span>
-								</button>
-								
-								<button id="friends-btn"
-									class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-blue-700 transition duration-300 ease-in-out">
-									<span data-i18n="friends">Friends</span>
-								</button>
-
-								<button id="social-btn"
-                					class="bg-blue-500 min-w-2xl text-white font-bold py-6 px-10 rounded hover:bg-orange-700 transition duration-300 ease-in-out">
-									<span data-i18n="social">Social</span>
-            					</button>
-
-								<button id="logout"
-									class="bg-red-500 text-white px-4 cursor-pointer py-2 rounded">
-									<span data-i18n="logout">Logout</span>
-								</button>
+									<button id="logout" class="btn-danger" style="padding: 1rem 2rem; font-size: 1rem;">
+										<span data-i18n="logout">Logout</span>
+									</button>
 							  `
-							: ""
-					}
+								: ""
+						}
+					</div>
 				</div>
-				
 			</div>
 			`;
 		}

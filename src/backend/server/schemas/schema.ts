@@ -247,12 +247,6 @@ export const recoveryPageSchema = {
 		}
 	}
 }
-export const rateLimiter = {
-		rateLimit: {
-			max: 10,
-			timeWindow: '1 minute'
-		}
-	};
 
 export const recoveryStepTwoPageSchema = {
 	body: {

@@ -5,6 +5,8 @@ import { GAME_TOURNAMENT_PAGE } from "./TournamentPage";
 import { HOME_PAGE } from "./HomePage";
 import { MULTIPLAYER_GAME_PAGE } from "./MultiplayerGamePage";
 
+declare const Notification: typeof import("../components/Notification").Notification;
+
 class MatchmakingPage implements Page {
 
 	title: string = "Tournament";
@@ -21,63 +23,52 @@ class MatchmakingPage implements Page {
 		
 		if (this.gameType === 'tournament') {
 			app.innerHTML = `
-				<div class="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-gray-900 flex items-center justify-center p-4">
-					<div class="max-w-4xl w-full">
-						<div class="w-full flex justify-end mb-4">
-							<button id="lang-en" class="mr-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded">EN</button>
-							<button id="lang-tr" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded">TR</button>
-						</div>
-						
-						<div class="bg-gray-800 rounded-2xl shadow-2xl p-8 border-4 border-purple-500">
-							<div class="text-center mb-8">
-								<div class="text-8xl mb-4">🏆</div>
-								<h1 class="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-4">
-									TOURNAMENT
-								</h1>
-								<p class="text-2xl text-gray-300 mb-2">Waiting for Players...</p>
-								<p class="text-lg text-gray-400">4 players needed to start</p>
+				<div style="min-height: calc(100vh - 80px); display: flex; align-items: center; justify-content: center; padding: 2rem;">
+					<div style="max-width: 900px; width: 100%;">
+						<div class="glass-card animate-scale-in">
+							<div style="text-align: center; margin-bottom: 2rem;">
+								<div style="font-size: 5rem; margin-bottom: 1rem;" class="neon-text-purple">🏆</div>
+								<h1 style="font-size: 3rem; margin-bottom: 1rem;" class="neon-text-purple">TOURNAMENT</h1>
+								<p style="font-size: 1.5rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 0.5rem;">Waiting for Players...</p>
+								<p style="color: rgba(255, 255, 255, 0.6);">4 players needed to start</p>
 							</div>
 
-							<div class="mb-8">
-								<div class="flex justify-between text-sm text-gray-400 mb-2">
+							<div style="margin-bottom: 2rem;">
+								<div style="display: flex; justify-content: space-between; font-size: 0.875rem; color: rgba(255, 255, 255, 0.6); margin-bottom: 0.5rem;">
 									<span>Players in queue</span>
 									<span id="playerCount">0 / 4</span>
 								</div>
-								<div class="w-full bg-gray-700 rounded-full h-6 overflow-hidden">
-									<div id="progressBar" class="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500 flex items-center justify-center text-white text-sm font-bold" style="width: 0%">
+								<div style="width: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 999px; height: 1.5rem; overflow: hidden;">
+									<div id="progressBar" style="height: 100%; background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink)); transition: width 0.5s; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.875rem; font-weight: 600; width: 0%;">
 										<span id="progressText">0%</span>
 									</div>
 								</div>
 							</div>
 
-							<div class="grid grid-cols-4 gap-4 mb-8">
+							<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;">
 								${Array.from({length: 4}, (_, i) => `
-									<div id="slot-${i}" class="aspect-square bg-gray-700 rounded-xl border-2 border-gray-600 flex items-center justify-center transition-all">
-										<div class="text-4xl text-gray-500">?</div>
+									<div id="slot-${i}" style="aspect-ratio: 1; background: rgba(255, 255, 255, 0.05); border-radius: 1rem; border: 2px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; transition: all 0.3s;">
+										<div style="font-size: 2rem; color: rgba(255, 255, 255, 0.3);">?</div>
 									</div>
 								`).join('')}
 							</div>
 
-							<div class="flex justify-center gap-2 mb-6">
-								<div class="w-3 h-3 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
-								<div class="w-3 h-3 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
-								<div class="w-3 h-3 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+							<div style="display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem;">
+								<div class="spinner" style="width: 12px; height: 12px; border-width: 2px;"></div>
+								<div class="spinner" style="width: 12px; height: 12px; border-width: 2px; animation-delay: 0.15s;"></div>
+								<div class="spinner" style="width: 12px; height: 12px; border-width: 2px; animation-delay: 0.3s;"></div>
 							</div>
 
-							<div class="text-center">
-								<button 
-									id="cancelButton"
-									class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition duration-300 shadow-lg hover:shadow-xl">
-									<span data-i18n="cancel">Cancel</span>
-								</button>
+							<div style="text-align: center; margin-bottom: 2rem;">
+								<button id="cancelButton" class="btn-danger" data-i18n="cancel">Cancel</button>
 							</div>
 
-							<div class="mt-6 p-4 bg-gray-900 rounded-lg">
-								<h3 class="text-xl font-bold text-yellow-400 mb-2">Tournament Rules</h3>
-								<ul class="text-sm text-gray-300 space-y-1">
-									<li>• 4 players single elimination bracket</li>
-									<li>• 2 rounds: Semi-Finals → Final</li>
-									<li>• Best of 1 matches</li>
+							<div class="glass-card" style="margin-top: 1.5rem; padding: 1.5rem;">
+								<h3 style="font-size: 1.25rem; margin-bottom: 1rem;" class="neon-text-purple">Tournament Rules</h3>
+								<ul style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.8); list-style: none; padding: 0;">
+									<li style="margin-bottom: 0.5rem;">• 4 players single elimination bracket</li>
+									<li style="margin-bottom: 0.5rem;">• 2 rounds: Semi-Finals → Final</li>
+									<li style="margin-bottom: 0.5rem;">• Best of 1 matches</li>
 									<li>• Winner takes all the glory! 🏆</li>
 								</ul>
 							</div>
@@ -87,36 +78,22 @@ class MatchmakingPage implements Page {
 			`;
 		} else {
 			app.innerHTML = `
-				<div class="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4">
-					<div class="text-center">
-						<div class="w-full flex justify-end mb-4">
-							<button id="lang-en" class="mr-2">EN</button>
-							<button id="lang-tr">TR</button>
-						</div>
-						
-						<div class="relative w-32 h-32 mx-auto mb-8">
-							<div class="absolute inset-0 border-8 border-white/20 rounded-full"></div>
-							<div class="absolute inset-0 border-8 border-t-white border-r-white border-b-transparent border-l-transparent rounded-full animate-spin"></div>
-						</div>
+				<div style="min-height: calc(100vh - 80px); display: flex; align-items: center; justify-content: center; padding: 2rem;">
+					<div style="text-align: center;">
+						<div class="spinner" style="width: 80px; height: 80px; margin: 0 auto 2rem; border-width: 4px;"></div>
 
-						<h1 class="text-5xl font-bold text-white mb-4" data-i18n="waiting">
-							Waiting
-						</h1>
+						<h1 style="font-size: 3rem; margin-bottom: 1rem;" class="neon-text-cyan" data-i18n="waiting">Waiting</h1>
 
-						<p class="text-2xl text-white/90 mb-2" data-i18n="searching_players">Searching for players...</p>
-						<p class="text-lg text-white/70 mb-8" data-i18n="please_wait">Please wait while we find you a match</p>
+						<p style="font-size: 1.5rem; color: rgba(255, 255, 255, 0.9); margin-bottom: 0.5rem;" data-i18n="searching_players">Searching for players...</p>
+						<p style="font-size: 1rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 2rem;" data-i18n="please_wait">Please wait while we find you a match</p>
 
-						<div class="flex justify-center gap-2 mb-12">
-							<div class="w-3 h-3 bg-white rounded-full animate-bounce" style="animation-delay: 0ms"></div>
-							<div class="w-3 h-3 bg-white rounded-full animate-bounce" style="animation-delay: 150ms"></div>
-							<div class="w-3 h-3 bg-white rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+						<div style="display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 3rem;">
+							<div class="spinner" style="width: 12px; height: 12px; border-width: 2px;"></div>
+							<div class="spinner" style="width: 12px; height: 12px; border-width: 2px; animation-delay: 0.15s;"></div>
+							<div class="spinner" style="width: 12px; height: 12px; border-width: 2px; animation-delay: 0.3s;"></div>
 						</div>
 
-						<button 
-							id="cancelButton"
-							class="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-bold py-4 px-8 rounded-lg transition duration-300 border-2 border-white/30">
-							<span data-i18n="cancel">Cancel</span>
-						</button>
+						<button id="cancelButton" class="btn-danger" data-i18n="cancel">Cancel</button>
 					</div>
 				</div>
 			`;
@@ -201,16 +178,39 @@ class MatchmakingPage implements Page {
 			}
 		}
 	  	if (message.action === "matchFound") {
+			console.log("Match found message received:", message);
+			
+			if (message.opponent) {
+				localStorage.setItem('currentOpponent', message.opponent);
+			}
+			
+			const roomId = message.roomId || message.room_id || message.data?.roomId;
+			
+			if (!roomId && message.queueType !== 'tournament') {
+				console.error("No roomId found in matchFound message:", message);
+				Notification.error("Match found but room ID is missing. Please try again.");
+				return;
+			}
+			
 			switch (message.queueType)
 			{
 				case "1v1":
-					GlobalState.setPage(CLASSIC_GAME_PAGE(message.roomId));
+				case "classic":
+					console.log("Navigating to ClassicGamePage with roomId:", roomId);
+					Notification.success(`Match found! Starting game...`);
+					GlobalState.setPage(CLASSIC_GAME_PAGE(roomId)).catch((error) => {
+						console.error("Failed to navigate to game page:", error);
+						Notification.error("Failed to start game. Please try again.");
+					});
 					break;
 				case "2v2":
-					GlobalState.setPage(MULTIPLAYER_GAME_PAGE(message.roomId));
+					console.log("Navigating to MultiplayerGamePage with roomId:", roomId);
+					Notification.success(`Match found! Opponent: ${message.opponent || 'Unknown'}`);
+					setTimeout(() => {
+						GlobalState.setPage(MULTIPLAYER_GAME_PAGE(roomId));
+					}, 500);
 					break;
 				case "tournament":
-					// Show "Match found" message briefly before navigating
 					const app = document.getElementById("app");
 					if (app && this.gameType === 'tournament') {
 						app.innerHTML = `
@@ -230,16 +230,13 @@ class MatchmakingPage implements Page {
 							</div>
 						`;
 					}
-					// Give UI time to render, then navigate
 					setTimeout(() => {
-						GlobalState.setPage(GAME_TOURNAMENT_PAGE(message.tournamentId));
+						GlobalState.setPage(GAME_TOURNAMENT_PAGE(message.tournamentId || message.tournament_id));
 					}, 1500);
 					break;
 				default:
-					console.error("Unknown queue type:", message.queueType);
-			}
-			if (message.queueType !== 'tournament') {
-				alert(`Match found! Opponent: ${message.opponent}`);
+					console.error("Unknown queue type:", message.queueType, "Full message:", message);
+					Notification.error(`Unknown queue type: ${message.queueType}`);
 			}
 	  	}
 		if (message.type === "error") {

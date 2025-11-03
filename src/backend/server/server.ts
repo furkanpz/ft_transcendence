@@ -10,8 +10,6 @@ import fastifyOauth2 from '@fastify/oauth2';
 const { GOOGLE_CONFIGURATION } = fastifyOauth2;
 import cors from '@fastify/cors';
 import fastifyWebsocket from '@fastify/websocket';
-import rateLimit from '@fastify/rate-limit';
-
 
 const certPath = path.join(__dirname, '../../certs');
 const httpsOptions = {
@@ -39,11 +37,6 @@ async function main() {
 	  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   });
   await server.register(fastifyWebsocket);
-  await server.register(rateLimit, {
-    global: true,
-    max: 20000,
-    timeWindow: '1 minute'
-  });
 
   await server.register(fastifyMultipart, {
     limits: {

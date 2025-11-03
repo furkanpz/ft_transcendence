@@ -14,8 +14,7 @@ export default async function AuthRoutes(server:FastifyInstance) {
 	server.post("/sign-in",
 	{
 		schema: schemas.loginSchema,
-		handler: loginController,
-		config: schemas.rateLimiter
+		handler: loginController
 	});
 	server.get("/logout", 
 	{
@@ -25,8 +24,7 @@ export default async function AuthRoutes(server:FastifyInstance) {
 	server.post("/sign-up",
 	{
 		schema: schemas.registerSchema,
-		handler: registerController,
-		config: schemas.rateLimiter
+		handler: registerController
 	});
 	server.get("/login/google/callback",
 	{
@@ -35,7 +33,6 @@ export default async function AuthRoutes(server:FastifyInstance) {
 
 	server.post("/account_recovery", {
 		schema: schemas.account_recovery,
-		config: schemas.rateLimiter,
 		handler:accountRecoveryController
 	})
 

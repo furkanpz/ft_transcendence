@@ -34,7 +34,6 @@ class Game2v2Page implements Page {
         socket.onmessage = (event) => {
             const message = JSON.parse(event.data);
             console.log("Received game message:", message);
-            // Handle game messages here
         };
 
         console.log("2v2 Game Page preloaded");

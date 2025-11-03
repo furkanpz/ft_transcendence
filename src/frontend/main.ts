@@ -1,3 +1,4 @@
+import "./globals.css";
 import { BLOCKED_USERS_PAGE, BlockedUsersPage } from "./pages/BlockedUsersPage";
 import { CHAT_PAGE, ChatPage } from "./pages/ChatPage";
 import { MATCHMAKING_PAGE } from "./pages/MatchmakingPage";
@@ -8,8 +9,9 @@ import { HOME_PAGE } from "./pages/HomePage";
 import { LOGIN_PAGE, LoginPage } from "./pages/LoginPage";
 import { SIGNUP_PAGE, SignUpPage } from "./pages/SignUpPage";
 import { FRIENDS_PAGE, FriendsPage } from "./pages/FriendsPage";
+import { Navbar } from "./components/Navbar";
+import { Notification } from "./components/Notification";
 
-// websocket için de kullanıyorum o yüzden sadece adres ve portu yazdım
 const FETCH_ADDRESS = "https://localhost:3000/api"
 const WS_ADDRESS = "wss://localhost:3000/ws"
 
@@ -69,12 +71,42 @@ class GlobalState {
 	public static async setPage(page: Page): Promise<void> {
 		await GlobalState.getcurrentPage().onUnload();
 		GlobalState.setcurrentPage(page);
-		await page.onPreLoad();
+		
+		try {
+			await page.onPreLoad();
+		} catch (error) {
+			console.error("Error in page.onPreLoad:", error);
+		}
+		
 		document.title = page.title;
 		const path = GlobalState.getPagePath(page);
 		window.history.pushState({ pageKey: path }, page.title, path);
+		
 		await page.render();
-		// translate newly rendered DOM according to current language
+		
+		const app = document.getElementById("app");
+		if (app) {
+			let existingNavbar = app.querySelector("#global-navbar");
+			if (!existingNavbar) {
+				const navbarHTML = await Navbar.render();
+				const tempDiv = document.createElement("div");
+				tempDiv.innerHTML = navbarHTML;
+				const navbar = tempDiv.firstElementChild;
+				if (navbar) {
+					app.insertBefore(navbar, app.firstChild);
+					Navbar.setupEventListeners();
+					console.log("✅ Navbar injected successfully");
+				} else {
+					console.error("❌ Failed to create navbar element");
+				}
+			} else {
+				Navbar.setupEventListeners();
+				console.log("✅ Navbar already exists");
+			}
+		} else {
+			console.error("❌ App element not found!");
+		}
+		
 		i18n.translateDOM();
 		await page.onLoad();
 	}
@@ -108,8 +140,26 @@ async function init() {
 	GlobalState.setcurrentPage(initialPage);
 	document.title = initialPage.title;
 	await initialPage.onPreLoad();
+	
 	await initialPage.render();
-	// translate initial render
+	
+	const app = document.getElementById("app");
+	if (app) {
+		let existingNavbar = app.querySelector("#global-navbar");
+		if (!existingNavbar) {
+			const navbarHTML = await Navbar.render();
+			const tempDiv = document.createElement("div");
+			tempDiv.innerHTML = navbarHTML;
+			const navbar = tempDiv.firstElementChild;
+			if (navbar) {
+				app.insertBefore(navbar, app.firstChild);
+				Navbar.setupEventListeners();
+			}
+		} else {
+			Navbar.setupEventListeners();
+		}
+	}
+	
 	i18n.translateDOM();
 	await initialPage.onLoad();
 
@@ -137,3 +187,6 @@ export { Page, GlobalState, FETCH_ADDRESS, WS_ADDRESS, PAGES };
 (window as any).ProfiPage = ProfilePage;
 (window as any).BlockedUsersPage = BlockedUsersPage;
 (window as any).i18n = i18n;
+(window as any).CHAT_PAGE = CHAT_PAGE;
+(window as any).FRIENDS_PAGE = FRIENDS_PAGE;
+(window as any).Notification = Notification;

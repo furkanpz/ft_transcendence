@@ -37,9 +37,9 @@ export async function sendRecovery(email: string, otp: string){
     `,
     })
 }
-// ENV DOMAIN GEREKLİ!
+
 export async function sendRecovery_2(email: string, otp: string){
-	// Send user to FRONTEND page, not backend API; frontend will call backend with these params
+	
 	const base = MAIN_URL.replace(/\/+$/, '');
 	const recoveryUrl = `${base}/forgot-password?verify=${otp}&email=${encodeURIComponent(email)}`;
 

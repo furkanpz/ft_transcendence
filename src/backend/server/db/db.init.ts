@@ -16,7 +16,6 @@ if (!fs.existsSync(dbDir)) {
 
 async function initializeDatabase() {
   try {
-    // Veritabanı zaten varsa, yeniden başlatma
     const dbExists = fs.existsSync(dbPath);
     if (dbExists) {
       console.log('Database already exists, skipping initialization');

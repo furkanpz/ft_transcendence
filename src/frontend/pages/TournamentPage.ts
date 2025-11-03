@@ -18,19 +18,15 @@ class TournamentPage implements Page {
         if (!app) return;
 
         app.innerHTML = `
-            <div class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white p-8">
-                <div class="max-w-7xl mx-auto">
-                    <div class="flex justify-between items-center mb-8">
-                        <h1 class="text-5xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
+            <div style="min-height: calc(100vh - 80px); color: white; padding: 2rem;">
+                <div style="max-width: 1280px; margin: 0 auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <h1 style="font-size: 3rem; font-weight: bold; color: var(--neon-magenta); text-shadow: 0 0 10px var(--neon-magenta);">
                             Tournament
                         </h1>
-                        <div class="flex gap-2">
-                            <button id="lang-en" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded transition">EN</button>
-                            <button id="lang-tr" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded transition">TR</button>
-                            <button id="backBtn" class="px-6 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition">
-                                Back
-                            </button>
-                        </div>
+                        <button id="backBtn" class="btn-danger" style="padding: 0.75rem 1.5rem;">
+                            ← Back
+                        </button>
                     </div>
 
                     <div id="tournamentContent" class="space-y-6">
@@ -70,9 +66,9 @@ class TournamentPage implements Page {
         let html = `
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2 space-y-6">
-                    <div class="bg-gray-800 rounded-xl p-6 shadow-2xl border border-purple-500">
+                    <div class="neon-card border-purple">
                         <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-3xl font-bold">Tournament Bracket</h2>
+                            <h2 class="text-3xl font-bold neon-text-purple">Tournament Bracket</h2>
                             <span class="px-4 py-2 ${statusColors[state.status]} rounded-full text-sm font-bold uppercase">
                                 ${state.status.replace('_', ' ')}
                             </span>
@@ -193,7 +189,7 @@ class TournamentPage implements Page {
                             <div class="flex justify-between items-center p-3 bg-gray-700 rounded-lg">
                                 <div class="flex items-center gap-2">
                                     <div class="w-2 h-2 rounded-full ${p.isConnected ? 'bg-green-500' : 'bg-gray-500'}"></div>
-                                    ${p.hasJoined ? '<span class="text-xs text-green-400">✓</span>' : '<span class="text-xs text-yellow-400">⏳</span>'}
+                                    ${p.hasJoined ? '<span class="text-xs text-green-400">✓</span>' : '<span class="text-xs text-yellow-400"></span>'}
                                     <span class="font-medium">${p.username}</span>
                                 </div>
                                 <span class="text-xs text-gray-400">Seed #${p.seedPosition}</span>
@@ -247,8 +243,7 @@ class TournamentPage implements Page {
 
         this.socket.onopen = () => {
             console.log("Connected to tournament");
-            
-            // Wait a moment for UI to render, then send join event
+    
             setTimeout(() => {
                 if (this.socket && this.socket.readyState === WebSocket.OPEN) {
                     this.socket.send(JSON.stringify({

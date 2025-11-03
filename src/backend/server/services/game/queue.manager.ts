@@ -11,7 +11,6 @@ class QueueManager {
 
 	public addQueue(userId: number, socket: WebSocket, gameType : GameType) : boolean
 	{
-		// Check if player is already in an active tournament
 		if (gameType === GameType.Tournament && tournamentManager.isPlayerInTournament(userId)) {
 			console.log(`Player ${userId} is already in an active tournament`);
 			const tournamentId = tournamentManager.getTournamentIdForPlayer(userId);
@@ -102,7 +101,6 @@ class QueueManager {
 						}
 					);
 					
-					// Give players time to navigate to tournament page and connect websockets
 					setTimeout(() => {
 						tournamentManager.startTournament(tournamentId);
 					}, 8000);

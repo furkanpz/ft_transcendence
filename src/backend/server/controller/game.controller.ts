@@ -87,12 +87,13 @@ export async function tournamentController(connection: any, req: any) {
 		  data: { message: 'Connected to tournament' }
 		}));
 
-		// Handle incoming messages (join event)
 		connection.on('message', (message: any) => {
 			try {
 				const data = JSON.parse(message.toString());
 				if (data.action === 'joinTournament') {
 					tournamentManager.handlePlayerJoin(tournamentId, jwtusr.id);
+				} else if (data.action === 'leaveTournament') {
+					tournamentManager.handlePlayerLeave(tournamentId, jwtusr.id);
 				}
 			} catch (error) {
 				console.error('Error parsing tournament message:', error);

@@ -19,68 +19,32 @@ export default async function setRoutes(server: FastifyInstance) {
 	
 	await server.register(async function (fastify) {
 	fastify.get('/ws/chat', {
-		websocket: true,
-		config: {
-			rateLimit: {
-				max: 5,
-				timeWindow: '10 seconds'
-			}
-		}
+		websocket: true
 	}, chatController);
 	});
 	await server.register(async function (fastify) {
 		fastify.get('/queue/classic', {
-			websocket: true,
-			config: {
-				rateLimit: {
-					max: 5,
-					timeWindow: '10 seconds'
-				}
-			}
+			websocket: true
 		}, classicQueueController);
 	});
 	await server.register(async function (fastify) {
 		fastify.get('/queue/multiplayer', {
-		websocket: true,
-		config: {
-			rateLimit: {
-				max: 5,
-				timeWindow: '10 seconds'
-			}
-		}
+		websocket: true
 	}, multiplayerQueueController);
 	});
 	await server.register(async function (fastify) {
 		fastify.get('/queue/tournament', {
-		websocket: true,
-		config: {
-			rateLimit: {
-				max: 5,
-				timeWindow: '10 seconds'
-			}
-		}
+		websocket: true
 	}, tournamentQueueController);
 	});
 	await server.register(async function (fastify) {
 		fastify.get('/ws/tournament/:tournamentId', {
-		websocket: true,
-		config: {
-			rateLimit: {
-				max: 5,
-				timeWindow: '10 seconds'
-			}
-		}
+		websocket: true
 	}, tournamentController);
 	});
 	await server.register(async function (fastify) {
 	fastify.get('/room/:roomId', {
-		websocket: true,
-		config: {
-			rateLimit: {
-				max: 5,
-				timeWindow: '10 seconds'
-			}
-		}
+		websocket: true
 	}, gameController);
 	});
 }

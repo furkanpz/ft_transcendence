@@ -5,6 +5,7 @@ import * as userFriendsUtils from '../services/user/friends.services';
 import { sendSuccess, sendError } from '../helpers/response';
 import * as authServices from '../services/auth/auth.services';
 import { ensureDmRoom } from '../services/chat/chat.services';
+import { chatManager } from '../services/chat/websocket.manager';
 
 export async function friendsDetailsController(request: FastifyRequest, response: FastifyReply) {
     const body = request.body as { friends: number[] };
@@ -283,7 +284,15 @@ export async function imageUploadController(request: FastifyRequest, response: F
             await avatarService.deleteOldAvatar(currentUser.avatar_url);
         }
         await userServices.setUserImage(user.id, result.url!);
-        
+
+        try {
+            chatManager.broadcastToAll({
+                type: 'avatar_updated',
+                data: { username: (await userServices.userIdFindInDb(user.id))?.username || user.username, avatar_url: result.url }
+            });
+        } catch (e) {
+        }
+
         return sendSuccess(response, "Avatar uploaded successfully!", {
             avatar_url: result.url
         });
@@ -291,4 +300,20 @@ export async function imageUploadController(request: FastifyRequest, response: F
         console.error('Avatar upload error:', error);
         return (sendError(response, 500, "Internal server error during avatar upload"));
     }
+}
+
+export async function usersDetailsByUsernameController(request: FastifyRequest, response: FastifyReply) {
+    const body = request.body as { usernames: string[] };
+    const usernames = Array.isArray(body?.usernames) ? body.usernames : [];
+    if (usernames.length === 0) {
+        return sendSuccess(response, "", { data: [] });
+    }
+    const results: { username: string; avatar_url?: string }[] = [];
+    for (const uname of usernames) {
+        const u = await userServices.userFindInDb(uname);
+        if (u) {
+            results.push({ username: u.username, avatar_url: u.avatar_url });
+        }
+    }
+    return sendSuccess(response, "", { data: results });
 }

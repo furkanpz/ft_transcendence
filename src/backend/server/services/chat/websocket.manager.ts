@@ -15,6 +15,11 @@ class ChatManager {
         
         this.connectedUsers.set(userId, user);
         
+        this.broadcastToAll({
+            type: 'user_joined',
+            data: { username: username, user_id: userId }
+        }, userId);
+        
         socket.on('close', () => {
             this.removeUser(userId);
         });
@@ -32,10 +37,17 @@ class ChatManager {
 
     removeUser(userId: number): void {
         const user = this.connectedUsers.get(userId);
-        if (user && user.current_room) {
-            this.leaveRoom(userId, user.current_room);
+        if (user) {
+            this.broadcastToAll({
+                type: 'user_left',
+                data: { username: user.username, user_id: userId }
+            }, userId);
+            
+            if (user.current_room) {
+                this.leaveRoom(userId, user.current_room);
+            }
+            this.connectedUsers.delete(userId);
         }
-        this.connectedUsers.delete(userId);
     }
 
     async handleMessage(userId: number, event: ChatEvent): Promise<void> {
@@ -163,6 +175,14 @@ class ChatManager {
         if (!room) return;
 
         room.forEach(userId => {
+            if (userId !== excludeUserId) {
+                this.sendToUser(userId, event);
+            }
+        });
+    }
+
+    broadcastToAll(event: ChatEvent, excludeUserId?: number): void {
+        this.connectedUsers.forEach((user, userId) => {
             if (userId !== excludeUserId) {
                 this.sendToUser(userId, event);
             }

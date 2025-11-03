@@ -10,7 +10,8 @@ import {
 	getBlockedUsersController,
 	unblockUserController,
 	changeUsernameController,
-	imageUploadController
+	imageUploadController,
+	usersDetailsByUsernameController
 } from '../controller/user.controller'
 import { authJwtVerify } from '../services/auth/jwt.services'
 
@@ -27,6 +28,12 @@ export default async function userRoutes(server: FastifyInstance) {
 		preHandler: authJwtVerify,
 		schema: schemas.friendDetailsSchema,
 		handler: friendsDetailsController
+	});
+
+	server.post("/details/by-username",
+	{
+		preHandler: authJwtVerify,
+		handler: usersDetailsByUsernameController
 	});
 	server.post("/friends/request",
 	{

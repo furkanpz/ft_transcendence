@@ -1,6 +1,7 @@
 import { WebSocket } from "ws"
 import { GameType, GameRoom, PlayerState} from "../../types/game.types"
 import { ClassicGameInstance, GameInstance } from "./game.instance";
+import { tournamentManager } from "./tournament.manager";
 import { MultiplayerGameInstance } from "./multigame.instance";
 
 class GameManager
@@ -43,6 +44,17 @@ class GameManager
 			if (roomId) {
 				const room = this.gameRooms.get(roomId);
 				if (room) {
+					if (room.roomType === GameType.Tournament) {
+						const tId = tournamentManager.getTournamentIdForPlayer(userId);
+						if (tId) {
+							try { tournamentManager.onGameSocketClose(tId, userId); } catch (e) { console.error(e); }
+						}
+						const others = room.players.filter((id) => id !== userId);
+						for (const otherId of others) {
+							const s = this.playerSockets.get(otherId);
+							try { s?.send(JSON.stringify({ action: "gameEnded", result: { players: [] } })); } catch (e) { console.error(e); }
+						}
+					}
 					room.players = room.players.filter((id) => this.playersState.get(id) !== PlayerState.LEFT);
 					if (room.players.length === 0) {
 						this.removeRoom(roomId);
@@ -74,7 +86,6 @@ class GameManager
 				this.gamesInstances.set(roomId, new MultiplayerGameInstance(room.players, room));
 				break;
 			case GameType.Tournament:
-				// Tournament uses classic game instance (1v1)
 				this.gamesInstances.set(roomId, new ClassicGameInstance(room.players, room));
 				break;
 			}

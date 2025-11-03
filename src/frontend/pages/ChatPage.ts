@@ -2,6 +2,8 @@ import { GlobalState, Page, FETCH_ADDRESS, WS_ADDRESS } from "../main"
 import * as i18n from "../i18n";
 import { HOME_PAGE } from "./HomePage"
 
+declare const Notification: typeof import("../components/Notification").Notification;
+
 class ChatPage implements Page {
     title: string = "Live Chat";
     static onlineUsers: string[] = [];
@@ -12,81 +14,280 @@ class ChatPage implements Page {
     static userChats: { [key: string]: any[] } = {};
     static unreadCounts: { [key: string]: number } = {};
     static userRoomIds: { [key: string]: string } = {};
+    static userAvatars: { [key: string]: string } = {}; 
+
+    static escapeHtml(input: any): string {
+        const s = String(input ?? "");
+        return s
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/\"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
 
     async render(): Promise<void> {
         const app = document.getElementById("app");
         if (app) {
             app.innerHTML = `
-                <div class="min-h-screen bg-gray-50">
-                    <nav class="bg-white border-b border-gray-200 px-6 py-4">
-                        <div class="flex justify-between items-center">
-                            <div class="flex items-center gap-4">
-                                <button onclick="GlobalState.setPage(HOME_PAGE)" class="text-2xl font-bold text-blue-600 hover:text-blue-700 transition duration-200">
-                                    💬 <span data-i18n="chat">Live Chat</span>
-                                </button>
-                                <div class="ml-4">
-                                    <button id="lang-en" class="mr-2">EN</button>
-                                    <button id="lang-tr">TR</button>
-                                </div>
-                            </div>
-                            <button onclick="GlobalState.setPage(HOME_PAGE)" class="text-gray-600 hover:text-gray-800 transition duration-200">
-                                ← <span data-i18n="back_to_home">Ana Sayfa</span>
-                            </button>
-                        </div>
-                    </nav>
-
-                    <div class="flex h-[calc(100vh-80px)]">
-                        
-                        <div class="w-80 bg-white border-r border-gray-200 flex flex-col">
-                            <div class="p-4 border-b border-gray-200">
-                                <div class="relative">
-                                    <input type="text" id="userSearchInput" placeholder="Kullanıcı Ara" data-i18n-placeholder="search_user"
-                                           class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200" 
-                                           oninput="ChatPage.searchUsers()"
-                                           onkeyup="ChatPage.searchUsers()"
-                                           onpaste="ChatPage.setTimeout(searchUsers, 100)">
-                                    <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
-                                </div>
-                            </div>
-                            
-                            <div class="flex-1 overflow-y-auto">
-                                <div id="chatsList" class="py-2">
-                                    <div class="text-center text-gray-500 py-8">
-                                        <p data-i18n="no_chats_yet">Henüz sohbet yok</p>
-                                        <p class="text-sm" data-i18n="find_user_above">Yukarıdaki arama ile kullanıcı bulun</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="flex-1 flex flex-col">
-                            <div id="chatHeader" class="bg-white border-b border-gray-200 p-4">
-                            </div>
-                            
-                            <div id="chatMessages" class="flex-1 overflow-y-auto p-4 bg-gray-50">
-                            </div>
-                            
-                            <div class="bg-white border-t border-gray-200 p-4">
-                                <form id="messageForm" method="post" class="flex gap-3" onsubmit="ChatPage.sendChatMessage(event)">
-                                    <input type="text" id="messageInput" placeholder="Önce bir kullanıcı seçin..." data-i18n-placeholder="select_user_first"
-                                           class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 bg-gray-50"
-                                           disabled>
-                                    <button type="submit" id="sendButton" 
-                                            class="bg-gray-400 text-white px-6 py-2 rounded-lg transition duration-200 font-semibold opacity-50 cursor-not-allowed" data-i18n="send"
-                                            disabled>
-                                        Gönder
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                        
-                        <div id="userInfoPanel" class="w-80 bg-white border-l border-gray-200 hidden">
-                            <div class="text-center text-gray-500 py-16">
-                                <p data-i18n="user_profile">Kullanıcı bilgisi burada görünecek</p>
-                            </div>
+            <style>
+                .chat-container {
+                    display: flex;
+                    height: calc(100vh - 80px);
+                    min-height: calc(100vh - 80px);
+                    overflow: hidden;
+                }
+                
+                .chat-sidebar {
+                    width: 320px;
+                    min-width: 280px;
+                    display: flex;
+                    flex-direction: column;
+                    background: rgba(20, 20, 40, 0.6);
+                    backdrop-filter: blur(20px);
+                    border-right: 1px solid rgba(0, 240, 255, 0.3);
+                }
+                
+                .chat-main {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    background: rgba(10, 10, 32, 0.3);
+                    min-width: 0;
+                }
+                
+                .chat-search-container {
+                    position: relative;
+                    padding: 1rem;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                }
+                
+                .chat-search-icon {
+                    position: absolute;
+                    left: 1.5rem;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    font-size: 1rem;
+                    color: rgba(255, 255, 255, 0.5);
+                }
+                
+                .chat-list {
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 0.5rem;
+                }
+                
+                .chat-header {
+                    padding: 1rem 1.5rem;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                    background: rgba(20, 20, 40, 0.6);
+                    backdrop-filter: blur(20px);
+                }
+                
+                .chat-messages {
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 1.5rem;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1rem;
+                }
+                
+                .chat-input-container {
+                    padding: 1rem 1.5rem;
+                    border-top: 1px solid rgba(255, 255, 255, 0.1);
+                    background: rgba(20, 20, 40, 0.6);
+                    backdrop-filter: blur(20px);
+                }
+                
+                .chat-input-form {
+                    display: flex;
+                    gap: 0.75rem;
+                }
+                
+                .message-sent {
+                    align-self: flex-end;
+                    background: linear-gradient(135deg, var(--neon-cyan), var(--neon-blue));
+                    color: white;
+                    padding: 0.75rem 1rem;
+                    border-radius: 18px 18px 4px 18px;
+                    max-width: 70%;
+                    word-wrap: break-word;
+                    box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);
+                }
+                
+                .message-received {
+                    align-self: flex-start;
+                    background: rgba(255, 255, 255, 0.1);
+                    color: white;
+                    padding: 0.75rem 1rem;
+                    border-radius: 18px 18px 18px 4px;
+                    max-width: 70%;
+                    word-wrap: break-word;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                }
+                
+                .message-time {
+                    font-size: 0.75rem;
+                    opacity: 0.6;
+                    margin-top: 0.25rem;
+                }
+                
+                .user-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    padding: 0.75rem;
+                    border-radius: 12px;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                    margin-bottom: 0.5rem;
+                }
+                
+                .user-item:hover {
+                    background: rgba(0, 240, 255, 0.1);
+                }
+                
+                .user-item.active {
+                    background: rgba(0, 240, 255, 0.2);
+                    border: 1px solid var(--neon-cyan);
+                }
+                
+                .user-avatar {
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: bold;
+                    font-size: 1.25rem;
+                    background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+                    color: white;
+                    flex-shrink: 0;
+                    overflow: hidden;
+                    position: relative;
+                }
+                
+                .user-avatar img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    border-radius: 50%;
+                }
+                
+                .online-indicator {
+                    position: absolute;
+                    bottom: 2px;
+                    right: 2px;
+                    width: 14px;
+                    height: 14px;
+                    background: var(--neon-green);
+                    border: 2px solid rgba(10, 10, 32, 0.9);
+                    border-radius: 50%;
+                    box-shadow: 0 0 8px var(--neon-green);
+                }
+                
+                .offline-indicator {
+                    position: absolute;
+                    bottom: 2px;
+                    right: 2px;
+                    width: 14px;
+                    height: 14px;
+                    background: rgba(255, 255, 255, 0.3);
+                    border: 2px solid rgba(10, 10, 32, 0.9);
+                    border-radius: 50%;
+                }
+                
+                .user-info {
+                    flex: 1;
+                    min-width: 0;
+                }
+                
+                .user-name {
+                    font-weight: 600;
+                    font-size: 0.875rem;
+                    color: white;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                
+                .user-status {
+                    font-size: 0.75rem;
+                    color: rgba(255, 255, 255, 0.6);
+                }
+                
+                .unread-badge {
+                    background: #ff0066;
+                    color: white;
+                    font-size: 0.75rem;
+                    padding: 0.25rem 0.5rem;
+                    border-radius: 12px;
+                    font-weight: 600;
+                }
+                
+                @media (max-width: 768px) {
+                    .chat-sidebar {
+                        width: 100%;
+                        position: absolute;
+                        z-index: 10;
+                        height: 100%;
+                        transform: translateX(-100%);
+                        transition: transform 0.3s;
+                    }
+                    
+                    .chat-sidebar.show {
+                        transform: translateX(0);
+                    }
+                    
+                    .chat-main {
+                        width: 100%;
+                    }
+                }
+            </style>
+            
+            <div class="chat-container">
+                <div class="chat-sidebar">
+                    <div class="chat-search-container">
+                        <div class="chat-search-icon">🔍</div>
+                        <input type="text" id="userSearchInput" placeholder="Search user..." data-i18n-placeholder="search_user"
+                               style="width: 100%; padding-left: 2.5rem; padding-right: 1rem; padding-top: 0.75rem; padding-bottom: 0.75rem;"
+                               oninput="ChatPage.searchUsers()"
+                               onkeyup="ChatPage.searchUsers()"
+                               onpaste="setTimeout(() => ChatPage.searchUsers(), 100)">
+                    </div>
+                    
+                    <div class="chat-list" id="chatsList">
+                        <div style="text-align: center; color: rgba(255, 255, 255, 0.5); padding: 2rem;">
+                            <p data-i18n="no_chats_yet">No chats yet</p>
+                            <p style="font-size: 0.875rem; margin-top: 0.5rem;" data-i18n="find_user_above">Find a user with the search above</p>
                         </div>
                     </div>
                 </div>
+                
+                <div class="chat-main">
+                    <div id="chatHeader" class="chat-header">
+                        <div style="text-align: center; color: rgba(255, 255, 255, 0.5);" data-i18n="select_chat">Select a chat</div>
+                    </div>
+                    
+                    <div id="chatMessages" class="chat-messages">
+                    </div>
+                    
+                    <div class="chat-input-container">
+                        <form id="messageForm" method="post" class="chat-input-form" onsubmit="ChatPage.sendChatMessage(event)">
+                            <input type="text" id="messageInput" placeholder="Select a user first..." data-i18n-placeholder=""
+                                   style="flex: 1;"
+                                   disabled>
+                            <button type="submit" id="sendButton" class="btn-primary"
+                                    style="padding: 0.75rem 1.5rem; white-space: nowrap;"
+                                    data-i18n="send" disabled>
+                                Send
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
             `;
         }
     }
@@ -96,7 +297,6 @@ class ChatPage implements Page {
     }
 
     async onLoad(): Promise<void> {
-        // Reset active chat state
         ChatPage.activeChatUser = null;
         
         try {
@@ -114,13 +314,17 @@ class ChatPage implements Page {
         await ChatPage.loadAllUsers();
         await ChatPage.loadExistingChats();
 
+        const allUsersToFetch = [...new Set([...ChatPage.allUsers, ...Object.keys(ChatPage.userChats)])];
+        Promise.all(allUsersToFetch.map(user => ChatPage.fetchUserAvatar(user))).then(() => {
+            ChatPage.updateChatsList();
+        });
+
         ChatPage.connectWebSocket();
         
-        // Update chat list after a small delay to ensure DOM is ready
         setTimeout(() => {
             console.log('🕐 Delayed updateChatsList call');
             ChatPage.updateChatsList();
-        }, 100);
+        }, 500);
         
         i18n.translateDOM();
 
@@ -142,7 +346,6 @@ class ChatPage implements Page {
             GlobalState.setSocket(null);
         }
         
-        // Reset all chat related states
         ChatPage.activeChatUser = null;
         ChatPage.chatHistory = [];
         ChatPage.onlineUsers = [];
@@ -154,16 +357,168 @@ class ChatPage implements Page {
         return window.localStorage.getItem("username") || "Guest";
     }
 
+    static async fetchUserAvatar(username: string, forceRefresh: boolean = false): Promise<string | null> {
+        if (!forceRefresh && ChatPage.userAvatars[username]) {
+            return ChatPage.userAvatars[username];
+        }
+
+        try {
+            const url = `${FETCH_ADDRESS}/user/details/by-username${forceRefresh ? `?t=${Date.now()}` : ''}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                },
+                body: JSON.stringify({ usernames: [username] })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if ((data.success || data.message === "") && data.data && data.data.length > 0) {
+                    const userData = data.data[0];
+                    if (userData.avatar_url) {
+                        let avatarUrl = userData.avatar_url;
+                        if (avatarUrl.startsWith('/uploads/')) {
+                            avatarUrl = `https://localhost:3000${avatarUrl}`;
+                        }
+                        const timestamp = Date.now();
+                        const finalUrl = `${avatarUrl}?t=${timestamp}`;
+                        ChatPage.userAvatars[username] = avatarUrl;
+                        return finalUrl;
+                    } else {
+                        delete ChatPage.userAvatars[username];
+                    }
+                } else {
+                    
+                }
+            } else {
+                console.error(`❌ Avatar fetch failed for ${username}: ${response.status}`);
+            }
+        } catch (error) {
+            console.error(`Failed to fetch avatar for ${username}:`, error);
+        }
+
+        return null;
+    }
+
+    static invalidateAvatarCache(username?: string): void {
+        if (username) {
+            console.log('🗑️ Invalidating avatar cache for:', username);
+            const oldUrl = ChatPage.userAvatars[username];
+            delete ChatPage.userAvatars[username];
+            console.log(`🗑️ Deleted cache: ${oldUrl}`);
+            
+            const chatsList = document.getElementById("chatsList");
+            if (chatsList) {
+                const userItems = chatsList.querySelectorAll('.user-item');
+                let updated = false;
+                userItems.forEach((item) => {
+                    const nameElement = item.querySelector('.user-name');
+                    if (nameElement && nameElement.textContent === username) {
+                        const avatarElement = item.querySelector('.user-avatar');
+                        if (avatarElement) {
+                            const isOnline = ChatPage.onlineUsers.includes(username);
+                            const newAvatarHtml = ChatPage.getAvatarHtml(username, isOnline, 48, true);
+                            avatarElement.outerHTML = newAvatarHtml;
+                            updated = true;
+                            console.log(`✅ Updated DOM avatar for ${username}`);
+                        }
+                    }
+                });
+                
+                const allImages = chatsList.querySelectorAll('.user-avatar img');
+                allImages.forEach((img: Element) => {
+                    const parent = img.closest('.user-item');
+                    if (parent) {
+                        const nameEl = parent.querySelector('.user-name');
+                        if (nameEl && nameEl.textContent === username) {
+                            const currentSrc = (img as HTMLImageElement).src;
+                            const newSrc = currentSrc.split('?')[0] + `?t=${Date.now()}`;
+                            (img as HTMLImageElement).src = newSrc;
+                            console.log(`🔄 Forced image reload for ${username}`);
+                        }
+                    }
+                });
+            }
+            
+            if (ChatPage.activeChatUser === username) {
+                const chatHeader = document.getElementById("chatHeader");
+                if (chatHeader) {
+                    const headerAvatar = chatHeader.querySelector('.user-avatar');
+                    if (headerAvatar) {
+                        const isOnline = ChatPage.onlineUsers.includes(username);
+                        const newAvatarHtml = ChatPage.getAvatarHtml(username, isOnline, 48, true);
+                        headerAvatar.outerHTML = newAvatarHtml;
+                        console.log(`✅ Updated header avatar for ${username}`);
+                    }
+                    const headerImages = chatHeader.querySelectorAll('.user-avatar img');
+                    headerImages.forEach((img: Element) => {
+                        const currentSrc = (img as HTMLImageElement).src;
+                        const newSrc = currentSrc.split('?')[0] + `?t=${Date.now()}`;
+                        (img as HTMLImageElement).src = newSrc;
+                    });
+                }
+            }
+            
+            ChatPage.updateChatsList();
+        } else {
+            console.log('🗑️ Clearing all avatar cache');
+            ChatPage.userAvatars = {};
+            ChatPage.updateChatsList();
+            if (ChatPage.activeChatUser) {
+                ChatPage.updateChatHeader();
+            }
+        }
+    }
+
+    static getAvatarHtml(username: string, isOnline: boolean, size: number = 48, forceRefresh: boolean = false): string {
+        const avatarUrl = ChatPage.userAvatars[username];
+        const initials = ChatPage.escapeHtml(username.charAt(0).toUpperCase());
+        const indicator = isOnline 
+            ? '<div class="online-indicator"></div>' 
+            : '<div class="offline-indicator"></div>';
+
+        if (avatarUrl) {
+            const timestamp = forceRefresh ? Date.now() : (Date.now() - Math.floor(Date.now() / 100000) * 100000);
+            const imgSrc = `${avatarUrl}?t=${timestamp}`;
+            return `
+                <div class="user-avatar" style="width: ${size}px; height: ${size}px;">
+                    <img src="${imgSrc}" alt="${ChatPage.escapeHtml(username)}" loading="eager" onerror="this.style.display='none'; const fb=this.nextElementSibling; if(fb){fb.style.display='flex';}">
+                    <div class="avatar-fallback" style="display:none;align-items:center;justify-content:center;width:${size}px;height:${size}px;">${initials}</div>
+                    ${indicator}
+                </div>
+            `;
+        } else {
+            return `
+                <div class="user-avatar" style="width: ${size}px; height: ${size}px;">
+                    ${initials}
+                    ${indicator}
+                </div>
+            `;
+        }
+    }
+
     static connectWebSocket() {
         try {
             const socket = new WebSocket(`${WS_ADDRESS}/chat`);
 
             socket.onopen = () => {
                 GlobalState.setSocket(socket);
-                ChatPage.addSystemMessage('Chat bağlantısı kuruldu');
+                console.log('✅ Chat WebSocket connected');
 
                 socket.send(JSON.stringify({ type: 'get_online_users' }));
                 socket.send(JSON.stringify({ type: 'get_offline_messages' }));
+                
+                const intervalId = setInterval(() => {
+                    if (socket.readyState === WebSocket.OPEN) {
+                        socket.send(JSON.stringify({ type: 'get_online_users' }));
+                    } else {
+                        clearInterval(intervalId);
+                    }
+                }, 30000); 
             };
 
             socket.onmessage = (event) => {
@@ -177,7 +532,6 @@ class ChatPage implements Page {
                         const senderUsername = msgData.username;
 
                         if (senderUsername !== ChatPage.getCurrentUsername()) {
-                            // Check if we have this room in our userRoomIds
                             let foundUser = null;
                             for (const [user, roomId] of Object.entries(ChatPage.userRoomIds)) {
                                 if (roomId === msgData.room_id) {
@@ -186,17 +540,14 @@ class ChatPage implements Page {
                                 }
                             }
                             
-                            // If not found, this is a new conversation - add the sender
                             if (!foundUser) {
                                 foundUser = senderUsername;
                                 ChatPage.userRoomIds[senderUsername] = msgData.room_id;
                                 
-                                // Add sender to allUsers if not already there
                                 if (!ChatPage.allUsers.includes(senderUsername)) {
                                     ChatPage.allUsers.push(senderUsername);
                                 }
                                 
-                                // Join the room so we can receive future messages
                                 const socket = GlobalState.getSocket();
                                 if (socket && socket.readyState === WebSocket.OPEN) {
                                     console.log(`📥 Auto-joining room ${msgData.room_id} for conversation with ${senderUsername}`);
@@ -252,11 +603,7 @@ class ChatPage implements Page {
                         }
                         break;
 
-                    case 'user_joined':
-                        break;
-
-                    case 'user_left':
-                        break;
+                    
 
                     case 'game_invite':
                         if (ChatPage.activeChatUser === data.from) {
@@ -269,12 +616,29 @@ class ChatPage implements Page {
                         break;
 
                     case 'online_users':
-                        ChatPage.onlineUsers = data.users || [];
-                        ChatPage.onlineUsers.forEach(user => {
-                            if (!ChatPage.allUsers.includes(user)) {
-                                ChatPage.allUsers.push(user);
-                            }
-                        });
+                        const usersList = data.data?.users || data.users || [];
+                        console.log('📊 Received online users:', usersList);
+                        console.log('📊 Current username:', ChatPage.getCurrentUsername());
+                        
+                        if (Array.isArray(usersList)) {
+                            ChatPage.onlineUsers = usersList;
+                            console.log('✅ Updated onlineUsers:', ChatPage.onlineUsers);
+                            
+                            ChatPage.onlineUsers.forEach(user => {
+                                if (!ChatPage.allUsers.includes(user)) {
+                                    ChatPage.allUsers.push(user);
+                                }
+                                ChatPage.fetchUserAvatar(user).then(() => {
+                                    ChatPage.updateChatsList();
+                                    if (ChatPage.activeChatUser === user) {
+                                        ChatPage.updateChatHeader();
+                                    }
+                                });
+                            });
+                        } else {
+                            console.warn('⚠️ online_users received invalid data:', data);
+                            ChatPage.onlineUsers = [];
+                        }
 
                         ChatPage.updateChatsList();
                         i18n.translateDOM();
@@ -284,24 +648,64 @@ class ChatPage implements Page {
                         break;
 
                     case 'user_joined':
-                        if (!ChatPage.onlineUsers.includes(data.username)) {
-                            ChatPage.onlineUsers.push(data.username);
-                            if (!ChatPage.allUsers.includes(data.username)) {
-                                ChatPage.allUsers.push(data.username);
+                        console.log('👤 User joined:', data.username, 'Full data:', data);
+                        const joinedUsername = data.username || data.data?.username;
+                        if (joinedUsername && !ChatPage.onlineUsers.includes(joinedUsername)) {
+                            ChatPage.onlineUsers.push(joinedUsername);
+                            console.log('✅ Added to onlineUsers. Current list:', ChatPage.onlineUsers);
+                            
+                            if (!ChatPage.allUsers.includes(joinedUsername)) {
+                                ChatPage.allUsers.push(joinedUsername);
                             }
+                            ChatPage.fetchUserAvatar(joinedUsername).then(() => {
+                                ChatPage.updateChatsList();
+                                if (ChatPage.activeChatUser === joinedUsername) {
+                                    ChatPage.updateChatHeader();
+                                }
+                            });
                             ChatPage.updateChatsList();
                             i18n.translateDOM();
-                            if (ChatPage.activeChatUser === data.username) {
+                            if (ChatPage.activeChatUser === joinedUsername) {
                                 ChatPage.updateChatHeader();
                             }
                         }
                         break;
 
                     case 'user_left':
-                        ChatPage.onlineUsers = ChatPage.onlineUsers.filter(user => user !== data.username);
-                        ChatPage.updateChatsList();
-                        if (ChatPage.activeChatUser === data.username) {
-                            ChatPage.updateChatHeader();
+                        console.log('👋 User left:', data.username, 'Full data:', data);
+                        const leftUsername = data.username || data.data?.username;
+                        if (leftUsername) {
+                            const beforeLength = ChatPage.onlineUsers.length;
+                            ChatPage.onlineUsers = ChatPage.onlineUsers.filter(user => user !== leftUsername);
+                            console.log(`✅ Removed ${leftUsername} from onlineUsers. Before: ${beforeLength}, After: ${ChatPage.onlineUsers.length}`);
+                            ChatPage.updateChatsList();
+                            i18n.translateDOM();
+                            if (ChatPage.activeChatUser === leftUsername) {
+                                ChatPage.updateChatHeader();
+                            }
+                        }
+                        break;
+
+                    case 'avatar_updated':
+                        {
+                            const updatedUsername = data.username || data.data?.username;
+                            const newUrl = data.avatar_url || data.data?.avatar_url;
+                            if (updatedUsername) {
+                                if (newUrl) {
+                                    let avatarUrl = newUrl as string;
+                                    if (avatarUrl.startsWith('/uploads/')) {
+                                        avatarUrl = `https://localhost:3000${avatarUrl}`;
+                                    }
+                                    ChatPage.userAvatars[updatedUsername] = avatarUrl;
+                                }
+                                ChatPage.invalidateAvatarCache(updatedUsername);
+                                ChatPage.fetchUserAvatar(updatedUsername, true).then(() => {
+                                    ChatPage.updateChatsList();
+                                    if (ChatPage.activeChatUser === updatedUsername) {
+                                        ChatPage.updateChatHeader();
+                                    }
+                                });
+                            }
                         }
                         break;
 
@@ -311,16 +715,18 @@ class ChatPage implements Page {
                 }
             };
 
-            socket.onclose = () => {
-                ChatPage.addSystemMessage('Bağlantı kesildi');
+            socket.onclose = (event) => {
+                if (!event.wasClean) {
+                    Notification.error('Unable to connect to chat service. Please check your internet connection and try again.', 8000);
+                }
             };
 
             socket.onerror = (error) => {
-                ChatPage.addSystemMessage('Bağlantı hatası');
+                Notification.error('Failed to establish chat connection. Please refresh the page to reconnect.', 8000);
             };
 
         } catch (error) {
-            ChatPage.addSystemMessage('WebSocket bağlantısı kurulamadı');
+            Notification.error('Chat service is currently unavailable. Please try again later.', 8000);
         }
     }
 
@@ -578,7 +984,6 @@ class ChatPage implements Page {
 
     static async createOrJoinPrivateRoom(username: string): Promise<string | null> {
         try {
-            // Generate consistent room name (alphabetically sorted)
             const currentUser = ChatPage.getCurrentUsername();
             console.log(`🔍 Current user: "${currentUser}", Target user: "${username}"`);
             const users = [currentUser, username].sort();
@@ -676,27 +1081,37 @@ class ChatPage implements Page {
         }
     }
 
-    static updateChatHeader() {
+    static async updateChatHeader() {
         const chatHeader = document.getElementById("chatHeader");
         if (chatHeader && ChatPage.activeChatUser) {
             const isOnline = ChatPage.onlineUsers.includes(ChatPage.activeChatUser);
-            const statusColor = isOnline ? 'bg-green-500' : 'bg-gray-400';
-            const statusText = isOnline ? 'Çevrimiçi' : 'Çevrimdışı';
+            const statusText = isOnline ? 'Online' : 'Offline';
+            const statusColor = isOnline ? 'var(--neon-green)' : 'rgba(255, 255, 255, 0.4)';
+
+            if (!ChatPage.userAvatars[ChatPage.activeChatUser]) {
+                await ChatPage.fetchUserAvatar(ChatPage.activeChatUser);
+            }
+
+            const avatarHtml = ChatPage.getAvatarHtml(ChatPage.activeChatUser, isOnline, 48);
 
             chatHeader.innerHTML = `
-            <div class="flex items-center cursor-pointer" onclick="ChatPage.toggleUserInfoPanel()">
-                <div class="relative mr-3">
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                        ${ChatPage.activeChatUser.charAt(0).toUpperCase()}
-                    </div>
-                    <div class="absolute -bottom-1 -right-1 w-4 h-4 ${statusColor} border-2 border-white rounded-full"></div>
+            <div style="display: flex; align-items: center; gap: 1rem; cursor: pointer;" onclick="ChatPage.toggleUserInfoPanel()">
+                <div style="position: relative;">
+                    ${avatarHtml}
                 </div>
                 <div>
-                    <h3 class="font-semibold text-gray-800 text-lg">${ChatPage.activeChatUser}</h3>
-                    <p class="text-sm text-gray-600">${statusText}</p>
+                    <h3 style="font-weight: 600; font-size: 1.125rem; color: white; margin: 0;">${ChatPage.escapeHtml(ChatPage.activeChatUser)}</h3>
+                    <p style="font-size: 0.875rem; color: ${statusColor}; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="display: inline-block; width: 8px; height: 8px; background: ${statusColor}; border-radius: 50%; ${isOnline ? 'box-shadow: 0 0 8px var(--neon-green);' : ''}"></span>
+                        ${statusText}
+                    </p>
                 </div>
             </div>
         `;
+        } else if (chatHeader) {
+            chatHeader.innerHTML = `
+                <div style="text-align: center; color: rgba(255, 255, 255, 0.5);" data-i18n="select_chat">Select a chat</div>
+            `;
         }
     }
 
@@ -819,33 +1234,43 @@ class ChatPage implements Page {
                 return;
             }
 
-            chatsList.innerHTML = users.map(user => {
-                const isOnline = ChatPage.onlineUsers.includes(user);
-                const statusIcon = isOnline ? '🟢' : '🔴';
-                const hasExistingChat = ChatPage.userChats[user];
-                const lastMessage = hasExistingChat ? ChatPage.userChats[user][ChatPage.userChats[user].length - 1] : null;
+            const searchAvatarPromises = users.map(user => {
+                if (!ChatPage.userAvatars[user]) {
+                    return ChatPage.fetchUserAvatar(user);
+                }
+                return Promise.resolve();
+            });
+            
+            Promise.all(searchAvatarPromises).then(() => {
+                chatsList.innerHTML = users.map(user => {
+                    const safeUser = ChatPage.escapeHtml(user);
+                    const isOnline = ChatPage.onlineUsers.includes(user);
+                    const hasExistingChat = ChatPage.userChats[user];
+                    const lastMessage = hasExistingChat ? ChatPage.userChats[user][ChatPage.userChats[user].length - 1] : null;
+                    const avatarHtml = ChatPage.getAvatarHtml(user, isOnline, 48);
 
-                return `
-                <div class="flex items-center p-3 hover:bg-gray-50 transition duration-200 cursor-pointer rounded-lg mx-2"
-                     onclick="ChatPage.startChatWith('${user}')">
-                    <div class="relative mr-3">
-                        <div class="w-12 h-12 bg-gradient-to-br ${hasExistingChat ? 'from-blue-500 to-purple-600' : 'from-gray-400 to-gray-600'} rounded-full flex items-center justify-center text-white font-bold">
-                            ${user.charAt(0).toUpperCase()}
+                    return `
+                    <div class="user-item"
+                         onclick="ChatPage.startChatWith('${user}')">
+                        ${avatarHtml}
+                        <div class="user-info">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                <div class="user-name">${safeUser}</div>
+                            </div>
+                            <div class="user-status" style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span>${hasExistingChat && lastMessage ?
+                            (lastMessage.type === 'game_invite' ? '🎮 Game invite' : ChatPage.escapeHtml(lastMessage.message)) :
+                            'New chat'
+                        }</span>
+                                <span style="font-size: 0.75rem; color: ${isOnline ? 'var(--neon-green)' : 'rgba(255, 255, 255, 0.4)'};">
+                                    ${isOnline ? '● Online' : '○ Offline'}
+                                </span>
+                            </div>
                         </div>
-                        <div class="absolute -bottom-1 -right-1 text-xs">${statusIcon}</div>
                     </div>
-                    <div class="flex-1">
-                        <h4 class="font-semibold text-gray-800">${user}</h4>
-                        <p class="text-sm text-gray-600">
-                            ${hasExistingChat && lastMessage ?
-                        (lastMessage.type === 'game_invite' ? '🎮 Oyun davetiyesi' : lastMessage.message) :
-                        'Yeni sohbet başlat'
-                    }
-                        </p>
-                    </div>
-                </div>
-            `;
-            }).join('');
+                `;
+                }).join('');
+            });
         }
     }
 
@@ -866,47 +1291,53 @@ class ChatPage implements Page {
             if (chatUsers.length === 0) {
                 console.log('⚠️ No chat users found, showing empty state');
                 chatsList.innerHTML = `
-                <div class="text-center text-gray-500 py-8">
-                    <p>Henüz sohbet yok</p>
-                    <p class="text-sm">Yukarıdaki arama ile kullanıcı bulun</p>
+                <div style="text-align: center; color: rgba(255, 255, 255, 0.5); padding: 2rem;">
+                    <p data-i18n="no_chats_yet">No chats yet</p>
+                    <p style="font-size: 0.875rem; margin-top: 0.5rem;" data-i18n="find_user_above">Find a user with the search above</p>
                 </div>
             `;
                 return;
             }
 
             console.log('✅ Rendering chat list with users:', chatUsers);
-            chatsList.innerHTML = chatUsers.map(user => {
-                const isActive = ChatPage.activeChatUser === user;
-                const isOnline = ChatPage.onlineUsers.includes(user);
-                const statusIcon = isOnline ? '🟢' : '🔴';
-                const lastMessage = ChatPage.userChats[user]?.[ChatPage.userChats[user].length - 1];
-                const unreadCount = ChatPage.unreadCounts[user] || 0;
 
-                return `
-                <div class="flex items-center p-3 hover:bg-gray-50 transition duration-200 cursor-pointer rounded-lg mx-2 ${isActive ? 'bg-blue-50 border-l-4 border-blue-500' : ''}"
-                     onclick="ChatPage.startChatWith('${user}')">
-                    <div class="relative mr-3">
-                        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                            ${user.charAt(0).toUpperCase()}
-                        </div>
-                        <div class="absolute -bottom-1 -right-1 text-xs">${statusIcon}</div>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex justify-between items-center">
-                            <h4 class="font-semibold text-gray-800 truncate">${user}</h4>
-                            ${unreadCount > 0 ? `
-                                <span class="bg-red-500 text-white text-xs px-2 py-1 rounded-full ml-2">
-                                    ${unreadCount}
+            const avatarPromises = chatUsers.map(user => {
+                if (!ChatPage.userAvatars[user]) {
+                    return ChatPage.fetchUserAvatar(user);
+                }
+                return Promise.resolve();
+            });
+            
+            Promise.all(avatarPromises).then(() => {
+                chatsList.innerHTML = chatUsers.map(user => {
+                    const safeUser = ChatPage.escapeHtml(user);
+                    const isActive = ChatPage.activeChatUser === user;
+                    const isOnline = ChatPage.onlineUsers.includes(user);
+                    const lastMessage = ChatPage.userChats[user]?.[ChatPage.userChats[user].length - 1];
+                    const unreadCount = ChatPage.unreadCounts[user] || 0;
+                    console.log(`User: ${user}, isOnline: ${isOnline}, onlineUsers:`, ChatPage.onlineUsers);
+                    const avatarHtml = ChatPage.getAvatarHtml(user, isOnline, 48);
+
+                    return `
+                    <div class="user-item ${isActive ? 'active' : ''}"
+                         onclick="ChatPage.startChatWith('${user}')">
+                        ${avatarHtml}
+                        <div class="user-info">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                <div class="user-name">${safeUser}</div>
+                                ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : ''}
+                            </div>
+                            <div class="user-status" style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span>${lastMessage ? (lastMessage.type === 'game_invite' ? '🎮 Game invite' : (ChatPage.escapeHtml(lastMessage.message || '').substring(0, 30) + '...')) : 'New chat'}</span>
+                                <span style="font-size: 0.75rem; color: ${isOnline ? 'var(--neon-green)' : 'rgba(255, 255, 255, 0.4)'};">
+                                    ${isOnline ? '● Online' : '○ Offline'}
                                 </span>
-                            ` : ''}
+                            </div>
                         </div>
-                        <p class="text-sm text-gray-600 truncate">
-                            ${lastMessage ? (lastMessage.type === 'game_invite' ? '🎮 Oyun davetiyesi' : lastMessage.message) : 'Yeni sohbet'}
-                        </p>
                     </div>
-                </div>
-            `;
-            }).join('');
+                `;
+                }).join('');
+            });
         }
     }
 
@@ -957,15 +1388,15 @@ class ChatPage implements Page {
         const chatMessages = document.getElementById("chatMessages");
         if (chatMessages) {
             const messageDiv = document.createElement("div");
-            messageDiv.className = `flex ${messageData.type === 'sent' ? 'justify-end' : 'justify-start'} mb-4`;
+            messageDiv.style.cssText = `display: flex; ${messageData.type === 'sent' ? 'justify-content: flex-end;' : 'justify-content: flex-start;'} margin-bottom: 1rem;`;
 
-            const bgColor = messageData.type === 'sent' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800';
-            const alignment = messageData.type === 'sent' ? 'rounded-bl-xl rounded-tl-xl rounded-tr-xl' : 'rounded-br-xl rounded-tr-xl rounded-tl-xl';
+            const messageClass = messageData.type === 'sent' ? 'message-sent' : 'message-received';
 
+            const safeMsg = ChatPage.escapeHtml(messageData.message);
             messageDiv.innerHTML = `
-            <div class="${bgColor} ${alignment} px-4 py-2 max-w-xs lg:max-w-md shadow-sm">
-                <div class="break-words">${messageData.message}</div>
-                <div class="text-xs opacity-75 mt-1">${messageData.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+            <div class="${messageClass}">
+                <div style="word-wrap: break-word;">${safeMsg}</div>
+                <div class="message-time">${messageData.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
             </div>
         `;
             chatMessages.appendChild(messageDiv);
@@ -1086,10 +1517,11 @@ class ChatPage implements Page {
         const chatMessages = document.getElementById("chatMessages");
         if (chatMessages) {
             const messageDiv = document.createElement("div");
-            messageDiv.className = 'flex justify-center mb-3';
+            messageDiv.style.cssText = 'display: flex; justify-content: center; margin-bottom: 1rem;';
+            const safe = ChatPage.escapeHtml(message);
             messageDiv.innerHTML = `
-            <div class="bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm">
-                🔔 ${message}
+            <div style="background: rgba(0, 240, 255, 0.2); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 999px; padding: 0.75rem 1.5rem; font-size: 0.875rem; color: var(--neon-cyan);">
+                🔔 ${safe}
             </div>
         `;
             chatMessages.appendChild(messageDiv);

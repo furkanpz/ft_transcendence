@@ -259,7 +259,6 @@ class ClassicGameInstance {
     }
 
     public storeResult() : void {
-        // If this is a tournament game, notify tournament manager
         if (this.room.roomType === GameType.Tournament && this.players.length === 2) {
             const player1 = this.players[0];
             const player2 = this.players[1];

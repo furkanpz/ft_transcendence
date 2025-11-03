@@ -10,7 +10,7 @@ interface TournamentPlayer {
     seedPosition: number;
     currentRound: number;
     isEliminated: boolean;
-    hasJoined: boolean; // Track if player has sent join event
+    hasJoined: boolean;
 }
 
 interface TournamentMatch {
@@ -37,12 +37,13 @@ interface Tournament {
     players: Map<number, TournamentPlayer>;
     matches: Map<number, TournamentMatch[]>;
     sockets: Map<number, WebSocket>;
+    isCompleting?: boolean; 
 }
 
 class TournamentManager {
     private tournaments: Map<string, Tournament> = new Map();
     private playerTournaments: Map<number, string> = new Map();
-    private nextMatchId: number = 1; // in-memory match id generator
+    private nextMatchId: number = 1; 
 
     public async createTournament(playerIds: number[]): Promise<string> {
         if (playerIds.length !== 4) {
@@ -78,7 +79,8 @@ class TournamentManager {
             winnerId: null,
             players,
             matches: new Map(),
-            sockets: new Map()
+            sockets: new Map(),
+            isCompleting: false
         };
 
         this.tournaments.set(tournamentId, tournament);
@@ -134,14 +136,14 @@ class TournamentManager {
         const matches = tournament.matches.get(round);
         if (!matches) return;
 
-        // Wait a bit to ensure all players are connected to tournament page
+        
         await new Promise(resolve => setTimeout(resolve, 3000));
 
         for (let i = 0; i < matches.length; i++) {
             const match = matches[i];
             if (match.player1Id && match.player2Id) {
                 await this.startMatch(tournamentId, match);
-                // Small delay between matches for UX
+                
                 if (i < matches.length - 1) {
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
@@ -155,45 +157,62 @@ class TournamentManager {
         const tournament = this.tournaments.get(tournamentId);
         if (!tournament) return;
 
-        const player1Socket = tournament.sockets.get(match.player1Id);
-        const player2Socket = tournament.sockets.get(match.player2Id);
-        const player1 = tournament.players.get(match.player1Id);
-        const player2 = tournament.players.get(match.player2Id);
+    const player1 = tournament.players.get(match.player1Id);
+    const player2 = tournament.players.get(match.player2Id);
 
-        // Check if players are connected AND have sent join event
-        const player1Ready = player1Socket && player1?.hasJoined;
-        const player2Ready = player2Socket && player2?.hasJoined;
+        
+        const p1Eliminated = !!player1?.isEliminated;
+        const p2Eliminated = !!player2?.isEliminated;
+        const player1Ready = !!(player1?.hasJoined) && !p1Eliminated;
+        const player2Ready = !!(player2?.hasJoined) && !p2Eliminated;
+
+        
+        if (p1Eliminated || p2Eliminated) {
+            if (p1Eliminated && p2Eliminated) {
+                
+                match.status = 'completed';
+            } else {
+                
+                const winnerId = p1Eliminated ? match.player2Id! : match.player1Id!;
+                match.winnerId = winnerId;
+                match.status = 'completed';
+            }
+            this.broadcastTournamentState(tournamentId);
+            return;
+        }
 
         if (!player1Ready || !player2Ready) {
             console.error(`Cannot start match ${match.matchNumber}: Players not ready`);
             
-            // Auto-forfeit: Give win to connected player or cancel match
             if (player1Ready && !player2Ready) {
                 console.log(`Player ${match.player2Id} forfeited, ${match.player1Id} wins by default`);
                 if (player2) {
                     player2.isEliminated = true;
                     this.playerTournaments.delete(match.player2Id);
                 }
-                await this.handleMatchResult('', match.player1Id, match.player2Id, 5, 0);
+                match.winnerId = match.player1Id;
+                match.status = 'completed';
             } else if (player2Ready && !player1Ready) {
                 console.log(`Player ${match.player1Id} forfeited, ${match.player2Id} wins by default`);
                 if (player1) {
                     player1.isEliminated = true;
                     this.playerTournaments.delete(match.player1Id);
                 }
-                await this.handleMatchResult('', match.player1Id, match.player2Id, 0, 5);
+                match.winnerId = match.player2Id;
+                match.status = 'completed';
             } else {
                 console.log(`Both players not ready, cancelling match ${match.matchNumber}`);
-                // Cancel this match - both players eliminated
-                if (player1) {
-                    player1.isEliminated = true;
-                    this.playerTournaments.delete(match.player1Id);
-                }
-                if (player2) {
-                    player2.isEliminated = true;
-                    this.playerTournaments.delete(match.player2Id);
-                }
+                if (player1) { player1.isEliminated = true; this.playerTournaments.delete(match.player1Id); }
+                if (player2) { player2.isEliminated = true; this.playerTournaments.delete(match.player2Id); }
                 match.status = 'completed';
+            }
+            this.broadcastTournamentState(tournamentId);
+            
+            const t = this.tournaments.get(tournamentId);
+            const currentRoundMatches = t?.matches.get(t!.currentRound);
+            const allMatchesCompleted = currentRoundMatches?.every(m => m.status === 'completed');
+            if (allMatchesCompleted && t && t.status !== ('completed' as any) && !t.isCompleting) {
+                await this.advanceToNextRound(tournamentId);
             }
             return;
         }
@@ -202,12 +221,16 @@ class TournamentManager {
         match.roomId = roomId;
         match.status = 'in_progress';
 
-        // Do not persist 'in_progress' state to DB; keep it in memory only.
-        // This ensures players can reconnect/join without being blocked by DB state.
+        
+        
 
         console.log(`Starting tournament match: Round ${match.roundNumber}, Match ${match.matchNumber}, Room: ${roomId}`);
 
-        player1Socket.send(JSON.stringify({
+        const player1Socket = tournament.sockets.get(match.player1Id);
+        const player2Socket = tournament.sockets.get(match.player2Id);
+
+        
+        player1Socket?.send(JSON.stringify({
             action: 'matchStarting',
             tournamentId,
             roomId,
@@ -216,7 +239,7 @@ class TournamentManager {
             matchNumber: match.matchNumber
         }));
 
-        player2Socket.send(JSON.stringify({
+        player2Socket?.send(JSON.stringify({
             action: 'matchStarting',
             tournamentId,
             roomId,
@@ -254,7 +277,7 @@ class TournamentManager {
         match.player2Score = player2Score;
         match.status = 'completed';
 
-        // Do not persist per-match results until tournament completes.
+        
 
         const tournament = this.tournaments.get(tournamentId);
         if (!tournament) return;
@@ -262,7 +285,7 @@ class TournamentManager {
         const loserPlayer = tournament.players.get(loserId);
         if (loserPlayer) {
             loserPlayer.isEliminated = true;
-            // Remove eliminated player from active tournament tracking
+            
             this.playerTournaments.delete(loserId);
             console.log(`Player ${loserId} eliminated from tournament ${tournamentId}`);
         }
@@ -272,7 +295,7 @@ class TournamentManager {
         const currentRoundMatches = tournament.matches.get(tournament.currentRound);
         const allMatchesCompleted = currentRoundMatches?.every(m => m.status === 'completed');
 
-        if (allMatchesCompleted) {
+        if (allMatchesCompleted && tournament.status !== 'completed' && !tournament.isCompleting) {
             await this.advanceToNextRound(tournamentId);
         }
     }
@@ -280,6 +303,7 @@ class TournamentManager {
     private async advanceToNextRound(tournamentId: string): Promise<void> {
         const tournament = this.tournaments.get(tournamentId);
         if (!tournament) return;
+        if (tournament.status === 'completed' || tournament.isCompleting) return;
 
         const activePlayers = Array.from(tournament.players.values()).filter(p => !p.isEliminated);
 
@@ -290,7 +314,7 @@ class TournamentManager {
 
         tournament.currentRound++;
         
-        // Keep current round only in memory; no DB writes until completion
+        
 
         await this.generateRoundMatches(tournamentId, tournament.currentRound);
         
@@ -304,19 +328,22 @@ class TournamentManager {
     private async completeTournament(tournamentId: string, winnerId: number): Promise<void> {
         const tournament = this.tournaments.get(tournamentId);
         if (!tournament) return;
+        if (tournament.status === 'completed' || tournament.isCompleting) return;
+
+        tournament.isCompleting = true;
 
         tournament.status = 'completed';
         tournament.winnerId = winnerId;
 
         const db = await getDb();
-        // Persist entire tournament only now
+        
         await db.run(
             `INSERT INTO ft_tournaments (id, status, required_players, current_round, max_rounds, winner_id, completed_at)
              VALUES (?, 'completed', ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
             [tournamentId, tournament.requiredPlayers, tournament.currentRound, tournament.maxRounds, winnerId]
         );
 
-        // Persist participants (with minimal info; mark winner position=1)
+        
         for (const p of tournament.players.values()) {
             await db.run(
                 `INSERT INTO ft_tournament_participants (tournament_id, user_id, seed_position, current_round, is_eliminated, final_position)
@@ -325,7 +352,7 @@ class TournamentManager {
             );
         }
 
-        // Persist all matches with final scores and winners
+        
         for (const matches of tournament.matches.values()) {
             for (const m of matches) {
                 await db.run(
@@ -336,7 +363,7 @@ class TournamentManager {
                     [tournamentId, m.roundNumber, m.matchNumber, m.player1Id, m.player2Id, m.winnerId, m.player1Score, m.player2Score]
                 );
 
-                // Also persist into match history
+                
                 if (m.player1Id && m.player2Id && m.winnerId !== null) {
                     const loserId = m.winnerId === m.player1Id ? m.player2Id! : m.player1Id!;
                     await db.run(
@@ -354,6 +381,8 @@ class TournamentManager {
         tournament.players.forEach((player, playerId) => {
             this.playerTournaments.delete(playerId);
         });
+
+        tournament.isCompleting = false;
     }
 
     public addPlayerSocket(tournamentId: string, userId: number, socket: WebSocket): void {
@@ -374,11 +403,9 @@ class TournamentManager {
             tournament.sockets.delete(userId);
             if (player) {
                 player.socket = undefined;
-                // If tournament is in progress and player hasn't finished their match, eliminate them
-                if (tournament.status === 'in_progress' && !player.isEliminated) {
-                    this.handlePlayerDisconnect(tournamentId, userId);
-                }
             }
+            
+            this.broadcastTournamentState(tournamentId);
         });
     }
 
@@ -391,7 +418,7 @@ class TournamentManager {
             player.hasJoined = true;
             console.log(`Player ${userId} joined tournament ${tournamentId}`);
             
-            // Check if all players have joined
+            
             const allJoined = Array.from(tournament.players.values()).every(p => p.hasJoined);
             if (allJoined && tournament.status === 'waiting') {
                 console.log(`All players joined tournament ${tournamentId}, starting soon...`);
@@ -399,6 +426,68 @@ class TournamentManager {
             
             this.broadcastTournamentState(tournamentId);
         }
+    }
+
+    public handlePlayerLeave(tournamentId: string, userId: number): void {
+        const tournament = this.tournaments.get(tournamentId);
+        if (!tournament) return;
+
+        
+        const player = tournament.players.get(userId);
+        if (!player || player.isEliminated || tournament.status === 'completed') return;
+
+        
+        const preActive = Array.from(tournament.players.values()).filter(p => !p.isEliminated);
+        if (preActive.length === 1 && preActive[0].id === userId) {
+            
+            this.completeTournament(tournamentId, userId);
+            return;
+        }
+
+        
+        player.isEliminated = true;
+        this.playerTournaments.delete(userId);
+        console.log(`Player ${userId} left tournament ${tournamentId} and is eliminated`);
+
+        
+        const currentMatches = tournament.matches.get(tournament.currentRound) || [];
+        const affectedMatch = currentMatches.find(m => (m.player1Id === userId || m.player2Id === userId) && m.status !== 'completed');
+        if (affectedMatch) {
+            const opponentId = affectedMatch.player1Id === userId ? affectedMatch.player2Id : affectedMatch.player1Id;
+            if (opponentId) {
+                
+                if (affectedMatch.status === 'in_progress' && affectedMatch.roomId) {
+                    
+                    affectedMatch.winnerId = opponentId;
+                    affectedMatch.status = 'completed';
+                } else {
+                    
+                    affectedMatch.winnerId = opponentId;
+                    affectedMatch.status = 'completed';
+                }
+                this.broadcastTournamentState(tournamentId);
+
+                
+                const currentRoundMatches = tournament.matches.get(tournament.currentRound);
+                const allMatchesCompleted = currentRoundMatches?.every(m => m.status === 'completed');
+                if (allMatchesCompleted && tournament.status !== 'completed' as any && !tournament.isCompleting) {
+                    this.advanceToNextRound(tournamentId);
+                }
+            } else {
+                
+                affectedMatch.status = 'completed';
+                this.broadcastTournamentState(tournamentId);
+            }
+        }
+
+        
+        const postActive = Array.from(tournament.players.values()).filter(p => !p.isEliminated);
+        if (postActive.length === 1) {
+            this.completeTournament(tournamentId, postActive[0].id);
+            return;
+        }
+
+        this.broadcastTournamentState(tournamentId);
     }
 
     private handlePlayerDisconnect(tournamentId: string, userId: number): void {
@@ -412,7 +501,7 @@ class TournamentManager {
         player.isEliminated = true;
         this.playerTournaments.delete(userId);
 
-        // Find if this player is in an active match
+        
         const currentRoundMatches = tournament.matches.get(tournament.currentRound);
         if (currentRoundMatches) {
             const activeMatch = currentRoundMatches.find(m => 
@@ -421,21 +510,24 @@ class TournamentManager {
             );
 
             if (activeMatch) {
-                // Award the match to the opponent
+                
                 const opponentId = activeMatch.player1Id === userId ? activeMatch.player2Id : activeMatch.player1Id;
                 if (opponentId) {
                     console.log(`Awarding match to player ${opponentId} due to opponent disconnect`);
-                    this.handleMatchResult(activeMatch.roomId || '', 
-                        activeMatch.player1Id!, 
-                        activeMatch.player2Id!, 
-                        activeMatch.player1Id === userId ? 0 : 5,
-                        activeMatch.player2Id === userId ? 0 : 5
-                    );
+                    activeMatch.winnerId = opponentId;
+                    activeMatch.status = 'completed';
+                } else {
+                    activeMatch.status = 'completed';
                 }
             }
         }
 
         this.broadcastTournamentState(tournamentId);
+    }
+
+    
+    public onGameSocketClose(tournamentId: string, userId: number): void {
+        this.handlePlayerDisconnect(tournamentId, userId);
     }
 
     private broadcastTournamentState(tournamentId: string): void {

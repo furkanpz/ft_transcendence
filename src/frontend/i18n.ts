@@ -46,7 +46,6 @@ const translations: Record<string, Record<string, string>> = {
     enter_6_digit_code: 'Enter the 6-digit code sent to your email:',
     six_digit_code_placeholder: '6-digit code',
     verify: 'Verify',
-    // Profile page extras
     stats: 'Stats',
     win: 'Win',
     lose: 'Lose',
@@ -134,7 +133,6 @@ const translations: Record<string, Record<string, string>> = {
     six_digit_code_placeholder: '6 haneli kod',
     verify: 'Doğrula',
     already_have_account_sign_in: 'Zaten hesabınız var mı? Giriş Yapın',
-    // Profile page extras
     stats: 'İstatistikler',
     win: 'Galibiyet',
     lose: 'Mağlubiyet',

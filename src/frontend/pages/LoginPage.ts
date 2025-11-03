@@ -1,6 +1,8 @@
 import { GlobalState, Page, FETCH_ADDRESS } from "../main"
 import { HOME_PAGE } from "./HomePage"
-import { SIGNUP_PAGE } from "./SignUpPage"   
+import { SIGNUP_PAGE } from "./SignUpPage"
+
+declare const Notification: typeof import("../components/Notification").Notification;   
 
 class LoginPage implements Page {
 	title: string = "login";
@@ -23,36 +25,46 @@ class LoginPage implements Page {
 		const app = document.getElementById("app");
 		if (app) {
 			app.innerHTML = `
-					<div id="loginArea" class="mx-32 min-h-[92vh] items-center flex flex-col justify-center text-center gap-6 ">
-						<div class="w-full flex justify-end mb-4">
-							<button id="lang-en" class="mr-2">EN</button>
-							<button id="lang-tr">TR</button>
-						</div>
-						<button id="backButton" onclick="GlobalState.setPage(HOME_PAGE)" data-i18n="back_to_home">Back to Home</button>
-					<form method="post" id="loginForm" class="bg-blue-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6">
-						<input type="text" id="username" placeholder="Username" class="bg-white p-1" data-i18n-placeholder="username"></input>
-						<input type="password" id="password" placeholder="Password" class="bg-white p-1" data-i18n-placeholder="password"></input>
-						<button type="submit" onclick="LoginPage.login(event)" class="bg-white text-black py-2 px-4 rounded" data-i18n="login">Login</button>
+				<div id="loginArea" style="min-height: calc(100vh - 80px); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem;">
+					<form method="post" id="loginForm" class="glass-card animate-scale-in" style="min-width: 400px; max-width: 500px; width: 100%;">
+						<h2 style="margin-bottom: 2rem; font-size: 2rem;" class="neon-text-cyan">Login</h2>
 						
-						<div class="flex flex-row w-full justify-between items-center gap-4">
-							<button id="googleLoginBtn" type="button" onclick="LoginPage.loginWithGoogle()" class="bg-white border border-gray-300 rounded-lg p-3 flex items-center gap-3 hover:shadow-lg transition-shadow">
-								<img src="google-logo.png" alt="Google" class="w-6 h-6">
+						<div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 1.5rem;">
+							<input type="text" id="username" placeholder="Username" data-i18n-placeholder="username" 
+								style="width: 100%;">
+							<input type="password" id="password" placeholder="Password" data-i18n-placeholder="password"
+								style="width: 100%;">
+						</div>
+						
+						<button type="submit" onclick="LoginPage.login(event)" class="btn-primary" 
+							style="width: 100%; margin-bottom: 1.5rem;" data-i18n="login">Login</button>
+						
+						<div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+							<button id="googleLoginBtn" type="button" onclick="LoginPage.loginWithGoogle()" 
+								class="glass-card" style="padding: 0.75rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); cursor: pointer;">
+								<img src="google-logo.png" alt="Google" style="width: 24px; height: 24px;">
 							</button>
-							<button id="forgotPasswordBtn" type="button" onclick="LoginPage.goToForgotPassword()" class="underline cursor-pointer text-white hover:text-gray-200" data-i18n="forgot_password">Forgot your password?</button>
+							<button id="forgotPasswordBtn" type="button" onclick="LoginPage.goToForgotPassword()" 
+								style="background: none; border: none; color: var(--neon-cyan); cursor: pointer; text-decoration: underline; font-size: 0.875rem;"
+								data-i18n="forgot_password">Forgot password?</button>
 						</div>
 					</form>
 
-					<div id="twoFactorArea" class="bg-green-500 rounded-2xl min-w-2xl p-12 items-center flex flex-col justify-center text-center gap-6" style="display: none;">
-						<h2 class="text-white text-xl font-bold mb-4" data-i18n="two_fa_verification">2FA Verification</h2>
-						<p class="text-white mb-4" data-i18n="enter_6_digit_code">Enter the 6-digit code sent to your email:</p>
-						<input type="text" id="otpCode" placeholder="6-digit code" data-i18n-placeholder="six_digit_code_placeholder" maxlength="6" class="bg-white p-2 rounded text-center text-xl tracking-widest mb-4"></input>
-						<div class="flex gap-4">
-							<button onclick="LoginPage.verify2FA(event)" class="bg-white text-black py-2 px-4 rounded" data-i18n="verify">Verify</button>
-							<button onclick="LoginPage.cancel2FA(event)" class="bg-red-500 text-white py-2 px-4 rounded" data-i18n="cancel">Cancel</button>
+					<div id="twoFactorArea" class="glass-card animate-scale-in" style="display: none; min-width: 400px; max-width: 500px; width: 100%; flex-direction: column; align-items: center; text-align: center;">
+						<h2 style="margin-bottom: 1rem; font-size: 1.75rem; width: 100%;" class="neon-text-green" data-i18n="two_fa_verification">2FA Verification</h2>
+						<p style="margin-bottom: 1.5rem; color: rgba(255, 255, 255, 0.8); width: 100%; font-size: 1rem;" data-i18n="enter_6_digit_code">Enter the 6-digit code sent to your email:</p>
+						<input type="text" id="otpCode" placeholder="000000" data-i18n-placeholder="six_digit_code_placeholder" maxlength="6" 
+							style="width: 100%; text-align: center; font-size: 2rem; letter-spacing: 0.75rem; margin-bottom: 2rem; font-weight: 700; padding: 1.25rem 1rem; background: rgba(20, 20, 40, 0.8); border: 2px solid var(--neon-green); border-radius: 12px; color: white; box-sizing: border-box;">
+						<div style="display: flex; gap: 1rem; width: 100%;">
+							<button onclick="LoginPage.verify2FA(event)" class="btn-success" style="flex: 1; padding: 0.875rem 1.5rem; font-size: 1rem;" data-i18n="verify">Verify</button>
+							<button onclick="LoginPage.cancel2FA(event)" class="btn-danger" style="flex: 1; padding: 0.875rem 1.5rem; font-size: 1rem;" data-i18n="cancel">Cancel</button>
 						</div>
 					</div>
-					<div class="flex flex-row w-2xl  justify-between items-center gap-4">
-						<button id="toggleSignUp" class="underline cursor-pointer" onclick="GlobalState.setPage(SIGNUP_PAGE)" data-i18n="sign_up_prompt">Don't have an account? Sign Up</button>
+					
+					<div style="margin-top: 2rem;">
+						<button id="toggleSignUp" onclick="GlobalState.setPage(SIGNUP_PAGE)" 
+							style="background: none; border: none; color: var(--neon-cyan); cursor: pointer; text-decoration: underline;"
+							data-i18n="sign_up_prompt">Don't have an account? Sign Up</button>
 					</div>
 				</div>
 			`;
@@ -95,6 +107,12 @@ class LoginPage implements Page {
 						if (loginForm && twoFactorArea) {
 							loginForm.style.display = "none";
 							twoFactorArea.style.display = "flex";
+							twoFactorArea.style.flexDirection = "column";
+							twoFactorArea.style.alignItems = "center";
+							const otpInput = document.getElementById("otpCode") as HTMLInputElement;
+							if (otpInput) {
+								setTimeout(() => otpInput.focus(), 100);
+							}
 						}
 					} else {
 						window.localStorage.setItem("isAuthenticated", "1");
@@ -103,13 +121,13 @@ class LoginPage implements Page {
 					}
 				}
 				else {
-					alert("Login Failed: " + data.message);
+					Notification.error("Login Failed: " + data.message);
 					GlobalState.setPage(LOGIN_PAGE);
 				}
 			})
 			.catch(error => {
 				console.error("Login error:", error);
-				alert("An error occurred. Please try again.");
+				Notification.error("An error occurred. Please try again.");
 			});
 	}
 
@@ -119,7 +137,7 @@ class LoginPage implements Page {
 		const otpCode = otpInput.value;
 
 		if (!otpCode || otpCode.length !== 6) {
-			alert("Please enter the 6-digit code!");
+			Notification.warning("Please enter the 6-digit code!");
 			return;
 		}
 
@@ -142,13 +160,13 @@ class LoginPage implements Page {
 					window.localStorage.setItem("username", LoginPage.currentUsername);
 					GlobalState.setPage(HOME_PAGE);
 				} else {
-					alert("2FA Verification Failed: " + data.message);
+					Notification.error("2FA Verification Failed: " + data.message);
 					otpInput.value = "";
 				}
 			})
 			.catch(error => {
 				console.error("2FA verification error:", error);
-				alert("An error occurred. Please try again.");
+				Notification.error("An error occurred. Please try again.");
 			});
 	}
 
