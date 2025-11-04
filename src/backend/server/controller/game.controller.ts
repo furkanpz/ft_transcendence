@@ -63,15 +63,12 @@ export async function tournamentQueueController(connection: any, req: any) {
 			}));
 			return;
 		}
-		// Guest flow: alias required in query
 		const alias = (req.query?.alias || '').toString().trim();
 		if (!alias || alias.length < 2 || alias.length > 20) {
 			connection.close(1008, 'Alias required (2-20 chars)');
 			return;
 		}
-		// Generate a negative guestId to avoid collision with real user ids
 		let guestId = -Math.floor(Math.random() * 1_000_000_000) - 1;
-		// Basic dedupe: ensure id not already tracked
 		while (queueManager.playerSockets.has(guestId) || tournamentManager.isPlayerInTournament(guestId)) {
 			guestId = -Math.floor(Math.random() * 1_000_000_000) - 1;
 		}

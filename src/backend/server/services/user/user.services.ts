@@ -149,7 +149,6 @@ export async function getLatestValidVerifiedOTPByUser(user_id: number, twof_code
 }
 
 export async function incrementUserWins(user_id: number): Promise<void> {
-	// Skip for guest users (negative IDs)
 	if (user_id < 0) return;
 	
 	const db = await getDb();
@@ -157,7 +156,6 @@ export async function incrementUserWins(user_id: number): Promise<void> {
 }
 
 export async function incrementUserLosses(user_id: number): Promise<void> {
-	// Skip for guest users (negative IDs)
 	if (user_id < 0) return;
 	
 	const db = await getDb();
@@ -165,7 +163,6 @@ export async function incrementUserLosses(user_id: number): Promise<void> {
 }
 
 export async function getUserStats(user_id: number): Promise<{ wins: number, losses: number } | null> {
-	// Return null for guest users
 	if (user_id < 0) return null;
 	
 	const db = await getDb();
@@ -174,7 +171,6 @@ export async function getUserStats(user_id: number): Promise<{ wins: number, los
 }
 
 export async function getUserDetailedStats(user_id: number): Promise<any> {
-	// Return empty stats for guest users
 	if (user_id < 0) return {
 		totalMatches: 0,
 		wins: 0,
@@ -188,7 +184,6 @@ export async function getUserDetailedStats(user_id: number): Promise<any> {
 	
 	const db = await getDb();
 	
-	// Get basic win/loss stats from user table (includes both matches and tournaments)
 	const basicStats = await db.get(
 		"SELECT wins, losses FROM ft_users WHERE id = ?", 
 		user_id
@@ -197,7 +192,6 @@ export async function getUserDetailedStats(user_id: number): Promise<any> {
 	const totalWins = basicStats?.wins || 0;
 	const totalLosses = basicStats?.losses || 0;
 	
-	// Get tournament stats
 	const tournamentStats = await db.get(
 		`SELECT 
 			COUNT(*) as total_tournaments,
@@ -214,7 +208,6 @@ export async function getUserDetailedStats(user_id: number): Promise<any> {
 	const tournamentLosses = tournamentStats?.tournament_losses || 0;
 	const tournamentWinRate = totalTournaments > 0 ? ((tournamentWins / totalTournaments) * 100).toFixed(1) : "0.0";
 	
-	// Calculate match-only stats (excluding tournaments)
 	const matchWins = totalWins - tournamentWins;
 	const matchLosses = totalLosses - tournamentLosses;
 	const totalMatches = matchWins + matchLosses;
@@ -242,7 +235,6 @@ export async function saveMatchHistory(
 	match_type: 'classic' | 'tournament' | 'multiplayer',
 	tournament_id?: string
 ): Promise<void> {
-	// Skip saving for guest users
 	if (player1_id < 0 || player2_id < 0) return;
 	
 	const db = await getDb();
@@ -254,7 +246,6 @@ export async function saveMatchHistory(
 }
 
 export async function getUserMatchHistory(user_id: number, limit: number = 5): Promise<any[]> {
-	// Return empty for guest users
 	if (user_id < 0) return [];
 	
 	const db = await getDb();
@@ -280,7 +271,6 @@ export async function getUserMatchHistory(user_id: number, limit: number = 5): P
 }
 
 export async function getUserTournamentHistory(user_id: number, limit: number = 5): Promise<any[]> {
-	// Return empty for guest users
 	if (user_id < 0) return [];
 	
 	const db = await getDb();

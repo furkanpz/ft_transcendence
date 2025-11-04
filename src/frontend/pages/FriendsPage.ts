@@ -198,7 +198,7 @@ class FriendsPage implements Page {
 			<div class="friends-container animate-fade-in">
 				<div class="friends-header">
 					<div class="friends-header-text">
-						<h1>👥 <span data-i18n="friends">Friends</span></h1>
+						<h1><span data-i18n="friends">Friends</span></h1>
 						<p data-i18n="friends_manage_help">Manage your friends and requests</p>
 					</div>
 					<div class="friends-header-actions">
@@ -263,7 +263,6 @@ class FriendsPage implements Page {
 				const button = e.target as HTMLButtonElement;
 				const friendId = button.dataset.id;
 				if (!friendId) return;
-				// Navigate with query param so page can load that user
 				await GlobalState.setPageWithQuery(USER_PROFILE_PAGE, `id=${encodeURIComponent(friendId)}`);
 			});
 		});

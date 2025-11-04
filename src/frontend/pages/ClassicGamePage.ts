@@ -70,7 +70,6 @@ class ClassicGamePage implements Page {
     }
 
     async onPreLoad() : Promise<void> {
-    // If participating as a guest in a tournament, pass guestId to room websocket
     const currentGuestId = localStorage.getItem('currentGuestId') || localStorage.getItem('guestPlayerId');
     const roomQs = currentGuestId ? `?guestId=${encodeURIComponent(currentGuestId)}` : '';
     const socket = new WebSocket(`wss://localhost:3000/room/${this.roomId}${roomQs}`);
@@ -81,8 +80,6 @@ class ClassicGamePage implements Page {
                 console.warn('WebSocket connection taking longer than expected for room:', this.roomId);
                 resolve();
             }, 3000);
-            // Hard fallback: if we still aren't connected shortly, and this is a tournament match,
-            // bounce the user back to the tournament page to avoid being stuck on a loading screen.
             const redirectTimeout = setTimeout(() => {
                 if (!connected) {
                     const activeTournament = localStorage.getItem('activeTournament');
@@ -226,7 +223,6 @@ class ClassicGamePage implements Page {
                 const userData = await response.json();
                 this.currentUserId = userData.id || null;
             } else {
-                // Guest user - try to get guest ID from localStorage
                 const guestId = localStorage.getItem('currentGuestId') || localStorage.getItem('guestPlayerId');
                 if (guestId) {
                     this.currentUserId = parseInt(guestId, 10);
@@ -234,7 +230,6 @@ class ClassicGamePage implements Page {
             }
         } catch (error) {
             console.error('Failed to fetch current user ID:', error);
-            // Guest user fallback
             const guestId = localStorage.getItem('currentGuestId') || localStorage.getItem('guestPlayerId');
             if (guestId) {
                 this.currentUserId = parseInt(guestId, 10);

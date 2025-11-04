@@ -118,10 +118,8 @@ class MatchmakingPage implements Page {
 			});
 		}
 
-		// Determine websocket URL; for tournament, allow guest alias param
 		let wsUrl = `wss://localhost:3000/queue/${this.gameType}`;
 		if (this.gameType === 'tournament') {
-			// Try to detect login by fetching profile
 			let isLoggedIn = false;
 			try {
 				const resp = await fetch(`${FETCH_ADDRESS}/user/profile`, { credentials: 'include' });
@@ -134,7 +132,6 @@ class MatchmakingPage implements Page {
 				}
 				alias = alias.trim().slice(0, 20);
 				if (!alias || alias.length < 2) {
-					// fallback alias
 					alias = `Guest${Math.floor(Math.random()*10000)}`;
 				}
 				localStorage.setItem('guestAlias', alias);
@@ -255,7 +252,6 @@ class MatchmakingPage implements Page {
 							</div>
 						`;
 					}
-					// Persist guest player id (if provided) for tournament connections
 					if (message.playerId) {
 						localStorage.setItem('guestPlayerId', String(message.playerId));
 					}

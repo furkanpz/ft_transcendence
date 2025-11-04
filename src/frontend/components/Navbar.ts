@@ -11,7 +11,6 @@ export class Navbar {
     private static currentUsername: string | null = null;
 
     static async render(): Promise<string> {
-        // Get current user info
         await Navbar.loadUserInfo();
 
         return `
@@ -44,19 +43,19 @@ export class Navbar {
                                         style="background: none; border: none; color: var(--neon-cyan); cursor: pointer; font-size: 0.875rem; font-family: 'Roboto', sans-serif; font-weight: 700; transition: all 0.3s;"
                                         onmouseover="this.style.color='var(--neon-purple)'"
                                         onmouseout="this.style.color='var(--neon-cyan)'">
-                                        💬 <span data-i18n="chat">Chat</span>
+                                        <span data-i18n="chat">Chat</span>
                                     </button>
                                     <button onclick="GlobalState.setPage(USER_SEARCH_PAGE)" 
                                         style="background: none; border: none; color: var(--neon-cyan); cursor: pointer; font-size: 0.875rem; font-family: 'Roboto', sans-serif; font-weight: 700; transition: all 0.3s;"
                                         onmouseover="this.style.color='var(--neon-purple)'"
                                         onmouseout="this.style.color='var(--neon-cyan)'">
-                                        🔎 <span data-i18n="search">Search</span>
+                                        <span data-i18n="search">Search</span>
                                     </button>
                                     <button onclick="GlobalState.setPage(FRIENDS_PAGE)" 
                                         style="background: none; border: none; color: var(--neon-cyan); cursor: pointer; font-size: 0.875rem; font-family: 'Roboto', sans-serif; font-weight: 700; transition: all 0.3s;"
                                         onmouseover="this.style.color='var(--neon-purple)'"
                                         onmouseout="this.style.color='var(--neon-cyan)'">
-                                        👥 <span data-i18n="friends">Friends</span>
+                                        <span data-i18n="friends">Friends</span>
                                     </button>
                                     <button id="authButton" onclick="GlobalState.setPage(PROFILE_PAGE)"
                                         style="background: linear-gradient(135deg, var(--neon-cyan), var(--neon-blue)); color: white; cursor: pointer; font-size: 0.875rem; font-family: 'Roboto', sans-serif; font-weight: 700; padding: 0.5rem 1.25rem; border-radius: 8px; border: none; box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3); transition: all 0.3s;">
@@ -91,8 +90,6 @@ export class Navbar {
     }
 
     static setupEventListeners(): void {
-        // Language switcher - i18n system handles this automatically via setupLanguageButtons
-        // But we can update button styles based on current language
         const currentLang = getLanguage();
         const langEn = document.getElementById("lang-en");
         const langTr = document.getElementById("lang-tr");

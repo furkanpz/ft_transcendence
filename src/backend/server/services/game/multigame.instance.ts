@@ -309,10 +309,7 @@ class MultiplayerGameInstance implements GameInstance {
     }
 
     public storeResult() {
-        // For multiplayer (4 players), save each pair's results
         if (this.players.length === 4) {
-            // Team 1: players[0] and players[1]
-            // Team 2: players[2] and players[3]
             const team1Score = this.players[0].score;
             const team2Score = this.players[2].score;
             
@@ -322,7 +319,6 @@ class MultiplayerGameInstance implements GameInstance {
             const winningTeam = team1Score > team2Score ? team1Players : team2Players;
             const losingTeam = team1Score > team2Score ? team2Players : team1Players;
             
-            // Update stats for each player (skip guests)
             winningTeam.forEach(player => {
                 userServices.incrementUserWins(player.id).catch(err => 
                     console.error('Failed to increment wins:', err)
@@ -334,9 +330,6 @@ class MultiplayerGameInstance implements GameInstance {
                     console.error('Failed to increment losses:', err)
                 );
             });
-            
-            // Save match history for team matchups (skips if guests involved)
-            // Team 1 player 1 vs Team 2 player 1
             userServices.saveMatchHistory(
                 this.players[0].id,
                 this.players[2].id,

@@ -4,7 +4,6 @@ async function migrateWinsLosses() {
     try {
         const db = await getDb();
         
-        // Check if columns already exist
         const tableInfo = await db.all("PRAGMA table_info(ft_users)");
         const hasWins = tableInfo.some((col: any) => col.name === 'wins');
         const hasLosses = tableInfo.some((col: any) => col.name === 'losses');

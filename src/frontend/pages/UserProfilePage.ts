@@ -13,7 +13,6 @@ class UserProfilePage implements Page {
 
   async onPreLoad(): Promise<void> {
     this.title = t('profile');
-    // Parse query params (?id=123 or ?username=foo)
     const params = new URLSearchParams(window.location.search);
     const idParam = params.get('id');
     const usernameParam = params.get('username');
@@ -89,7 +88,7 @@ class UserProfilePage implements Page {
             </div>
           </div>
           <div style="border-top:1px solid rgba(255,255,255,.1);margin:1rem 0;padding-top:1rem;">
-            <h3 style="font-size:1.1rem;font-weight:600;text-align:center;margin-bottom:.75rem;" class="neon-text-magenta">🏆 Turnuva İstatistikleri</h3>
+            <h3 style="font-size:1.1rem;font-weight:600;text-align:center;margin-bottom:.75rem;" class="neon-text-magenta">Tournament Statistics</h3>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1rem;">
               <div style="text-align:center;padding:.75rem;">
                 <div id="totalTournamentsCount" style="font-size:1.25rem;font-weight:bold;color:var(--neon-purple);margin-bottom:.5rem;">0</div>
@@ -121,7 +120,7 @@ class UserProfilePage implements Page {
         </div>
 
         <div class="glass-card profile-section" style="border-color: var(--neon-magenta);">
-          <h2 style="font-size:1.25rem;font-weight:600;text-align:center;margin-bottom:1rem;" class="neon-text-magenta">🏆 Turnuva Geçmişi</h2>
+          <h2 style="font-size:1.25rem;font-weight:600;text-align:center;margin-bottom:1rem;" class="neon-text-magenta">Tournament History</h2>
           <div id="tournamentHistoryContainer" style="max-height:400px;overflow-y:auto;">
             <div style="text-align:center;padding:2rem;color:rgba(255,255,255,.5);">
               <p>Turnuva geçmişi yükleniyor...</p>
@@ -130,7 +129,7 @@ class UserProfilePage implements Page {
         </div>
 
         <div class="glass-card profile-section" style="border-color: var(--neon-blue);">
-          <h2 style="font-size:1.25rem;font-weight:600;text-align:center;margin-bottom:1rem;" class="neon-text-cyan" data-i18n="chat">💬 Live Chat</h2>
+          <h2 style="font-size:1.25rem;font-weight:600;text-align:center;margin-bottom:1rem;" class="neon-text-cyan" data-i18n="chat">Live Chat</h2>
           <div style="text-align:center;">
             <button id="goChatBtn" class="btn-secondary" data-i18n="go_to_chat">Go to Chat</button>
           </div>
@@ -168,7 +167,6 @@ class UserProfilePage implements Page {
     }
 
     await this.loadPublicProfile(this.targetUserId);
-    // If user profile couldn't be loaded (e.g., invalid id), redirect to home
     if (!this.profileUsername) {
       await GlobalState.setPage(HOME_PAGE);
       return;
@@ -234,7 +232,7 @@ class UserProfilePage implements Page {
         return;
       }
       container.innerHTML = matches.map((m: any) => {
-        const matchTypeIcon = m.match_type === 'tournament' ? '🏆' : m.match_type === 'multiplayer' ? '👥' : '⚔️';
+        const matchTypeIcon = m.match_type === 'tournament' ? '[T]' : m.match_type === 'multiplayer' ? '[M]' : '[C]';
         return `
           <div style="padding:1rem;margin-bottom:.75rem;background:rgba(20,20,40,.5);border-radius:12px;border-left:4px solid rgba(255,255,255,.2);">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;">
@@ -279,7 +277,7 @@ class UserProfilePage implements Page {
               <div>
                 <div style="font-weight:600;color:white;margin-bottom:.25rem;">Turnuva ${String(t.id).substring(0,8)}</div>
                 <div style="font-size:.875rem;color:rgba(255,255,255,.6);">${t.required_players} Oyuncu • ${new Date(t.completed_at).toLocaleDateString('tr-TR')}</div>
-                ${t.winner_username ? `<div style=\"font-size:.875rem;color:var(--neon-green);margin-top:.25rem;\">🏆 Şampiyon: ${t.winner_username}</div>` : ''}
+                ${t.winner_username ? `<div style=\"font-size:.875rem;color:var(--neon-green);margin-top:.25rem;\">Champion: ${t.winner_username}</div>` : ''}
               </div>
               <div style="text-align:right;">
                 <div style="font-weight:700;font-size:1.1rem;color:${positionColor};">${positionText}</div>
@@ -293,7 +291,6 @@ class UserProfilePage implements Page {
     }
   }
 
-  // messages preview removed per request
 }
 
 const USER_PROFILE_PAGE = new UserProfilePage();

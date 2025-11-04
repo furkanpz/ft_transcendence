@@ -45,19 +45,17 @@ class GameManager
 				const room = this.gameRooms.get(roomId);
 				if (room) {
 					if (room.roomType === GameType.Tournament) {
-						// First: Force stop game and store result with current scores
 						const gameInstance = this.gamesInstances.get(roomId);
 						if (gameInstance) {
 							try {
 								gameInstance.forceStop();
-								gameInstance.storeResult(); // This calls handleMatchResult with scores
+								gameInstance.storeResult();
 								console.log(`Stored tournament match result for room ${roomId}`);
 							} catch (e) {
 								console.error('Failed to store forced result:', e);
 							}
 						}
 						
-						// Second: Notify tournament manager about disconnect (will only eliminate if match still in_progress)
 						const tId = tournamentManager.getTournamentIdForPlayer(userId);
 						if (tId) {
 							try { 
@@ -67,7 +65,6 @@ class GameManager
 							}
 						}
 						
-						// Third: Notify other players that game ended
 						const others = room.players.filter((id) => id !== userId);
 						for (const otherId of others) {
 							const s = this.playerSockets.get(otherId);

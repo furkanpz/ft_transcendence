@@ -74,20 +74,23 @@ class UserSearchPage implements Page {
       results.innerHTML = `<div style="text-align:center;color:rgba(255,255,255,.6);padding:1rem;" data-i18n="no_results">No results</div>`;
       return;
     }
+    
+    const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    
     results.innerHTML = users.map(u => `
       <div class="user-item">
         <div style="display:flex;align-items:center;gap:.75rem;">
           <div style="width:44px;height:44px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,var(--neon-cyan),var(--neon-purple));display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;">
-            ${u.avatar_url ? `<img src="${u.avatar_url.startsWith('/uploads/') ? 'https://localhost:3000'+u.avatar_url : u.avatar_url}" style="width:100%;height:100%;object-fit:cover;"/>` : (u.username[0] || '?').toUpperCase()}
+            ${u.avatar_url ? `<img src="${u.avatar_url.startsWith('/uploads/') ? 'https://localhost:3000'+u.avatar_url : u.avatar_url}" style="width:100%;height:100%;object-fit:cover;"/>` : escapeHtml((u.username[0] || '?').toUpperCase())}
           </div>
           <div>
-            <div style="font-weight:600;color:white;">${u.username}</div>
+            <div style="font-weight:600;color:white;">${escapeHtml(u.username)}</div>
             <div style="font-size:.8rem;color:${u.is_online ? 'var(--neon-green)' : 'rgba(255,255,255,.6)'};">${u.is_online ? '<span data-i18n="online">Online</span>' : '<span data-i18n="offline">Offline</span>'}</div>
           </div>
         </div>
         <div style="display:flex;gap:.5rem;">
-          <button class="btn-secondary" data-username="${u.username}" data-action="view"><span data-i18n="view_profile">View Profile</span></button>
-          <button class="btn-success" data-username="${u.username}" data-action="add"><span data-i18n="add_friend">Add Friend</span></button>
+          <button class="btn-secondary" data-username="${escapeHtml(u.username)}" data-action="view"><span data-i18n="view_profile">View Profile</span></button>
+          <button class="btn-success" data-username="${escapeHtml(u.username)}" data-action="add"><span data-i18n="add_friend">Add Friend</span></button>
         </div>
       </div>
     `).join('');
@@ -119,7 +122,6 @@ class UserSearchPage implements Page {
         }
       });
     });
-    // Apply translations for dynamic content
     (window as any).i18n?.translateDOM();
   }
 }

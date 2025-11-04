@@ -115,12 +115,10 @@ class GlobalState {
 		await page.onLoad();
 	}
 
-	// Utility to navigate with query string support (e.g., /user-profile?id=123)
 	public static async setPageWithQuery(page: Page, query?: string): Promise<void> {
 		await GlobalState.getcurrentPage().onUnload();
 		GlobalState.setcurrentPage(page);
 
-		// Push the new URL (with query) BEFORE onPreLoad so pages can read window.location.search
 		const path = GlobalState.getPagePath(page) + (query ? `?${query}` : "");
 		window.history.pushState({ pageKey: path }, page.title, path);
 

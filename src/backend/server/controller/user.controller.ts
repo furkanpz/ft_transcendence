@@ -21,7 +21,6 @@ export async function otherUserProfileController(request: FastifyRequest, respon
         return sendError(response, 404, "User not found");
     }
 
-    // Return a sanitized public profile (no email)
     const profileData = {
         id: db_User.id,
         username: db_User.username,

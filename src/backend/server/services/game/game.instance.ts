@@ -272,19 +272,15 @@ class ClassicGameInstance {
             );
         }
         
-        // Save match history and update win/loss stats for NON-TOURNAMENT matches only
-        // Tournament wins/losses are handled separately when the tournament ends
         if (this.players.length === 2 && this.room.roomType !== GameType.Tournament) {
             const player1 = this.players[0];
             const player2 = this.players[1];
             const winner = player1.score > player2.score ? player1 : player2;
             const loser = player1.score > player2.score ? player2 : player1;
             
-            // Determine match type (classic or multiplayer)
             const matchType: 'classic' | 'tournament' | 'multiplayer' = 
                 this.room.roomType === GameType.Multiplayer ? 'multiplayer' : 'classic';
             
-            // Save to match history (skips if guests involved)
             userServices.saveMatchHistory(
                 player1.id,
                 player2.id,
@@ -295,7 +291,6 @@ class ClassicGameInstance {
                 matchType
             ).catch(err => console.error('Failed to save match history:', err));
             
-            // Update win/loss stats (skips if guest)
             userServices.incrementUserWins(winner.id).catch(err => 
                 console.error('Failed to increment wins:', err)
             );

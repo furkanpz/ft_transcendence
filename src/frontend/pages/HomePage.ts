@@ -1,9 +1,7 @@
 import { GlobalState, Page, FETCH_ADDRESS } from "../main"
-import { FRIENDS_PAGE } from "./FriendsPage";
 import { LOGIN_PAGE } from "./LoginPage";
 import { SIGNUP_PAGE } from "./SignUpPage";
 import { MATCHMAKING_PAGE } from "./MatchmakingPage";
-import { CHAT_PAGE } from "./ChatPage";
 import { PROFILE_PAGE } from "./ProfilePage";
 import { GAME_TOURNAMENT_PAGE } from "./TournamentPage";
 
@@ -27,6 +25,83 @@ class HomePage implements Page {
 					width: 100%;
 					max-width: 900px;
 				}
+
+				/* New modern mode buttons */
+				.mode-btn {
+					position: relative;
+					display: flex;
+					flex-direction: column;
+					align-items: center;
+					justify-content: center;
+					gap: 0.5rem;
+					padding: 1.5rem 1.75rem;
+					border: 1px solid rgba(255,255,255,0.12);
+					border-radius: 16px;
+					background: radial-gradient(120% 120% at 0% 0%, rgba(0,240,255,0.08) 0%, rgba(255,0,102,0.05) 60%, rgba(0,0,0,0.2) 100%);
+					backdrop-filter: blur(10px);
+					color: #fff;
+					font-weight: 700;
+					text-align: center;
+					cursor: pointer;
+					transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+				}
+				.mode-btn:hover {
+					transform: translateY(-3px);
+					box-shadow: 0 8px 28px rgba(0, 240, 255, 0.2);
+					border-color: rgba(0, 240, 255, 0.35);
+				}
+				.mode-btn:active { transform: translateY(-1px); }
+
+				.mode-title { font-size: 1.15rem; letter-spacing: .02em; }
+				.mode-sub { font-size: .85rem; opacity: .75; font-weight: 500; }
+
+				/* Accents per mode */
+				.mode-1v1::after,
+				.mode-multi::after,
+				.mode-tourney::after {
+					content: "";
+					position: absolute;
+					inset: -1px;
+					border-radius: 16px;
+					padding: 1px;
+					background: linear-gradient(135deg, rgba(0,240,255,.45), rgba(255,0,102,.35));
+					-webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+					-webkit-mask-composite: xor;
+					mask-composite: exclude;
+					pointer-events: none;
+				}
+				.mode-1v1 svg { color: var(--neon-cyan); }
+				.mode-multi svg { color: var(--neon-purple); }
+				.mode-tourney svg { color: var(--neon-yellow); }
+
+				.mode-icon {
+					width: 40px; height: 40px;
+					filter: drop-shadow(0 0 10px rgba(0,240,255,0.25));
+				}
+
+				/* Centered logout under grid */
+				.logout-wrapper {
+					grid-column: 1 / -1;
+					display: flex;
+					justify-content: center;
+					margin-top: 0.5rem;
+				}
+				.btn-logout {
+					padding: 0.85rem 1.5rem;
+					font-size: 0.95rem;
+					border-radius: 12px;
+					border: 1px solid rgba(255,255,255,0.12);
+					background: rgba(0,0,0,0.25);
+					backdrop-filter: blur(6px);
+					color: #fff;
+					cursor: pointer;
+					transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+				}
+				.btn-logout:hover {
+					transform: translateY(-2px);
+					box-shadow: 0 8px 24px rgba(0,240,255,0.18);
+					border-color: rgba(0,240,255,0.35);
+				}
 			</style>
 			
 			<div class="home-container animate-fade-in">
@@ -40,36 +115,49 @@ class HomePage implements Page {
 								Single Player
 							</button>
 							<button onclick="GlobalState.setPage(MATCHMAKING_PAGE('tournament'))" class="btn-secondary" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
-								🏆 Tournament (Guest)
+								Tournament (Guest)
 							</button>
 						` : ''}
 						
 						${
 							this.data != null
 								? `
-									<button id="1v1Online-btn" class="btn-primary" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
-										<span data-i18n="one_v_one_online">1V1 Online</span>
+									<button id="1v1Online-btn" class="mode-btn mode-1v1">
+										<svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+											<circle cx="7" cy="12" r="3"/>
+											<circle cx="17" cy="12" r="3"/>
+											<path d="M9.5 12h5"/>
+										</svg>
+										<div class="mode-title" data-i18n="one_v_one_online">1V1 Online</div>
+										<div class="mode-sub" data-i18n="fast_matches">Fast competitive matches</div>
 									</button>
 
-									<button id="multiplayer-btn" class="btn-secondary" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
-										<span data-i18n="multiplayer">Multiplayer</span>
+									<button id="multiplayer-btn" class="mode-btn mode-multi">
+										<svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+											<path d="M6 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+											<path d="M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+											<path d="M3 20c0-3 3-5 6-5s6 2 6 5"/>
+											<path d="M15 15c3 0 6 2 6 5"/>
+										</svg>
+										<div class="mode-title" data-i18n="multiplayer">Multiplayer</div>
+										<div class="mode-sub" data-i18n="play_with_friends">Play with friends or teams</div>
 									</button>
 
-									<button id="tournament-btn" class="btn-secondary" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
-										<span data-i18n="tournament">🏆 Tournament</span>
-									</button>
-									
-									<button id="friends-btn" class="btn-primary" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
-										<span data-i18n="friends">Friends</span>
-									</button>
-
-									<button id="social-btn" class="btn-success" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
-										<span data-i18n="social">Social</span>
+									<button id="tournament-btn" class="mode-btn mode-tourney">
+										<svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+											<path d="M4 4h16v4a6 6 0 0 1-6 6H10A6 6 0 0 1 4 8V4Z"/>
+											<path d="M12 20v-6"/>
+											<path d="M8 20h8"/>
+										</svg>
+										<div class="mode-title" data-i18n="tournament">Tournament</div>
+										<div class="mode-sub" data-i18n="bracket_elimination">Bracket elimination mode</div>
 									</button>
 
-									<button id="logout" class="btn-danger" style="padding: 1rem 2rem; font-size: 1rem;">
-										<span data-i18n="logout">Logout</span>
-									</button>
+									<div class="logout-wrapper">
+										<button id="logout" class="btn-logout">
+											<span data-i18n="logout">Logout</span>
+										</button>
+									</div>
 							  `
 								: ""
 						}
@@ -118,21 +206,6 @@ class HomePage implements Page {
 		if (tournamentBtn)
 		{
 			tournamentBtn.addEventListener("click", () => {GlobalState.setPage(MATCHMAKING_PAGE('tournament'))});
-		}
-		
-		const friendsBtn = document.getElementById("friends-btn");
-		if (friendsBtn)
-		{
-			friendsBtn.addEventListener("click", async () => {
-				GlobalState.setPage(FRIENDS_PAGE);
-			})
-		}
-
-		const socialBtn = document.getElementById("social-btn");
-		if (socialBtn) {
-			socialBtn.addEventListener("click", async () => {
-				GlobalState.setPage(CHAT_PAGE);
-			});
 		}
 
 		const logoutBtn = document.getElementById("logout");

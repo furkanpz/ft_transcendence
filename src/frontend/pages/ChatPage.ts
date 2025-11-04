@@ -930,47 +930,64 @@ class ChatPage implements Page {
     static showProfileModal(profile: any) {
         const modal = document.createElement('div');
         modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        const safeUsername = ChatPage.escapeHtml(profile.username);
         modal.innerHTML = `
         <div class="bg-white rounded-xl p-8 max-w-lg w-full m-4 shadow-2xl">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-gray-800">${profile.username} - Profil</h3>
-                <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600 text-3xl">×</button>
+                <h3 class="text-2xl font-bold text-gray-800">${safeUsername} - Profile</h3>
+                <button id="closeProfileModal" class="text-gray-400 hover:text-gray-600 text-3xl">×</button>
             </div>
             
             <div class="flex items-center mb-6">
                 <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mr-4">
-                    ${profile.username.charAt(0).toUpperCase()}
+                    ${safeUsername.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                    <h4 class="text-xl font-semibold text-gray-800">${profile.username}</h4>
-                    <p class="text-gray-600">${profile.online ? '🟢 Çevrimiçi' : '🔴 Çevrimdışı'}</p>
+                    <h4 class="text-xl font-semibold text-gray-800">${safeUsername}</h4>
+                    <p class="text-gray-600">${profile.online ? 'Online' : 'Offline'}</p>
                 </div>
             </div>
             
             <div class="grid grid-cols-2 gap-4 mb-6">
                 <div class="bg-gray-50 p-4 rounded-lg text-center">
                     <div class="text-2xl font-bold text-green-600">${profile.wins || 0}</div>
-                    <div class="text-sm text-gray-600">Galibiyet</div>
+                    <div class="text-sm text-gray-600">Wins</div>
                 </div>
                 <div class="bg-gray-50 p-4 rounded-lg text-center">
                     <div class="text-2xl font-bold text-red-600">${profile.losses || 0}</div>
-                    <div class="text-sm text-gray-600">Mağlubiyet</div>
+                    <div class="text-sm text-gray-600">Losses</div>
                 </div>
             </div>
             
             <div class="flex gap-3">
-                <button onclick="ChatPage.startChatWith('${profile.username}'); this.closest('.fixed').remove();" 
+                <button id="sendMessageBtn" data-username="${safeUsername}"
                         class="flex-1 bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-600 transition duration-200 font-semibold">
-                    💬 Mesaj Gönder
+                    Send Message
                 </button>
-                <button onclick="ChatPage.inviteToGame('${profile.username}'); this.closest('.fixed').remove();" 
+                <button id="inviteGameBtn" data-username="${safeUsername}"
                         class="flex-1 bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 transition duration-200 font-semibold">
-                    🎮 Oyuna Davet Et
+                    Invite to Game
                 </button>
             </div>
         </div>
     `;
         document.body.appendChild(modal);
+        
+        modal.querySelector('#closeProfileModal')?.addEventListener('click', () => modal.remove());
+        modal.querySelector('#sendMessageBtn')?.addEventListener('click', () => {
+            const username = (modal.querySelector('#sendMessageBtn') as HTMLElement)?.dataset.username;
+            if (username) {
+                ChatPage.startChatWith(username);
+                modal.remove();
+            }
+        });
+        modal.querySelector('#inviteGameBtn')?.addEventListener('click', () => {
+            const username = (modal.querySelector('#inviteGameBtn') as HTMLElement)?.dataset.username;
+            if (username) {
+                ChatPage.inviteToGame(username);
+                modal.remove();
+            }
+        });
     }
 
     static async createOrJoinPrivateRoom(username: string): Promise<string | null> {
@@ -1252,8 +1269,7 @@ class ChatPage implements Page {
                     const avatarHtml = ChatPage.getAvatarHtml(user, isOnline, 48);
 
                     return `
-                    <div class="user-item"
-                         onclick="ChatPage.startChatWith('${user}')">
+                    <div class="user-item" data-username="${safeUser}">
                         ${avatarHtml}
                         <div class="user-info">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
@@ -1261,7 +1277,7 @@ class ChatPage implements Page {
                             </div>
                             <div class="user-status" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>${hasExistingChat && lastMessage ?
-                            (lastMessage.type === 'game_invite' ? '🎮 Game invite' : ChatPage.escapeHtml(lastMessage.message)) :
+                            (lastMessage.type === 'game_invite' ? 'Game invite' : ChatPage.escapeHtml(lastMessage.message)) :
                             'New chat'
                         }</span>
                                 <span style="font-size: 0.75rem; color: ${isOnline ? 'var(--neon-green)' : 'rgba(255, 255, 255, 0.4)'};">
@@ -1272,6 +1288,13 @@ class ChatPage implements Page {
                     </div>
                 `;
                 }).join('');
+                
+                document.querySelectorAll('.user-item[data-username]').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const username = (item as HTMLElement).dataset.username;
+                        if (username) ChatPage.startChatWith(username);
+                    });
+                });
             });
         }
     }
@@ -1321,8 +1344,7 @@ class ChatPage implements Page {
                     const avatarHtml = ChatPage.getAvatarHtml(user, isOnline, 48);
 
                     return `
-                    <div class="user-item ${isActive ? 'active' : ''}"
-                         onclick="ChatPage.startChatWith('${user}')">
+                    <div class="user-item ${isActive ? 'active' : ''}" data-username="${safeUser}">
                         ${avatarHtml}
                         <div class="user-info">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
@@ -1330,7 +1352,7 @@ class ChatPage implements Page {
                                 ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : ''}
                             </div>
                             <div class="user-status" style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span>${lastMessage ? (lastMessage.type === 'game_invite' ? '🎮 Game invite' : (ChatPage.escapeHtml(lastMessage.message || '').substring(0, 30) + '...')) : 'New chat'}</span>
+                                <span>${lastMessage ? (lastMessage.type === 'game_invite' ? 'Game invite' : (ChatPage.escapeHtml(lastMessage.message || '').substring(0, 30) + '...')) : 'New chat'}</span>
                                 <span style="font-size: 0.75rem; color: ${isOnline ? 'var(--neon-green)' : 'rgba(255, 255, 255, 0.4)'};">
                                     ${isOnline ? '● Online' : '○ Offline'}
                                 </span>
@@ -1339,6 +1361,13 @@ class ChatPage implements Page {
                     </div>
                 `;
                 }).join('');
+                
+                document.querySelectorAll('.user-item[data-username]').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const username = (item as HTMLElement).dataset.username;
+                        if (username) ChatPage.startChatWith(username);
+                    });
+                });
             });
         }
     }
@@ -1411,13 +1440,15 @@ class ChatPage implements Page {
         if (chatMessages) {
             const inviteDiv = document.createElement("div");
             inviteDiv.className = 'flex justify-center mb-4';
+            
+            const safeUsername = ChatPage.escapeHtml(username);
 
             if (messageData.type === 'sent') {
                 inviteDiv.innerHTML = `
                 <div class="bg-green-50 border border-green-200 rounded-xl p-4 max-w-sm">
                     <div class="text-center">
-                        <div class="text-green-600 font-semibold mb-2">🎮 Oyun Davetiyesi Gönderildi</div>
-                        <div class="text-sm text-green-700">${username} kullanıcısına Pong davetiyesi gönderdin</div>
+                        <div class="text-green-600 font-semibold mb-2">Game Invite Sent</div>
+                        <div class="text-sm text-green-700">You sent a Pong invite to ${safeUsername}</div>
                     </div>
                 </div>
             `;
@@ -1425,21 +1456,34 @@ class ChatPage implements Page {
                 inviteDiv.innerHTML = `
                 <div class="bg-green-50 border border-green-200 rounded-xl p-4 max-w-sm">
                     <div class="text-center">
-                        <div class="text-green-600 font-semibold mb-2">🎮 Oyun Davetiyesi</div>
-                        <div class="text-sm text-green-700 mb-3">${username} seni bir Pong maçına davet ediyor!</div>
+                        <div class="text-green-600 font-semibold mb-2">Game Invite</div>
+                        <div class="text-sm text-green-700 mb-3">${safeUsername} invites you to a Pong match!</div>
                         <div class="flex gap-2">
-                            <button onclick="ChatPage.acceptGameInvite('${username}')" 
-                                    class="flex-1 bg-green-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-600 transition duration-200">
-                                Kabul Et
+                            <button data-username="${safeUsername}" data-action="accept" 
+                                    class="game-invite-btn flex-1 bg-green-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-600 transition duration-200">
+                                Accept
                             </button>
-                            <button onclick="this.closest('.bg-green-50').remove()" 
-                                    class="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-600 transition duration-200">
-                                Reddet
+                            <button data-action="decline" 
+                                    class="game-invite-btn flex-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-600 transition duration-200">
+                                Decline
                             </button>
                         </div>
                     </div>
                 </div>
             `;
+                
+                inviteDiv.querySelectorAll('.game-invite-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const target = e.currentTarget as HTMLElement;
+                        const action = target.dataset.action;
+                        if (action === 'accept') {
+                            const user = target.dataset.username;
+                            if (user) ChatPage.acceptGameInvite(user);
+                        } else if (action === 'decline') {
+                            inviteDiv.remove();
+                        }
+                    });
+                });
             }
 
             chatMessages.appendChild(inviteDiv);
@@ -1676,15 +1720,12 @@ class ChatPage implements Page {
 
     static handleGameInvite(data: any) {
         if (data.sent) {
-            // Confirmation that invite was sent
             console.log('Game invite sent:', data);
             return;
         }
 
-        // Received a game invite
         const { inviteId, fromUsername, message } = data;
         
-        // Create notification element with unique ID
         const notificationId = `game-invite-${inviteId}`;
         const notificationDiv = document.createElement('div');
         notificationDiv.id = notificationId;
@@ -1723,7 +1764,6 @@ class ChatPage implements Page {
         
         document.body.appendChild(notificationDiv);
         
-        // Auto-remove after 30 seconds
         setTimeout(() => {
             const elem = document.getElementById(notificationId);
             if (elem) {
@@ -1734,7 +1774,6 @@ class ChatPage implements Page {
     }
 
     static acceptGameInvite(inviteId: string, notificationId?: string) {
-        // Close notification immediately
         if (notificationId) {
             const elem = document.getElementById(notificationId);
             if (elem) elem.remove();
@@ -1756,7 +1795,6 @@ class ChatPage implements Page {
     }
 
     static declineGameInvite(inviteId: string, notificationId?: string) {
-        // Close notification immediately
         if (notificationId) {
             const elem = document.getElementById(notificationId);
             if (elem) elem.remove();
@@ -1793,8 +1831,7 @@ class ChatPage implements Page {
         const { roomId, opponentUsername, message } = data;
         
         Notification.success(message, 3000);
-        
-        // Navigate to game page after a short delay
+
         setTimeout(() => {
             GlobalState.setPage(CLASSIC_GAME_PAGE(roomId));
         }, 1500);

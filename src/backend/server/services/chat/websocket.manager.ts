@@ -243,7 +243,6 @@ class ChatManager {
             return;
         }
 
-        // Generate unique invite ID
         const inviteId = `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 
         const invite: GameInvite = {
@@ -258,7 +257,6 @@ class ChatManager {
 
         this.gameInvites.set(inviteId, invite);
 
-        // Auto-expire after 30 seconds
         setTimeout(() => {
             const inv = this.gameInvites.get(inviteId);
             if (inv && inv.status === 'pending') {
@@ -271,7 +269,6 @@ class ChatManager {
             }
         }, 30000);
 
-        // Send invitation to recipient
         this.sendToUser(toUserId, {
             type: 'game_invite',
             data: {
@@ -282,7 +279,6 @@ class ChatManager {
             }
         });
 
-        // Confirm to sender
         this.sendToUser(fromUserId, {
             type: 'game_invite',
             data: {
@@ -326,13 +322,11 @@ class ChatManager {
         if (accept) {
             invite.status = 'accepted';
 
-            // Create game room
             const roomId = gameManager.createRoom([invite.fromUserId, invite.toUserId], GameType.Classic);
             invite.roomId = roomId;
 
             console.log(`Game invite accepted: ${inviteId}, room created: ${roomId}`);
 
-            // Notify both players to join the game
             this.sendToUser(invite.fromUserId, {
                 type: 'game_starting',
                 data: {
@@ -357,7 +351,6 @@ class ChatManager {
         } else {
             invite.status = 'declined';
 
-            // Notify sender of decline
             this.sendToUser(invite.fromUserId, {
                 type: 'game_invite_response',
                 data: {
@@ -370,7 +363,6 @@ class ChatManager {
             console.log(`Game invite declined: ${inviteId}`);
         }
 
-        // Clean up after 5 seconds
         setTimeout(() => {
             this.gameInvites.delete(inviteId);
         }, 5000);

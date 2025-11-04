@@ -7,8 +7,8 @@ class TournamentPage implements Page {
     tournamentId: string;
     socket: WebSocket | null = null;
     tournamentState: any = null;
-    currentUserId: number = 0; // logged-in user id
-    currentGuestId: number | null = null; // guest player id
+    currentUserId: number = 0;
+    currentGuestId: number | null = null;
     private reconnectAttempted: boolean = false;
     private pollTimer: any = null;
 
@@ -270,13 +270,10 @@ class TournamentPage implements Page {
 
     localStorage.setItem('activeTournament', this.tournamentId);
 
-    // Support guest tournament connections by passing guestId if present
     const guestId = localStorage.getItem('guestPlayerId');
     const guestAlias = localStorage.getItem('guestAlias');
     const qs = guestId ? `?guestId=${encodeURIComponent(guestId)}${guestAlias?`&alias=${encodeURIComponent(guestAlias)}`:''}` : '';
     this.socket = new WebSocket(`wss://localhost:3000/ws/tournament/${this.tournamentId}${qs}`);
-
-        // Fallback: fetch current tournament state via HTTP to avoid spinner hang
         try {
             const resp = await fetch(`${FETCH_ADDRESS}/tournament/${this.tournamentId}`, { credentials: 'include' });
             if (resp.ok) {
@@ -293,7 +290,6 @@ class TournamentPage implements Page {
             console.warn('HTTP fallback for tournament state failed:', e);
         }
 
-        // Start a light polling as a safety net while tournament is active
         this.pollTimer = setInterval(async () => {
             try {
                 const resp = await fetch(`${FETCH_ADDRESS}/tournament/${this.tournamentId}`, { credentials: 'include' });
@@ -338,7 +334,6 @@ class TournamentPage implements Page {
                 
                 this.renderTournamentState();
             } else if (message.action === 'matchStarting') {
-                // For guests, persist current player's id so game room can authenticate
                 if (typeof message.playerId !== 'undefined') {
                     localStorage.setItem('currentGuestId', String(message.playerId));
                     this.currentGuestId = Number(message.playerId);
@@ -353,7 +348,6 @@ class TournamentPage implements Page {
 
         this.socket.onclose = async () => {
             console.log("Disconnected from tournament");
-            // Try a single lightweight reconnect for transient closures (e.g., 1005)
             if (!this.reconnectAttempted) {
                 this.reconnectAttempted = true;
                 try {
@@ -374,7 +368,6 @@ class TournamentPage implements Page {
                     };
                 } catch (_) {}
             }
-            // Always do an HTTP fallback refresh to avoid being stuck
             try {
                 const resp = await fetch(`${FETCH_ADDRESS}/tournament/${this.tournamentId}`, { credentials: 'include' });
                 if (resp.ok) {
@@ -390,7 +383,6 @@ class TournamentPage implements Page {
 
     async onLoad(): Promise<void> {
         console.log("Tournament Page loaded");
-        // Ensure leaving the page notifies server
         window.addEventListener('beforeunload', this.handleBeforeUnload as any);
     }
 
@@ -437,7 +429,6 @@ class TournamentPage implements Page {
         const me = this.getCurrentPlayerId();
         if (!me || !this.tournamentState?.matches) return '';
 
-        // Find the most recent match involving current player
         const myMatches = this.tournamentState.matches
             .filter((m: any) => (m.player1?.id === me || m.player2?.id === me))
             .sort((a: any, b: any) => (b.round - a.round) || (b.matchNumber - a.matchNumber));

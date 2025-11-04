@@ -433,10 +433,8 @@ class ProfilePage implements Page {
 				this.update2FAStatus(userData.twoFactorEnabled || userData['2fa_enabled'] || false);
 				console.log('User data loaded successfully');
 				
-				// Load detailed statistics
 				this.loadDetailedStats();
 				
-				// Load match and tournament history
 				this.loadMatchHistory();
 				this.loadTournamentHistory();
 			} else if (response.status === 401) {
@@ -888,7 +886,6 @@ class ProfilePage implements Page {
 				const data = await response.json();
 				const stats = data.stats || {};
 
-				// Update main stats
 				const totalMatchesCount = document.getElementById('totalMatchesCount');
 				const winsCount = document.getElementById('winsCount');
 				const lossesCount = document.getElementById('lossesCount');
@@ -907,7 +904,6 @@ class ProfilePage implements Page {
 					winRateCount.textContent = `${stats.winRate || 0}%`;
 				}
 
-				// Update tournament stats
 				const totalTournamentsCount = document.getElementById('totalTournamentsCount');
 				const tournamentWinsCount = document.getElementById('tournamentWinsCount');
 				const tournamentLossesCount = document.getElementById('tournamentLossesCount');
@@ -961,7 +957,6 @@ class ProfilePage implements Page {
 					return;
 				}
 
-				// Get current user info to determine winner
 				const profileResponse = await fetch(`${FETCH_ADDRESS}/user/profile`, {
 					method: 'GET',
 					credentials: 'include',
@@ -977,7 +972,6 @@ class ProfilePage implements Page {
 				}
 
 				container.innerHTML = matches.map((match: any) => {
-					// Check if current user is the winner
 					const isWinner = currentUserId && match.winner_id === currentUserId;
 					const matchTypeIcon = match.match_type === 'tournament' ? '🏆' : match.match_type === 'multiplayer' ? '👥' : '⚔️';
 					const resultColor = isWinner ? 'var(--neon-green)' : '#ff0066';

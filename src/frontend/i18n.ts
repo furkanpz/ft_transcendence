@@ -34,6 +34,9 @@ const translations: Record<string, Record<string, string>> = {
         offline: 'Offline',
         no_results: 'No results',
         go_to_chat: 'Go to Chat',
+    fast_matches: 'Quick 1v1 online matches',
+    play_with_friends: 'Team up for 2v2 matches',
+    bracket_elimination: 'Climb the bracket and be the champion',
         send_friend_request: 'Send Friend Request',
         enter_username: 'Enter username...',
         sign_up: 'Sign Up',
@@ -129,6 +132,9 @@ const translations: Record<string, Record<string, string>> = {
     offline: 'Offline',
     no_results: 'Sonuç yok',
     go_to_chat: 'Sohbete Git',
+    fast_matches: 'Hızlı 1v1 çevrimiçi maçlar',
+    play_with_friends: "2'ye 2 maçlar için takım ol",
+    bracket_elimination: 'Eleme tablosunda ilerle, şampiyon ol',
         send_friend_request: 'Arkadaş İsteği Gönder',
         enter_username: 'Kullanıcı adını gir...',
         sign_up: 'Kayıt Ol',
@@ -234,7 +240,6 @@ function translateDOM(root: HTMLElement | Document = document) {
             }
         });
     }
-    // Update language toggle visuals dynamically each time language changes
     const enBtn = document.getElementById('lang-en') as HTMLElement | null;
     const trBtn = document.getElementById('lang-tr') as HTMLElement | null;
     if (enBtn && trBtn) {

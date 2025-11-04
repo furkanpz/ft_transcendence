@@ -12,13 +12,10 @@ class QueueManager {
 
 	public addQueue(userId: number, socket: WebSocket, gameType : GameType) : boolean
 	{
-		// For tournament, don't check if already in tournament for new sessions
-		// Only check if they're already in the queue
 		if (gameType === GameType.Tournament) {
 			const activeTournamentId = tournamentManager.getTournamentIdForPlayer(userId);
 			if (activeTournamentId) {
 				const tournament = tournamentManager.getTournament(activeTournamentId);
-				// Only redirect if tournament is still in progress
 				if (tournament && (tournament.status === 'waiting' || tournament.status === 'in_progress')) {
 					console.log(`Player ${userId} is already in active tournament ${activeTournamentId}`);
 					socket.send(JSON.stringify({
@@ -28,7 +25,6 @@ class QueueManager {
 					}));
 					return true;
 				} else {
-					// Clean up stale tournament reference
 					tournamentManager.removePlayerFromTournamentMap(userId);
 				}
 			}
@@ -100,7 +96,6 @@ class QueueManager {
 			if (this.tournamentGameQueue.length >= 4)
 			{
 				const players = this.tournamentGameQueue.splice(0, 4);
-				// Build alias map for selected players (guests)
 				const aliasMap = new Map<number, string>();
 				for (const pid of players) {
 					const alias = this.guestAliases.get(pid);

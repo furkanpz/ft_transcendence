@@ -67,7 +67,6 @@ class TournamentManager {
             if (aliasMap?.has(userId) || !user) {
                 hasGuests = true;
             }
-            // ensure unique usernames within the tournament
             let finalName = username;
             let counter = 2;
             while (usedNames.has(finalName)) {
@@ -99,7 +98,6 @@ class TournamentManager {
             sockets: new Map(),
             isCompleting: false
         };
-        // @ts-ignore
         (tournament as any).hasGuests = hasGuests;
 
         this.tournaments.set(tournamentId, tournament);
@@ -147,14 +145,12 @@ class TournamentManager {
         await this.startRoundMatches(tournamentId, 1);
         this.broadcastTournamentState(tournamentId);
 
-        // If only one active player remains after disconnect, immediately complete
         const remaining = Array.from(tournament.players.values()).filter(p => !p.isEliminated);
         if (remaining.length === 1 && tournament.status !== ('completed' as any) && !tournament.isCompleting) {
             this.completeTournament(tournamentId, remaining[0].id);
             return;
         }
 
-        // If all matches in current round are now done, advance
         const nowMatches = tournament.matches.get(tournament.currentRound);
         const allDone = nowMatches?.every(m => m.status === 'completed');
         if (allDone && tournament.status !== ('completed' as any) && !tournament.isCompleting) {
@@ -168,9 +164,6 @@ class TournamentManager {
 
         const matches = tournament.matches.get(round);
         if (!matches) return;
-
-        
-        // Increased wait time to allow players to reconnect after previous round
         await new Promise(resolve => setTimeout(resolve, 5000));
 
         for (let i = 0; i < matches.length; i++) {
@@ -219,7 +212,6 @@ class TournamentManager {
             return;
         }
 
-        // If players not ready, retry a few times before forfeit
         if (!player1Ready || !player2Ready) {
             if (retryCount < 3) {
                 console.log(`Players not ready, retrying in 2 seconds... (attempt ${retryCount + 1}/3)`);
@@ -367,7 +359,6 @@ class TournamentManager {
 
         await this.generateRoundMatches(tournamentId, tournament.currentRound);
         
-        // Reduced delay since startRoundMatches now has its own wait time
         setTimeout(() => {
             this.startRoundMatches(tournamentId, tournament.currentRound);
         }, 2000);
@@ -386,19 +377,14 @@ class TournamentManager {
         tournament.winnerId = winnerId;
 
         const hasGuests = (tournament as any).hasGuests === true;
-
-        // Update win/loss stats: Winner gets +1 win, all others get +1 loss
-        // Only for non-guest players
         for (const player of tournament.players.values()) {
-            if (player.id < 0) continue; // Skip guest players
+            if (player.id < 0) continue;
             
             if (player.id === winnerId) {
-                // Winner gets +1 win
                 userServices.incrementUserWins(player.id).catch(err => 
                     console.error(`Failed to increment tournament win for player ${player.id}:`, err)
                 );
             } else {
-                // All other players get +1 loss
                 userServices.incrementUserLosses(player.id).catch(err => 
                     console.error(`Failed to increment tournament loss for player ${player.id}:`, err)
                 );
@@ -448,7 +434,6 @@ class TournamentManager {
                 console.error('Failed to persist tournament to DB:', err);
             }
         } else {
-            // Even with guests, save tournament if there are registered players
             const registeredPlayers = Array.from(tournament.players.values()).filter(p => p.id >= 0);
             
             if (registeredPlayers.length > 0) {
@@ -460,7 +445,6 @@ class TournamentManager {
                         [tournamentId, tournament.requiredPlayers, tournament.currentRound, tournament.maxRounds, winnerId >= 0 ? winnerId : null]
                     );
 
-                    // Only save registered players
                     for (const p of registeredPlayers) {
                         await db.run(
                             `INSERT INTO ft_tournament_participants (tournament_id, user_id, seed_position, current_round, is_eliminated, final_position)
@@ -469,7 +453,6 @@ class TournamentManager {
                         );
                     }
 
-                    // Save all matches (even those with guests)
                     for (const matches of tournament.matches.values()) {
                         for (const m of matches) {
                             await db.run(
@@ -484,7 +467,6 @@ class TournamentManager {
                                  m.player1Score, m.player2Score]
                             );
 
-                            // Only save match history if both players are registered
                             if (m.player1Id && m.player1Id >= 0 && m.player2Id && m.player2Id >= 0 && m.winnerId !== null) {
                                 const loserId = m.winnerId === m.player1Id ? m.player2Id! : m.player1Id!;
                                 await db.run(
@@ -523,13 +505,10 @@ class TournamentManager {
         const player = tournament.players.get(userId);
         if (player) {
             player.socket = socket;
-            // Automatically mark as joined when reconnecting during active tournament
-            // This ensures players are ready for subsequent rounds (e.g., finals)
             if (tournament.status === 'in_progress' && !player.isEliminated) {
                 player.hasJoined = true;
                 console.log(`Player ${userId} auto-joined active tournament ${tournamentId} (eliminated: ${player.isEliminated})`);
                 
-                // Immediately broadcast state so all players see the connection
                 this.broadcastTournamentState(tournamentId);
             }
         }
@@ -635,7 +614,6 @@ class TournamentManager {
         const player = tournament.players.get(userId);
         if (!player || player.isEliminated) return;
 
-        // Check if there's an active match involving this player
         const currentRoundMatches = tournament.matches.get(tournament.currentRound);
         let wasInActiveMatch = false;
         
@@ -646,14 +624,12 @@ class TournamentManager {
             );
 
             if (activeMatch) {
-                // Check if match already has a winner (from game result)
                 if (!activeMatch.winnerId) {
                     console.log(`Player ${userId} disconnected from active match, awarding to opponent`);
                     player.isEliminated = true;
                     this.playerTournaments.delete(userId);
                     wasInActiveMatch = true;
 
-                    // Award match to opponent
                     const opponentId = activeMatch.player1Id === userId ? activeMatch.player2Id : activeMatch.player1Id;
                     if (opponentId) {
                         console.log(`Awarding match to player ${opponentId} due to opponent disconnect`);
@@ -672,19 +648,15 @@ class TournamentManager {
 
         this.broadcastTournamentState(tournamentId);
 
-        // Always check for round advancement, even if player wasn't eliminated
-        // (because storeResult may have already completed the match)
         const nowMatches = tournament.matches.get(tournament.currentRound);
         const allDone = nowMatches?.every(m => m.status === 'completed');
         
         if (allDone && tournament.status !== ('completed' as any) && !tournament.isCompleting) {
-            // Check if only one player remains
             const activePlayers = Array.from(tournament.players.values()).filter(p => !p.isEliminated);
             if (activePlayers.length === 1) {
                 this.completeTournament(tournamentId, activePlayers[0].id);
                 return;
             }
-            // Otherwise advance to next round
             this.advanceToNextRound(tournamentId);
         }
     }
@@ -709,7 +681,6 @@ class TournamentManager {
                 if ((socket as any).readyState === WebSocket.OPEN) {
                     socket.send(message);
                 } else {
-                    // prune bad sockets
                     tournament.sockets.delete(uid);
                 }
             } catch (err) {

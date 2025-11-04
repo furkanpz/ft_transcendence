@@ -74,7 +74,6 @@ export default async function userRoutes(server: FastifyInstance) {
 		handler: userDetailedStatsController
 	});
 
-	// Public (other user) profile and stats by userId (requires auth)
 	server.get("/other/:userId/profile",
 	{
 		preHandler: authJwtVerify,
