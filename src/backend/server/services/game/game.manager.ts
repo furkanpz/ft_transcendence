@@ -45,14 +45,39 @@ class GameManager
 				const room = this.gameRooms.get(roomId);
 				if (room) {
 					if (room.roomType === GameType.Tournament) {
+						// First: Force stop game and store result with current scores
+						const gameInstance = this.gamesInstances.get(roomId);
+						if (gameInstance) {
+							try {
+								gameInstance.forceStop();
+								gameInstance.storeResult(); // This calls handleMatchResult with scores
+								console.log(`Stored tournament match result for room ${roomId}`);
+							} catch (e) {
+								console.error('Failed to store forced result:', e);
+							}
+						}
+						
+						// Second: Notify tournament manager about disconnect (will only eliminate if match still in_progress)
 						const tId = tournamentManager.getTournamentIdForPlayer(userId);
 						if (tId) {
-							try { tournamentManager.onGameSocketClose(tId, userId); } catch (e) { console.error(e); }
+							try { 
+								tournamentManager.onGameSocketClose(tId, userId); 
+							} catch (e) { 
+								console.error('Failed to notify tournament of disconnect:', e); 
+							}
 						}
+						
+						// Third: Notify other players that game ended
 						const others = room.players.filter((id) => id !== userId);
 						for (const otherId of others) {
 							const s = this.playerSockets.get(otherId);
-							try { s?.send(JSON.stringify({ action: "gameEnded", result: { players: [] } })); } catch (e) { console.error(e); }
+							if (s) {
+								try { 
+									s.send(JSON.stringify({ action: "gameEnded", result: { players: [] } })); 
+								} catch (e) { 
+									console.error('Failed to send gameEnded:', e); 
+								}
+							}
 						}
 					}
 					room.players = room.players.filter((id) => this.playersState.get(id) !== PlayerState.LEFT);

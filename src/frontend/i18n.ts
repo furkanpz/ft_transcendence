@@ -25,6 +25,15 @@ const translations: Record<string, Record<string, string>> = {
         forgot_password: 'Forgot your password?',
         sign_up_prompt: "Don't have an account? Sign Up",
     already_have_account_sign_in: 'Already have an account? Sign In',
+        multiplayer: 'Multiplayer',
+        search: 'Search',
+        results: 'Results',
+        view_profile: 'View Profile',
+        add_friend: 'Add Friend',
+        online: 'Online',
+        offline: 'Offline',
+        no_results: 'No results',
+        go_to_chat: 'Go to Chat',
         send_friend_request: 'Send Friend Request',
         enter_username: 'Enter username...',
         sign_up: 'Sign Up',
@@ -97,6 +106,7 @@ const translations: Record<string, Record<string, string>> = {
         one_v_one: '1v1',
         one_v_one_online: '1V1 Online',
         tournament: 'Turnuva',
+        multiplayer: 'Çok Oyunculu',
         friends: 'Arkadaşlar',
         social: 'Sosyal',
         logout: 'Çıkış',
@@ -111,6 +121,14 @@ const translations: Record<string, Record<string, string>> = {
         cancel: 'İptal',
         forgot_password: 'Şifreni mi unuttun?',
         sign_up_prompt: 'Hesabın yok mu? Kayıt Ol',
+    search: 'Ara',
+    results: 'Sonuçlar',
+    view_profile: 'Profili Gör',
+    add_friend: 'Arkadaş Ekle',
+    online: 'Online',
+    offline: 'Offline',
+    no_results: 'Sonuç yok',
+    go_to_chat: 'Sohbete Git',
         send_friend_request: 'Arkadaş İsteği Gönder',
         enter_username: 'Kullanıcı adını gir...',
         sign_up: 'Kayıt Ol',
@@ -216,15 +234,26 @@ function translateDOM(root: HTMLElement | Document = document) {
             }
         });
     }
-    const enBtn = document.getElementById('lang-en');
-    const trBtn = document.getElementById('lang-tr');
+    // Update language toggle visuals dynamically each time language changes
+    const enBtn = document.getElementById('lang-en') as HTMLElement | null;
+    const trBtn = document.getElementById('lang-tr') as HTMLElement | null;
     if (enBtn && trBtn) {
+        const activeStyle = '0 0 14px var(--neon-cyan), 0 0 24px rgba(0,240,255,0.5)';
+        const inactiveStyle = 'none';
         if (lang === 'tr') {
             enBtn.classList.remove('font-bold');
             trBtn.classList.add('font-bold');
+            enBtn.style.opacity = '0.6';
+            trBtn.style.opacity = '1';
+            (trBtn.style as any).boxShadow = activeStyle;
+            (enBtn.style as any).boxShadow = inactiveStyle;
         } else {
             trBtn.classList.remove('font-bold');
             enBtn.classList.add('font-bold');
+            trBtn.style.opacity = '0.6';
+            enBtn.style.opacity = '1';
+            (enBtn.style as any).boxShadow = activeStyle;
+            (trBtn.style as any).boxShadow = inactiveStyle;
         }
     }
 }
@@ -256,3 +285,5 @@ window.addEventListener('load', () => {
 });
 
 export { t, setLanguage, getLanguage, translateDOM, setupLanguageButtons };
+
+

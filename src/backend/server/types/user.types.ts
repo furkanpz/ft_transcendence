@@ -13,6 +13,8 @@ export interface User {
 	avatar_url? : string,
 	is_online? : boolean;
 	twof_active?: boolean;
+	wins?: number;
+	losses?: number;
 	created_at? : string,
 	updated_at? : string,
 	role? : userRole;

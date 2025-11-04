@@ -6,7 +6,87 @@ import { sendSuccess, sendError } from '../helpers/response';
 import * as authServices from '../services/auth/auth.services';
 import { ensureDmRoom } from '../services/chat/chat.services';
 import { chatManager } from '../services/chat/websocket.manager';
+import { searchUsersByUsername } from '../services/user/user.services';
 
+export async function otherUserProfileController(request: FastifyRequest, response: FastifyReply) {
+    const { userId } = request.params as { userId: string };
+    const targetId = parseInt(userId, 10);
+
+    if (isNaN(targetId)) {
+        return sendError(response, 400, "Invalid user id");
+    }
+
+    const db_User = await userServices.userIdFindInDb(targetId);
+    if (!db_User) {
+        return sendError(response, 404, "User not found");
+    }
+
+    // Return a sanitized public profile (no email)
+    const profileData = {
+        id: db_User.id,
+        username: db_User.username,
+        avatar_url: db_User.avatar_url,
+        created_at: db_User.created_at,
+        role: db_User.role,
+        is_online: db_User.is_online ?? false,
+    };
+    return sendSuccess(response, "User profile retrieved successfully", profileData);
+}
+
+export async function otherUserDetailedStatsController(request: FastifyRequest, response: FastifyReply) {
+    const { userId } = request.params as { userId: string };
+    const targetId = parseInt(userId, 10);
+
+    if (isNaN(targetId)) {
+        return sendError(response, 400, "Invalid user id");
+    }
+
+    const targetUser = await userServices.userIdFindInDb(targetId);
+    if (!targetUser) {
+        return sendError(response, 404, "User not found");
+    }
+
+    const stats = await userServices.getUserDetailedStats(targetId);
+    return sendSuccess(response, "Statistics retrieved successfully", { stats });
+}
+
+export async function otherUserMatchHistoryController(request: FastifyRequest, response: FastifyReply) {
+    const { userId } = request.params as { userId: string };
+    const { limit } = request.query as { limit?: string };
+    const targetId = parseInt(userId, 10);
+
+    if (isNaN(targetId)) {
+        return sendError(response, 400, "Invalid user id");
+    }
+
+    const targetUser = await userServices.userIdFindInDb(targetId);
+    if (!targetUser) {
+        return sendError(response, 404, "User not found");
+    }
+
+    const matchLimit = limit ? parseInt(limit) : 20;
+    const matches = await userServices.getUserMatchHistory(targetId, matchLimit);
+    return sendSuccess(response, "Match history retrieved successfully", { matches });
+}
+
+export async function otherUserTournamentHistoryController(request: FastifyRequest, response: FastifyReply) {
+    const { userId } = request.params as { userId: string };
+    const { limit } = request.query as { limit?: string };
+    const targetId = parseInt(userId, 10);
+
+    if (isNaN(targetId)) {
+        return sendError(response, 400, "Invalid user id");
+    }
+
+    const targetUser = await userServices.userIdFindInDb(targetId);
+    if (!targetUser) {
+        return sendError(response, 404, "User not found");
+    }
+
+    const tournamentLimit = limit ? parseInt(limit) : 10;
+    const tournaments = await userServices.getUserTournamentHistory(targetId, tournamentLimit);
+    return sendSuccess(response, "Tournament history retrieved successfully", { tournaments });
+}
 export async function friendsDetailsController(request: FastifyRequest, response: FastifyReply) {
     const body = request.body as { friends: number[] };
     const data = await userFriendsUtils.getFriendsDetails(body.friends);
@@ -145,11 +225,41 @@ export async function userProfileController(request: FastifyRequest, response: F
         username: db_User.username,
         email: db_User.email,
         avatar_url: db_User.avatar_url,
+        wins: db_User.wins || 0,
+        losses: db_User.losses || 0,
         created_at: db_User.created_at,
         role: db_User.role,
     };
     return sendSuccess(response, "User profile retrieved successfully", profileData);
 }
+
+export async function userMatchHistoryController(request: FastifyRequest, response: FastifyReply) {
+    const user = request.user as jwtUser;
+    const { limit } = request.query as { limit?: string };
+    
+    const matchLimit = limit ? parseInt(limit) : 20;
+    const matches = await userServices.getUserMatchHistory(user.id, matchLimit);
+    
+    return sendSuccess(response, "Match history retrieved successfully", { matches });
+}
+
+export async function userTournamentHistoryController(request: FastifyRequest, response: FastifyReply) {
+    const user = request.user as jwtUser;
+    const { limit } = request.query as { limit?: string };
+    
+    const tournamentLimit = limit ? parseInt(limit) : 10;
+    const tournaments = await userServices.getUserTournamentHistory(user.id, tournamentLimit);
+    
+    return sendSuccess(response, "Tournament history retrieved successfully", { tournaments });
+}
+
+export async function userDetailedStatsController(request: FastifyRequest, response: FastifyReply) {
+    const user = request.user as jwtUser;
+    const stats = await userServices.getUserDetailedStats(user.id);
+    
+    return sendSuccess(response, "Statistics retrieved successfully", { stats });
+}
+
 export async function changePasswordController(request:FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
 	const user = request.user as jwtUser;
 	const isAdmin = user.role === userRole.admin;
@@ -302,6 +412,22 @@ export async function imageUploadController(request: FastifyRequest, response: F
     }
 }
 
+export async function getUserIdByUsernameController(request: FastifyRequest, response: FastifyReply) {
+    const { username } = request.params as { username: string };
+    
+    if (!username) {
+        return sendError(response, 400, "Username is required");
+    }
+    
+    const user = await userServices.userFindInDb(username);
+    
+    if (!user) {
+        return sendError(response, 404, "User not found");
+    }
+    
+    return sendSuccess(response, "User ID retrieved", { userId: user.id });
+}
+
 export async function usersDetailsByUsernameController(request: FastifyRequest, response: FastifyReply) {
     const body = request.body as { usernames: string[] };
     const usernames = Array.isArray(body?.usernames) ? body.usernames : [];
@@ -316,4 +442,15 @@ export async function usersDetailsByUsernameController(request: FastifyRequest, 
         }
     }
     return sendSuccess(response, "", { data: results });
+}
+
+export async function searchUsersController(request: FastifyRequest, response: FastifyReply) {
+    const { q, limit } = request.query as { q?: string, limit?: string };
+    const query = (q || '').trim();
+    if (!query) {
+        return sendSuccess(response, 'ok', { users: [] });
+    }
+    const lim = limit ? Math.min(50, Math.max(1, parseInt(limit))) : 20;
+    const users = await searchUsersByUsername(query, lim);
+    return sendSuccess(response, 'ok', { users });
 }

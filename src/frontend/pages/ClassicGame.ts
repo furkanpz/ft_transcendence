@@ -75,19 +75,27 @@ export class ClassicGame {
         document.addEventListener("keydown", (event) => {
             if (event.repeat) return;
             if (event.key === "w" || event.key === "ArrowUp") {
-                this.socket.send(JSON.stringify({ action: "key", key: "up", type: "press" }));
+                if (this.socket.readyState === WebSocket.OPEN) {
+                    this.socket.send(JSON.stringify({ action: "key", key: "up", type: "press" }));
+                }
             }
             if (event.key === "s" || event.key === "ArrowDown") {
-                this.socket.send(JSON.stringify({ action: "key", key: "down", type: "press" }));
+                if (this.socket.readyState === WebSocket.OPEN) {
+                    this.socket.send(JSON.stringify({ action: "key", key: "down", type: "press" }));
+                }
             }
         });
 
         document.addEventListener("keyup", (event) => {
             if (event.key === "w" || event.key === "ArrowUp") {
-                this.socket.send(JSON.stringify({ action: "key", key: "up", type: "release" }));
+                if (this.socket.readyState === WebSocket.OPEN) {
+                    this.socket.send(JSON.stringify({ action: "key", key: "up", type: "release" }));
+                }
             }
             if (event.key === "s" || event.key === "ArrowDown") {
-                this.socket.send(JSON.stringify({ action: "key", key: "down", type: "release" }));
+                if (this.socket.readyState === WebSocket.OPEN) {
+                    this.socket.send(JSON.stringify({ action: "key", key: "down", type: "release" }));
+                }
             }
         });
 

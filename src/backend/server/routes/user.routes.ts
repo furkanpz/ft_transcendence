@@ -11,7 +11,15 @@ import {
 	unblockUserController,
 	changeUsernameController,
 	imageUploadController,
-	usersDetailsByUsernameController
+	usersDetailsByUsernameController,
+	getUserIdByUsernameController,
+	userMatchHistoryController,
+	userTournamentHistoryController,
+	userDetailedStatsController,
+	otherUserProfileController,
+	otherUserDetailedStatsController,
+	otherUserMatchHistoryController,
+	otherUserTournamentHistoryController
 } from '../controller/user.controller'
 import { authJwtVerify } from '../services/auth/jwt.services'
 
@@ -35,6 +43,62 @@ export default async function userRoutes(server: FastifyInstance) {
 		preHandler: authJwtVerify,
 		handler: usersDetailsByUsernameController
 	});
+
+	server.get("/getUserId/:username",
+	{
+		preHandler: authJwtVerify,
+		handler: getUserIdByUsernameController
+	});
+
+	server.get("/search",
+	{
+		preHandler: authJwtVerify,
+		handler: (await import('../controller/user.controller')).searchUsersController
+	});
+	
+	server.get("/match-history",
+	{
+		preHandler: authJwtVerify,
+		handler: userMatchHistoryController
+	});
+	
+	server.get("/tournament-history",
+	{
+		preHandler: authJwtVerify,
+		handler: userTournamentHistoryController
+	});
+	
+	server.get("/detailed-stats",
+	{
+		preHandler: authJwtVerify,
+		handler: userDetailedStatsController
+	});
+
+	// Public (other user) profile and stats by userId (requires auth)
+	server.get("/other/:userId/profile",
+	{
+		preHandler: authJwtVerify,
+		handler: otherUserProfileController
+	});
+
+	server.get("/other/:userId/detailed-stats",
+	{
+		preHandler: authJwtVerify,
+		handler: otherUserDetailedStatsController
+	});
+
+	server.get("/other/:userId/match-history",
+	{
+		preHandler: authJwtVerify,
+		handler: otherUserMatchHistoryController
+	});
+
+	server.get("/other/:userId/tournament-history",
+	{
+		preHandler: authJwtVerify,
+		handler: otherUserTournamentHistoryController
+	});
+	
 	server.post("/friends/request",
 	{
 		preHandler: authJwtVerify,

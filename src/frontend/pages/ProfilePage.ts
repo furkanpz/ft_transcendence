@@ -139,14 +139,61 @@ class ProfilePage implements Page {
 
 				<div class="glass-card profile-section" style="border-color: var(--neon-green);">
 					<h2 style="font-size: 1.5rem; font-weight: 600; text-align: center; margin-bottom: 1rem;" class="neon-text-green" data-i18n="stats">Stats</h2>
-					<div class="stats-grid">
+					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
 						<div style="text-align: center; padding: 1rem;">
-							<div style="font-size: 2rem; font-weight: bold; color: var(--neon-green); margin-bottom: 0.5rem;" id="winsCount">0</div>
+							<div style="font-size: 1.75rem; font-weight: bold; color: var(--neon-cyan); margin-bottom: 0.5rem;" id="totalMatchesCount">0</div>
+							<div style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.7);">Toplam Maç</div>
+						</div>
+						<div style="text-align: center; padding: 1rem;">
+							<div style="font-size: 1.75rem; font-weight: bold; color: var(--neon-green); margin-bottom: 0.5rem;" id="winsCount">0</div>
 							<div style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.7);" data-i18n="win">Win</div>
 						</div>
 						<div style="text-align: center; padding: 1rem;">
-							<div style="font-size: 2rem; font-weight: bold; color: #ff0066; margin-bottom: 0.5rem;" id="lossesCount">0</div>
+							<div style="font-size: 1.75rem; font-weight: bold; color: #ff0066; margin-bottom: 0.5rem;" id="lossesCount">0</div>
 							<div style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.7);" data-i18n="lose">Lose</div>
+						</div>
+						<div style="text-align: center; padding: 1rem;">
+							<div style="font-size: 1.75rem; font-weight: bold; color: var(--neon-yellow); margin-bottom: 0.5rem;" id="winRateCount">0%</div>
+							<div style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.7);">Kazanma Oranı</div>
+						</div>
+					</div>
+					<div style="border-top: 1px solid rgba(255, 255, 255, 0.1); margin: 1rem 0; padding-top: 1rem;">
+						<h3 style="font-size: 1.25rem; font-weight: 600; text-align: center; margin-bottom: 0.75rem;" class="neon-text-magenta">🏆 Turnuva İstatistikleri</h3>
+						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;">
+							<div style="text-align: center; padding: 0.75rem;">
+								<div style="font-size: 1.5rem; font-weight: bold; color: var(--neon-purple); margin-bottom: 0.5rem;" id="totalTournamentsCount">0</div>
+								<div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);">Toplam Turnuva</div>
+							</div>
+							<div style="text-align: center; padding: 0.75rem;">
+								<div style="font-size: 1.5rem; font-weight: bold; color: var(--neon-green); margin-bottom: 0.5rem;" id="tournamentWinsCount">0</div>
+								<div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);">Turnuva Win</div>
+							</div>
+							<div style="text-align: center; padding: 0.75rem;">
+								<div style="font-size: 1.5rem; font-weight: bold; color: #ff0066; margin-bottom: 0.5rem;" id="tournamentLossesCount">0</div>
+								<div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);">Turnuva Lose</div>
+							</div>
+							<div style="text-align: center; padding: 0.75rem;">
+								<div style="font-size: 1.5rem; font-weight: bold; color: var(--neon-yellow); margin-bottom: 0.5rem;" id="tournamentWinRateCount">0%</div>
+								<div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);">Turnuva Kazanma</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="glass-card profile-section" style="border-color: var(--neon-purple);">
+					<h2 style="font-size: 1.5rem; font-weight: 600; text-align: center; margin-bottom: 1rem;" class="neon-text-purple">📜 Maç Geçmişi</h2>
+					<div id="matchHistoryContainer" style="max-height: 400px; overflow-y: auto;">
+						<div style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.5);">
+							<p>Maç geçmişi yükleniyor...</p>
+						</div>
+					</div>
+				</div>
+
+				<div class="glass-card profile-section" style="border-color: var(--neon-magenta);">
+					<h2 style="font-size: 1.5rem; font-weight: 600; text-align: center; margin-bottom: 1rem;" class="neon-text-magenta">🏆 Turnuva Geçmişi</h2>
+					<div id="tournamentHistoryContainer" style="max-height: 400px; overflow-y: auto;">
+						<div style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.5);">
+							<p>Turnuva geçmişi yükleniyor...</p>
 						</div>
 					</div>
 				</div>
@@ -367,21 +414,12 @@ class ProfilePage implements Page {
 				const currentUsernameInput = document.getElementById('currentUsername') as HTMLInputElement;
 				const currentEmailInput = document.getElementById('currentEmail') as HTMLInputElement;
 				const profilePicture = document.getElementById('profilePicture') as HTMLImageElement;
-				const winsCount = document.getElementById('winsCount');
-				const lossesCount = document.getElementById('lossesCount');
 				
 				if (currentUsernameInput) {
 					currentUsernameInput.value = userData.username || 'Current User';
 				}
 				if (currentEmailInput) {
 					currentEmailInput.value = userData.email || 'user@example.com';
-				}
-				
-				if (winsCount) {
-					winsCount.textContent = userData.wins || 0;
-				}
-				if (lossesCount) {
-					lossesCount.textContent = userData.losses || 0;
 				}
 				
 				if (profilePicture && userData.avatar_url) {
@@ -394,6 +432,13 @@ class ProfilePage implements Page {
 
 				this.update2FAStatus(userData.twoFactorEnabled || userData['2fa_enabled'] || false);
 				console.log('User data loaded successfully');
+				
+				// Load detailed statistics
+				this.loadDetailedStats();
+				
+				// Load match and tournament history
+				this.loadMatchHistory();
+				this.loadTournamentHistory();
 			} else if (response.status === 401) {
 				console.warn('User not authenticated');
 				this.updateProfileStatus('Authentication required', 'error');
@@ -827,6 +872,237 @@ class ProfilePage implements Page {
 
 	async onUnload(): Promise<void> {
 		console.log("Profile page unloaded");
+	}
+
+	private async loadDetailedStats(): Promise<void> {
+		try {
+			const response = await fetch(`${FETCH_ADDRESS}/user/detailed-stats`, {
+				method: 'GET',
+				credentials: 'include',
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				const stats = data.stats || {};
+
+				// Update main stats
+				const totalMatchesCount = document.getElementById('totalMatchesCount');
+				const winsCount = document.getElementById('winsCount');
+				const lossesCount = document.getElementById('lossesCount');
+				const winRateCount = document.getElementById('winRateCount');
+
+				if (totalMatchesCount) {
+					totalMatchesCount.textContent = stats.totalMatches || 0;
+				}
+				if (winsCount) {
+					winsCount.textContent = stats.wins || 0;
+				}
+				if (lossesCount) {
+					lossesCount.textContent = stats.losses || 0;
+				}
+				if (winRateCount) {
+					winRateCount.textContent = `${stats.winRate || 0}%`;
+				}
+
+				// Update tournament stats
+				const totalTournamentsCount = document.getElementById('totalTournamentsCount');
+				const tournamentWinsCount = document.getElementById('tournamentWinsCount');
+				const tournamentLossesCount = document.getElementById('tournamentLossesCount');
+				const tournamentWinRateCount = document.getElementById('tournamentWinRateCount');
+
+				if (totalTournamentsCount) {
+					totalTournamentsCount.textContent = stats.totalTournaments || 0;
+				}
+				if (tournamentWinsCount) {
+					tournamentWinsCount.textContent = stats.tournamentWins || 0;
+				}
+				if (tournamentLossesCount) {
+					tournamentLossesCount.textContent = stats.tournamentLosses || 0;
+				}
+				if (tournamentWinRateCount) {
+					tournamentWinRateCount.textContent = `${stats.tournamentWinRate || 0}%`;
+				}
+
+				console.log('Detailed statistics loaded successfully');
+			} else {
+				console.error('Failed to load detailed statistics');
+			}
+		} catch (error) {
+			console.error('Error loading detailed statistics:', error);
+		}
+	}
+
+	private async loadMatchHistory(): Promise<void> {
+		const container = document.getElementById('matchHistoryContainer');
+		if (!container) return;
+
+		try {
+			const response = await fetch(`${FETCH_ADDRESS}/user/match-history?limit=5`, {
+				method: 'GET',
+				credentials: 'include',
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				const matches = data.matches || [];
+
+				if (matches.length === 0) {
+					container.innerHTML = `
+						<div style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.5);">
+							<p>Henüz maç geçmişi yok</p>
+						</div>
+					`;
+					return;
+				}
+
+				// Get current user info to determine winner
+				const profileResponse = await fetch(`${FETCH_ADDRESS}/user/profile`, {
+					method: 'GET',
+					credentials: 'include',
+					headers: {
+						'Content-Type': 'application/json'
+					}
+				});
+				
+				let currentUserId: number | null = null;
+				if (profileResponse.ok) {
+					const profileData = await profileResponse.json();
+					currentUserId = profileData.id;
+				}
+
+				container.innerHTML = matches.map((match: any) => {
+					// Check if current user is the winner
+					const isWinner = currentUserId && match.winner_id === currentUserId;
+					const matchTypeIcon = match.match_type === 'tournament' ? '🏆' : match.match_type === 'multiplayer' ? '👥' : '⚔️';
+					const resultColor = isWinner ? 'var(--neon-green)' : '#ff0066';
+					const winnerName = match.winner_username || 'Unknown';
+					
+					return `
+						<div style="padding: 1rem; margin-bottom: 0.75rem; background: rgba(20, 20, 40, 0.5); border-radius: 12px; border-left: 4px solid ${resultColor};">
+							<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+								<div style="display: flex; align-items: center; gap: 0.75rem;">
+									<span style="font-size: 1.5rem;">${matchTypeIcon}</span>
+									<div>
+										<div style="font-weight: 600; color: white;">
+											${match.player1_username} vs ${match.player2_username}
+										</div>
+										<div style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.6);">
+											${match.match_type} • ${new Date(match.played_at).toLocaleDateString('tr-TR')}
+										</div>
+									</div>
+								</div>
+								<div style="text-align: right;">
+									<div style="font-weight: 700; font-size: 1.25rem; color: ${resultColor};">
+										Kazanan: ${winnerName}
+									</div>
+									<div style="font-size: 1rem; color: rgba(255, 255, 255, 0.8);">
+										${match.p1_score} - ${match.p2_score}
+									</div>
+								</div>
+							</div>
+						</div>
+					`;
+				}).join('');
+			} else {
+				container.innerHTML = `
+					<div style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.5);">
+						<p>Maç geçmişi yüklenemedi</p>
+					</div>
+				`;
+			}
+		} catch (error) {
+			console.error('Error loading match history:', error);
+			container.innerHTML = `
+				<div style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.5);">
+					<p>Maç geçmişi yüklenirken hata oluştu</p>
+				</div>
+			`;
+		}
+	}
+
+	private async loadTournamentHistory(): Promise<void> {
+		const container = document.getElementById('tournamentHistoryContainer');
+		if (!container) return;
+
+		try {
+			const response = await fetch(`${FETCH_ADDRESS}/user/tournament-history?limit=5`, {
+				method: 'GET',
+				credentials: 'include',
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				const tournaments = data.tournaments || [];
+
+				if (tournaments.length === 0) {
+					container.innerHTML = `
+						<div style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.5);">
+							<p>Henüz turnuva geçmişi yok</p>
+						</div>
+					`;
+					return;
+				}
+
+				container.innerHTML = tournaments.map((tournament: any) => {
+					const isWinner = tournament.winner_id && tournament.final_position === 1;
+					const positionText = tournament.final_position === 1 ? '🥇 1. Sıra' : 
+										 tournament.final_position === 2 ? '🥈 2. Sıra' : 
+										 tournament.final_position === 3 ? '🥉 3. Sıra' : 
+										 `#${tournament.final_position}`;
+					const positionColor = tournament.final_position === 1 ? 'var(--neon-yellow)' : 
+										  tournament.final_position === 2 ? '#C0C0C0' : 
+										  tournament.final_position === 3 ? '#CD7F32' : 
+										  'rgba(255, 255, 255, 0.6)';
+					
+					return `
+						<div style="padding: 1rem; margin-bottom: 0.75rem; background: rgba(20, 20, 40, 0.5); border-radius: 12px; border-left: 4px solid ${positionColor};">
+							<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+								<div>
+									<div style="font-weight: 600; color: white; margin-bottom: 0.25rem;">
+										Turnuva ${tournament.id.substring(0, 8)}
+									</div>
+									<div style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.6);">
+										${tournament.required_players} Oyuncu • ${new Date(tournament.completed_at).toLocaleDateString('tr-TR')}
+									</div>
+									${tournament.winner_username ? `
+										<div style="font-size: 0.875rem; color: var(--neon-green); margin-top: 0.25rem;">
+											🏆 Şampiyon: ${tournament.winner_username}
+										</div>
+									` : ''}
+								</div>
+								<div style="text-align: right;">
+									<div style="font-weight: 700; font-size: 1.25rem; color: ${positionColor};">
+										${positionText}
+									</div>
+								</div>
+							</div>
+						</div>
+					`;
+				}).join('');
+			} else {
+				container.innerHTML = `
+					<div style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.5);">
+						<p>Turnuva geçmişi yüklenemedi</p>
+					</div>
+				`;
+			}
+		} catch (error) {
+			console.error('Error loading tournament history:', error);
+			container.innerHTML = `
+				<div style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.5);">
+					<p>Turnuva geçmişi yüklenirken hata oluştu</p>
+				</div>
+			`;
+		}
 	}
 };
 

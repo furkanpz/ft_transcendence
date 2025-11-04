@@ -70,16 +70,33 @@ class ClassicGamePage implements Page {
     }
 
     async onPreLoad() : Promise<void> {
-        const socket = new WebSocket(`wss://localhost:3000/room/${this.roomId}`);
+    // If participating as a guest in a tournament, pass guestId to room websocket
+    const currentGuestId = localStorage.getItem('currentGuestId') || localStorage.getItem('guestPlayerId');
+    const roomQs = currentGuestId ? `?guestId=${encodeURIComponent(currentGuestId)}` : '';
+    const socket = new WebSocket(`wss://localhost:3000/room/${this.roomId}${roomQs}`);
+    let connected = false;
         
         return new Promise<void>((resolve) => {
             const timeout = setTimeout(() => {
                 console.warn('WebSocket connection taking longer than expected for room:', this.roomId);
                 resolve();
             }, 3000);
+            // Hard fallback: if we still aren't connected shortly, and this is a tournament match,
+            // bounce the user back to the tournament page to avoid being stuck on a loading screen.
+            const redirectTimeout = setTimeout(() => {
+                if (!connected) {
+                    const activeTournament = localStorage.getItem('activeTournament');
+                    if (activeTournament) {
+                        console.warn('Redirecting back to tournament due to room connect timeout');
+                        GlobalState.setPage(GAME_TOURNAMENT_PAGE(activeTournament));
+                    }
+                }
+            }, 5000);
             
             socket.onopen = () => {
+                connected = true;
                 clearTimeout(timeout);
+                clearTimeout(redirectTimeout);
                 console.log('WebSocket connected to room:', this.roomId);
                 GlobalState.setSocket(socket);
                 socket.send(JSON.stringify({ action: "joinGame", roomId: this.roomId }));
@@ -89,14 +106,22 @@ class ClassicGamePage implements Page {
             
             socket.onerror = (error) => {
                 clearTimeout(timeout);
+                clearTimeout(redirectTimeout);
                 console.error('WebSocket error for room:', this.roomId, error);
                 resolve();
             };
             
             socket.onclose = (event) => {
                 clearTimeout(timeout);
+                clearTimeout(redirectTimeout);
                 if (event.code !== 1000 && socket.readyState !== WebSocket.OPEN) {
                     console.error('WebSocket closed before connection established:', event.code, event.reason);
+                    const activeTournament = localStorage.getItem('activeTournament');
+                    if (!connected && activeTournament) {
+                        setTimeout(() => {
+                            GlobalState.setPage(GAME_TOURNAMENT_PAGE(activeTournament));
+                        }, 500);
+                    }
                 }
                 resolve();
             };
@@ -179,7 +204,7 @@ class ClassicGamePage implements Page {
                     if (activeTournament) {
                         setTimeout(() => {
                             GlobalState.setPage(GAME_TOURNAMENT_PAGE(activeTournament));
-                        }, 3000);
+                        }, 1000);
                     } else {
                         GlobalState.setPage(CLASSIC_GAME_PAGE_RESULT(message.result));
                     }
@@ -200,9 +225,20 @@ class ClassicGamePage implements Page {
             if (response.ok) {
                 const userData = await response.json();
                 this.currentUserId = userData.id || null;
+            } else {
+                // Guest user - try to get guest ID from localStorage
+                const guestId = localStorage.getItem('currentGuestId') || localStorage.getItem('guestPlayerId');
+                if (guestId) {
+                    this.currentUserId = parseInt(guestId, 10);
+                }
             }
         } catch (error) {
             console.error('Failed to fetch current user ID:', error);
+            // Guest user fallback
+            const guestId = localStorage.getItem('currentGuestId') || localStorage.getItem('guestPlayerId');
+            if (guestId) {
+                this.currentUserId = parseInt(guestId, 10);
+            }
         }
         
         this.gameRun();

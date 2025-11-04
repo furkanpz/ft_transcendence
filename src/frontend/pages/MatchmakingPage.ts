@@ -1,4 +1,4 @@
-import { GlobalState, Page } from "../main";
+import { GlobalState, Page, FETCH_ADDRESS } from "../main";
 import { CLASSIC_GAME_PAGE } from "./ClassicGamePage";
 import { GAME_2V2_PAGE } from "./Game2v2Page";
 import { GAME_TOURNAMENT_PAGE } from "./TournamentPage";
@@ -118,7 +118,32 @@ class MatchmakingPage implements Page {
 			});
 		}
 
-		const socket = new WebSocket(`wss://localhost:3000/queue/${this.gameType}`);
+		// Determine websocket URL; for tournament, allow guest alias param
+		let wsUrl = `wss://localhost:3000/queue/${this.gameType}`;
+		if (this.gameType === 'tournament') {
+			// Try to detect login by fetching profile
+			let isLoggedIn = false;
+			try {
+				const resp = await fetch(`${FETCH_ADDRESS}/user/profile`, { credentials: 'include' });
+				isLoggedIn = resp.ok;
+			} catch (_) {}
+			if (!isLoggedIn) {
+				let alias = localStorage.getItem('guestAlias') || '';
+				if (!alias) {
+					alias = window.prompt('Enter a tournament nickname (2-20 chars):', '') || '';
+				}
+				alias = alias.trim().slice(0, 20);
+				if (!alias || alias.length < 2) {
+					// fallback alias
+					alias = `Guest${Math.floor(Math.random()*10000)}`;
+				}
+				localStorage.setItem('guestAlias', alias);
+				localStorage.setItem('username', alias);
+				wsUrl = `wss://localhost:3000/queue/${this.gameType}?alias=${encodeURIComponent(alias)}`;
+			}
+		}
+
+		const socket = new WebSocket(wsUrl);
 	
 	socket.onerror = (error) => {
 		console.error("WebSocket error:", error);
@@ -177,7 +202,7 @@ class MatchmakingPage implements Page {
 				}
 			}
 		}
-	  	if (message.action === "matchFound") {
+		  	if (message.action === "matchFound") {
 			console.log("Match found message received:", message);
 			
 			if (message.opponent) {
@@ -229,6 +254,10 @@ class MatchmakingPage implements Page {
 								</div>
 							</div>
 						`;
+					}
+					// Persist guest player id (if provided) for tournament connections
+					if (message.playerId) {
+						localStorage.setItem('guestPlayerId', String(message.playerId));
 					}
 					setTimeout(() => {
 						GlobalState.setPage(GAME_TOURNAMENT_PAGE(message.tournamentId || message.tournament_id));

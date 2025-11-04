@@ -3,6 +3,7 @@ import { Vector2 } from "../../types/vector.types";
 import { gameManager } from "./game.manager";
 import { tournamentManager } from "./tournament.manager";
 import { WebSocket } from "ws";
+import * as userServices from "../user/user.services";
 
 export interface GameInstance {
     setSocketForPlayer(playerId: number, socket: WebSocket) : void;
@@ -268,6 +269,38 @@ class ClassicGameInstance {
                 player2.id, 
                 player1.score, 
                 player2.score
+            );
+        }
+        
+        // Save match history and update win/loss stats for NON-TOURNAMENT matches only
+        // Tournament wins/losses are handled separately when the tournament ends
+        if (this.players.length === 2 && this.room.roomType !== GameType.Tournament) {
+            const player1 = this.players[0];
+            const player2 = this.players[1];
+            const winner = player1.score > player2.score ? player1 : player2;
+            const loser = player1.score > player2.score ? player2 : player1;
+            
+            // Determine match type (classic or multiplayer)
+            const matchType: 'classic' | 'tournament' | 'multiplayer' = 
+                this.room.roomType === GameType.Multiplayer ? 'multiplayer' : 'classic';
+            
+            // Save to match history (skips if guests involved)
+            userServices.saveMatchHistory(
+                player1.id,
+                player2.id,
+                winner.id,
+                loser.id,
+                player1.score,
+                player2.score,
+                matchType
+            ).catch(err => console.error('Failed to save match history:', err));
+            
+            // Update win/loss stats (skips if guest)
+            userServices.incrementUserWins(winner.id).catch(err => 
+                console.error('Failed to increment wins:', err)
+            );
+            userServices.incrementUserLosses(loser.id).catch(err => 
+                console.error('Failed to increment losses:', err)
             );
         }
         

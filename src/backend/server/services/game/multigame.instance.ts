@@ -3,6 +3,7 @@ import { Vector2 } from "../../types/vector.types";
 import { GameInstance } from "./game.instance";
 import { gameManager } from "./game.manager";
 import { WebSocket } from "ws";
+import * as userServices from "../user/user.services";
 
 const HEIGHT: number = MULTI_HEIGHT;
 const WIDTH: number = MULTI_WIDTH;
@@ -308,6 +309,45 @@ class MultiplayerGameInstance implements GameInstance {
     }
 
     public storeResult() {
+        // For multiplayer (4 players), save each pair's results
+        if (this.players.length === 4) {
+            // Team 1: players[0] and players[1]
+            // Team 2: players[2] and players[3]
+            const team1Score = this.players[0].score;
+            const team2Score = this.players[2].score;
+            
+            const team1Players = [this.players[0], this.players[1]];
+            const team2Players = [this.players[2], this.players[3]];
+            
+            const winningTeam = team1Score > team2Score ? team1Players : team2Players;
+            const losingTeam = team1Score > team2Score ? team2Players : team1Players;
+            
+            // Update stats for each player (skip guests)
+            winningTeam.forEach(player => {
+                userServices.incrementUserWins(player.id).catch(err => 
+                    console.error('Failed to increment wins:', err)
+                );
+            });
+            
+            losingTeam.forEach(player => {
+                userServices.incrementUserLosses(player.id).catch(err => 
+                    console.error('Failed to increment losses:', err)
+                );
+            });
+            
+            // Save match history for team matchups (skips if guests involved)
+            // Team 1 player 1 vs Team 2 player 1
+            userServices.saveMatchHistory(
+                this.players[0].id,
+                this.players[2].id,
+                winningTeam[0].id,
+                losingTeam[0].id,
+                team1Score,
+                team2Score,
+                'multiplayer'
+            ).catch(err => console.error('Failed to save match history:', err));
+        }
+        
         this.players.forEach((player) => {
             player.socket?.send(JSON.stringify({
                 action: "gameEnded",

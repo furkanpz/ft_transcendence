@@ -1,4 +1,5 @@
 import { GlobalState, Page, FETCH_ADDRESS} from "../main"
+import { USER_PROFILE_PAGE } from "./UserProfilePage";
 import { BLOCKED_USERS_PAGE } from "./BlockedUsersPage"
 import { HOME_PAGE } from "./HomePage";
 
@@ -44,6 +45,14 @@ class FriendsPage implements Page {
 						</div>
 						
 						<div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+							<button
+								data-id="${req.friend_id}"
+								id="viewProfileBtn"
+								class="btn-secondary"
+								style="padding: 0.625rem 1.25rem; font-size: 0.875rem;"
+							>
+								View Profile
+							</button>
 							<button
 								data-id="${req.friend_id}"
 								id="removeFriendBtn"
@@ -247,7 +256,17 @@ class FriendsPage implements Page {
 		const sendButton = document.getElementById("sendBtn");
 		const rejectButtons = document.querySelectorAll("#rejectBtn");
 		const acceptButtons = document.querySelectorAll("#acceptBtn");
-		const blockFriendButtons = document.querySelectorAll("#blockUserBtn");
+	const blockFriendButtons = document.querySelectorAll("#blockUserBtn");
+	const viewProfileButtons = document.querySelectorAll("#viewProfileBtn");
+		viewProfileButtons.forEach(btn => {
+			btn.addEventListener("click", async (e) => {
+				const button = e.target as HTMLButtonElement;
+				const friendId = button.dataset.id;
+				if (!friendId) return;
+				// Navigate with query param so page can load that user
+				await GlobalState.setPageWithQuery(USER_PROFILE_PAGE, `id=${encodeURIComponent(friendId)}`);
+			});
+		});
 		const removeFriendButtons = document.querySelectorAll("#removeFriendBtn");
 		const backToHomeBtn = document.getElementById("backToHomeBtn");
 		const blockedUsersBtn = document.getElementById("blockedUsersBtn");

@@ -3,6 +3,8 @@ import { BLOCKED_USERS_PAGE, BlockedUsersPage } from "./pages/BlockedUsersPage";
 import { CHAT_PAGE, ChatPage } from "./pages/ChatPage";
 import { MATCHMAKING_PAGE } from "./pages/MatchmakingPage";
 import { PROFILE_PAGE, ProfilePage } from "./pages/ProfilePage";
+import { USER_PROFILE_PAGE, UserProfilePage } from "./pages/UserProfilePage";
+import { USER_SEARCH_PAGE, UserSearchPage } from "./pages/UserSearchPage";
 import * as i18n from "./i18n";
 import { FORGOT_PASSWORD_PAGE } from "./pages/ForgotPasswordPage";
 import { HOME_PAGE } from "./pages/HomePage";
@@ -26,6 +28,8 @@ interface Page {
 const PAGES: { [key: string]: Page } = {
 	"home": HOME_PAGE,
 	"profile": PROFILE_PAGE,
+	"user-profile": USER_PROFILE_PAGE,
+	"user-search": USER_SEARCH_PAGE,
 	"login": LOGIN_PAGE,
 	"signup": SIGNUP_PAGE,
 	"friends": FRIENDS_PAGE,
@@ -111,6 +115,46 @@ class GlobalState {
 		await page.onLoad();
 	}
 
+	// Utility to navigate with query string support (e.g., /user-profile?id=123)
+	public static async setPageWithQuery(page: Page, query?: string): Promise<void> {
+		await GlobalState.getcurrentPage().onUnload();
+		GlobalState.setcurrentPage(page);
+
+		// Push the new URL (with query) BEFORE onPreLoad so pages can read window.location.search
+		const path = GlobalState.getPagePath(page) + (query ? `?${query}` : "");
+		window.history.pushState({ pageKey: path }, page.title, path);
+
+		try {
+			await page.onPreLoad();
+		} catch (error) {
+			console.error("Error in page.onPreLoad:", error);
+		}
+
+		document.title = page.title;
+
+		await page.render();
+
+		const app = document.getElementById("app");
+		if (app) {
+			let existingNavbar = app.querySelector("#global-navbar");
+			if (!existingNavbar) {
+				const navbarHTML = await Navbar.render();
+				const tempDiv = document.createElement("div");
+				tempDiv.innerHTML = navbarHTML;
+				const navbar = tempDiv.firstElementChild;
+				if (navbar) {
+					app.insertBefore(navbar, app.firstChild);
+					Navbar.setupEventListeners();
+				}
+			} else {
+				Navbar.setupEventListeners();
+			}
+		}
+
+		i18n.translateDOM();
+		await page.onLoad();
+	}
+
 	public static getPagePath(page: Page): string {
 		for (const [key, value] of Object.entries(PAGES)) {
 			if (value === page) {
@@ -176,6 +220,7 @@ export { Page, GlobalState, FETCH_ADDRESS, WS_ADDRESS, PAGES };
 (window as any).LOGIN_PAGE = LOGIN_PAGE;
 (window as any).SIGNUP_PAGE = SIGNUP_PAGE;
 (window as any).FRIENDS_PAGE = FRIENDS_PAGE;
+(window as any).USER_SEARCH_PAGE = USER_SEARCH_PAGE;
 (window as any).BLOCKED_USERS_PAGE = BLOCKED_USERS_PAGE;
 (window as any).MATCHMAKING_PAGE = MATCHMAKING_PAGE;
 (window as any).CHAT_PAGE = CHAT_PAGE;
@@ -185,6 +230,8 @@ export { Page, GlobalState, FETCH_ADDRESS, WS_ADDRESS, PAGES };
 (window as any).FriendsPage = FriendsPage;
 (window as any).ChatPage = ChatPage;
 (window as any).ProfiPage = ProfilePage;
+(window as any).UserProfilePage = UserProfilePage;
+(window as any).USER_PROFILE_PAGE = USER_PROFILE_PAGE;
 (window as any).BlockedUsersPage = BlockedUsersPage;
 (window as any).i18n = i18n;
 (window as any).CHAT_PAGE = CHAT_PAGE;

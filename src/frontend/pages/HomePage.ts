@@ -39,6 +39,9 @@ class HomePage implements Page {
 							<button onclick="GlobalState.setPage(MATCHMAKING_PAGE('classic'))" class="btn-primary" data-i18n="single_player" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
 								Single Player
 							</button>
+							<button onclick="GlobalState.setPage(MATCHMAKING_PAGE('tournament'))" class="btn-secondary" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
+								🏆 Tournament (Guest)
+							</button>
 						` : ''}
 						
 						${
@@ -93,7 +96,7 @@ class HomePage implements Page {
 		console.log("Home page loaded");
 		
 		const activeTournament = localStorage.getItem('activeTournament');
-		if (activeTournament && this.data) {
+		if (activeTournament) {
 			console.log("Found active tournament, redirecting:", activeTournament);
 			GlobalState.setPage(GAME_TOURNAMENT_PAGE(activeTournament));
 			return;
@@ -137,6 +140,10 @@ class HomePage implements Page {
 			logoutBtn.addEventListener("click", async () => {
 				await fetch(`${FETCH_ADDRESS}/auth/logout`, {credentials: "include"});
 				localStorage.removeItem('activeTournament');
+				localStorage.removeItem('username');
+				localStorage.removeItem('guestAlias');
+				localStorage.removeItem('guestPlayerId');
+				localStorage.removeItem('currentGuestId');
 				window.location.reload();
 			});
 		}

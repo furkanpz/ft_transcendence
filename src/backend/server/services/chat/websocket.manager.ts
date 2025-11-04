@@ -1,10 +1,14 @@
 import { WebSocket } from 'ws';
-import { ChatMessage, ChatEvent, WebSocketUser } from '../../types/chat.types';
+import { ChatMessage, ChatEvent, WebSocketUser, GameInvite } from '../../types/chat.types';
 import { saveMessage, getChatHistory, canAccessRoom } from '../chat/chat.services';
 import chatLimiter from '../../helpers/chat.limiter';
+import { gameManager } from '../game/game.manager';
+import { GameType } from '../../types/game.types';
+
 class ChatManager {
     private connectedUsers: Map<number, WebSocketUser> = new Map();
     private rooms: Map<string, Set<number>> = new Map();
+    private gameInvites: Map<string, GameInvite> = new Map();
 
     addUser(userId: number, username: string, socket: WebSocket): void {
         const user: WebSocketUser = {
@@ -73,6 +77,12 @@ class ChatManager {
                 this.sendOnlineUsers(userId);
                 break;
             case 'get_offline_messages':
+                break;
+            case 'game_invite':
+                await this.handleGameInvite(userId, event.data.toUserId, event.data.toUsername);
+                break;
+            case 'game_invite_response':
+                await this.handleGameInviteResponse(userId, event.data.inviteId, event.data.accept);
                 break;
             default:
                 this.sendError(user.socket, 'Unknown event type');
@@ -217,6 +227,153 @@ class ChatManager {
             type: 'online_users',
             data: { users: onlineUsernames }
         });
+    }
+
+    async handleGameInvite(fromUserId: number, toUserId: number, toUsername: string): Promise<void> {
+        const fromUser = this.connectedUsers.get(fromUserId);
+        const toUser = this.connectedUsers.get(toUserId);
+
+        if (!fromUser) {
+            console.error('Sender not found');
+            return;
+        }
+
+        if (!toUser) {
+            this.sendError(fromUser.socket, 'User is not online');
+            return;
+        }
+
+        // Generate unique invite ID
+        const inviteId = `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+
+        const invite: GameInvite = {
+            inviteId,
+            fromUserId,
+            fromUsername: fromUser.username,
+            toUserId,
+            toUsername,
+            timestamp: new Date(),
+            status: 'pending'
+        };
+
+        this.gameInvites.set(inviteId, invite);
+
+        // Auto-expire after 30 seconds
+        setTimeout(() => {
+            const inv = this.gameInvites.get(inviteId);
+            if (inv && inv.status === 'pending') {
+                inv.status = 'expired';
+                this.sendToUser(fromUserId, {
+                    type: 'game_invite_response',
+                    data: { inviteId, accepted: false, expired: true, message: 'Invitation expired' }
+                });
+                this.gameInvites.delete(inviteId);
+            }
+        }, 30000);
+
+        // Send invitation to recipient
+        this.sendToUser(toUserId, {
+            type: 'game_invite',
+            data: {
+                inviteId,
+                fromUserId,
+                fromUsername: fromUser.username,
+                message: `${fromUser.username} invited you to play Pong!`
+            }
+        });
+
+        // Confirm to sender
+        this.sendToUser(fromUserId, {
+            type: 'game_invite',
+            data: {
+                inviteId,
+                sent: true,
+                toUsername,
+                message: `Game invitation sent to ${toUsername}`
+            }
+        });
+
+        console.log(`Game invite ${inviteId}: ${fromUser.username} -> ${toUsername}`);
+    }
+
+    async handleGameInviteResponse(userId: number, inviteId: string, accept: boolean): Promise<void> {
+        const invite = this.gameInvites.get(inviteId);
+
+        if (!invite) {
+            const user = this.connectedUsers.get(userId);
+            if (user) {
+                this.sendError(user.socket, 'Invitation not found or expired');
+            }
+            return;
+        }
+
+        if (invite.toUserId !== userId) {
+            const user = this.connectedUsers.get(userId);
+            if (user) {
+                this.sendError(user.socket, 'Invalid invitation');
+            }
+            return;
+        }
+
+        if (invite.status !== 'pending') {
+            const user = this.connectedUsers.get(userId);
+            if (user) {
+                this.sendError(user.socket, 'Invitation already processed');
+            }
+            return;
+        }
+
+        if (accept) {
+            invite.status = 'accepted';
+
+            // Create game room
+            const roomId = gameManager.createRoom([invite.fromUserId, invite.toUserId], GameType.Classic);
+            invite.roomId = roomId;
+
+            console.log(`Game invite accepted: ${inviteId}, room created: ${roomId}`);
+
+            // Notify both players to join the game
+            this.sendToUser(invite.fromUserId, {
+                type: 'game_starting',
+                data: {
+                    inviteId,
+                    roomId,
+                    opponentId: invite.toUserId,
+                    opponentUsername: invite.toUsername,
+                    message: `${invite.toUsername} accepted your invitation!`
+                }
+            });
+
+            this.sendToUser(invite.toUserId, {
+                type: 'game_starting',
+                data: {
+                    inviteId,
+                    roomId,
+                    opponentId: invite.fromUserId,
+                    opponentUsername: invite.fromUsername,
+                    message: 'Game starting!'
+                }
+            });
+        } else {
+            invite.status = 'declined';
+
+            // Notify sender of decline
+            this.sendToUser(invite.fromUserId, {
+                type: 'game_invite_response',
+                data: {
+                    inviteId,
+                    accepted: false,
+                    message: `${invite.toUsername} declined your invitation`
+                }
+            });
+
+            console.log(`Game invite declined: ${inviteId}`);
+        }
+
+        // Clean up after 5 seconds
+        setTimeout(() => {
+            this.gameInvites.delete(inviteId);
+        }, 5000);
     }
 
     getConnectedUsersCount(): number {

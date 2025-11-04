@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS ft_users (
 	avatar_url	TEXT DEFAULT 'https://placehold.co/150x150/cccccc/000000?text=Avatar',
     is_online	BOOLEAN DEFAULT FALSE,
 	twof_active	BOOLEAN DEFAULT FALSE,
+    wins        INTEGER DEFAULT 0,
+    losses      INTEGER DEFAULT 0,
     created_at	DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at	DATETIME DEFAULT CURRENT_TIMESTAMP,
     last_login	DATETIME

@@ -4,6 +4,7 @@ import { PROFILE_PAGE } from "../pages/ProfilePage";
 import { LOGIN_PAGE } from "../pages/LoginPage";
 import { CHAT_PAGE } from "../pages/ChatPage";
 import { FRIENDS_PAGE } from "../pages/FriendsPage";
+import { USER_SEARCH_PAGE } from "../pages/UserSearchPage";
 import { setLanguage, getLanguage } from "../i18n";
 
 export class Navbar {
@@ -44,6 +45,12 @@ export class Navbar {
                                         onmouseover="this.style.color='var(--neon-purple)'"
                                         onmouseout="this.style.color='var(--neon-cyan)'">
                                         💬 <span data-i18n="chat">Chat</span>
+                                    </button>
+                                    <button onclick="GlobalState.setPage(USER_SEARCH_PAGE)" 
+                                        style="background: none; border: none; color: var(--neon-cyan); cursor: pointer; font-size: 0.875rem; font-family: 'Roboto', sans-serif; font-weight: 700; transition: all 0.3s;"
+                                        onmouseover="this.style.color='var(--neon-purple)'"
+                                        onmouseout="this.style.color='var(--neon-cyan)'">
+                                        🔎 <span data-i18n="search">Search</span>
                                     </button>
                                     <button onclick="GlobalState.setPage(FRIENDS_PAGE)" 
                                         style="background: none; border: none; color: var(--neon-cyan); cursor: pointer; font-size: 0.875rem; font-family: 'Roboto', sans-serif; font-weight: 700; transition: all 0.3s;"

@@ -1,6 +1,7 @@
 import { GlobalState, Page, FETCH_ADDRESS, WS_ADDRESS } from "../main"
 import * as i18n from "../i18n";
 import { HOME_PAGE } from "./HomePage"
+import { CLASSIC_GAME_PAGE } from "./ClassicGamePage"
 
 declare const Notification: typeof import("../components/Notification").Notification;
 
@@ -606,9 +607,15 @@ class ChatPage implements Page {
                     
 
                     case 'game_invite':
-                        if (ChatPage.activeChatUser === data.from) {
-                            ChatPage.addGameInviteToChat(data.from, 'received');
-                        }
+                        ChatPage.handleGameInvite(data.data);
+                        break;
+
+                    case 'game_invite_response':
+                        ChatPage.handleGameInviteResponse(data.data);
+                        break;
+
+                    case 'game_starting':
+                        ChatPage.handleGameStarting(data.data);
                         break;
 
                     case 'tournament_notification':
@@ -857,22 +864,6 @@ class ChatPage implements Page {
         }
     }
 
-    static async inviteToGame(username: string) {
-        const socket = GlobalState.getSocket();
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify({
-                type: 'game_invite',
-                to: username,
-                from: ChatPage.getCurrentUsername(),
-                gameType: 'pong'
-            }));
-
-            ChatPage.addGameInviteToChat(username, 'sent');
-        } else {
-            ChatPage.addSystemMessage('Bağlantı sorunu. Oyun davetiyesi gönderilemedi.');
-        }
-    }
-
     static async blockUser(username: string) {
         if (confirm(`${username} kullanıcısını engellemek istediğinizden emin misiniz? Engellediğinizde birbirinize mesaj gönderemezsiniz.`)) {
             try {
@@ -1087,6 +1078,7 @@ class ChatPage implements Page {
             const isOnline = ChatPage.onlineUsers.includes(ChatPage.activeChatUser);
             const statusText = isOnline ? 'Online' : 'Offline';
             const statusColor = isOnline ? 'var(--neon-green)' : 'rgba(255, 255, 255, 0.4)';
+            const isBlocked = ChatPage.blockedUsers.includes(ChatPage.activeChatUser);
 
             if (!ChatPage.userAvatars[ChatPage.activeChatUser]) {
                 await ChatPage.fetchUserAvatar(ChatPage.activeChatUser);
@@ -1095,17 +1087,27 @@ class ChatPage implements Page {
             const avatarHtml = ChatPage.getAvatarHtml(ChatPage.activeChatUser, isOnline, 48);
 
             chatHeader.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 1rem; cursor: pointer;" onclick="ChatPage.toggleUserInfoPanel()">
-                <div style="position: relative;">
-                    ${avatarHtml}
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="position: relative;">
+                        ${avatarHtml}
+                    </div>
+                    <div>
+                        <h3 style="font-weight: 600; font-size: 1.125rem; color: white; margin: 0;">${ChatPage.escapeHtml(ChatPage.activeChatUser)}</h3>
+                        <p style="font-size: 0.875rem; color: ${statusColor}; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="display: inline-block; width: 8px; height: 8px; background: ${statusColor}; border-radius: 50%; ${isOnline ? 'box-shadow: 0 0 8px var(--neon-green);' : ''}"></span>
+                            ${statusText}
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <h3 style="font-weight: 600; font-size: 1.125rem; color: white; margin: 0;">${ChatPage.escapeHtml(ChatPage.activeChatUser)}</h3>
-                    <p style="font-size: 0.875rem; color: ${statusColor}; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="display: inline-block; width: 8px; height: 8px; background: ${statusColor}; border-radius: 50%; ${isOnline ? 'box-shadow: 0 0 8px var(--neon-green);' : ''}"></span>
-                        ${statusText}
-                    </p>
-                </div>
+                ${!isBlocked && isOnline ? `
+                <button onclick="ChatPage.inviteToGame('${ChatPage.activeChatUser}')" 
+                        style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan)); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0, 240, 255, 0.4)';"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 240, 255, 0.3)';">
+                    🎮 Pong'a Davet Et
+                </button>
+                ` : ''}
             </div>
         `;
         } else if (chatHeader) {
@@ -1529,18 +1531,6 @@ class ChatPage implements Page {
         }
     }
 
-    static acceptGameInvite(inviter: string) {
-        const socket = GlobalState.getSocket();
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify({
-                type: 'game_invite_accepted',
-                to: inviter,
-                from: ChatPage.getCurrentUsername()
-            }));
-            ChatPage.addSystemMessage(`${inviter} ile oyun başlatılıyor...`);
-        }
-    }
-
     static async sendOfflineMessage(messageData: any) {
         try {
             const createRoomResponse = await fetch(`${FETCH_ADDRESS}/chat/rooms`, {
@@ -1651,6 +1641,163 @@ class ChatPage implements Page {
             } catch (error) {
             }
         }
+    }
+
+    static inviteToGame(username: string) {
+        const socket = GlobalState.getSocket();
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+            Notification.error('Chat bağlantısı yok. Lütfen sayfayı yenileyin.', 3000);
+            return;
+        }
+
+        fetch(`${FETCH_ADDRESS}/user/getUserId/${username}`, {
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.userId) {
+                socket.send(JSON.stringify({
+                    type: 'game_invite',
+                    data: {
+                        toUserId: data.userId,
+                        toUsername: username
+                    }
+                }));
+                Notification.success(`${username} kullanıcısına oyun daveti gönderildi!`, 3000);
+            } else {
+                Notification.error('Kullanıcı bulunamadı.', 3000);
+            }
+        })
+        .catch(error => {
+            console.error('Error getting user ID:', error);
+            Notification.error('Oyun daveti gönderilemedi.', 3000);
+        });
+    }
+
+    static handleGameInvite(data: any) {
+        if (data.sent) {
+            // Confirmation that invite was sent
+            console.log('Game invite sent:', data);
+            return;
+        }
+
+        // Received a game invite
+        const { inviteId, fromUsername, message } = data;
+        
+        // Create notification element with unique ID
+        const notificationId = `game-invite-${inviteId}`;
+        const notificationDiv = document.createElement('div');
+        notificationDiv.id = notificationId;
+        notificationDiv.style.cssText = `
+            position: fixed;
+            top: 100px;
+            right: 2rem;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 240, 255, 0.3);
+            z-index: 10000;
+            min-width: 350px;
+            max-width: 500px;
+            animation: slideInRight 0.3s ease-out;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        `;
+        
+        notificationDiv.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <p style="margin: 0; font-weight: 600; font-size: 1rem;">${ChatPage.escapeHtml(message)}</p>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button onclick="ChatPage.acceptGameInvite('${inviteId}', '${notificationId}')" 
+                            style="flex: 1; padding: 0.5rem 1rem; background: var(--neon-green); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        Kabul Et
+                    </button>
+                    <button onclick="ChatPage.declineGameInvite('${inviteId}', '${notificationId}')" 
+                            style="flex: 1; padding: 0.5rem 1rem; background: rgba(255, 0, 0, 0.7); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        Reddet
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(notificationDiv);
+        
+        // Auto-remove after 30 seconds
+        setTimeout(() => {
+            const elem = document.getElementById(notificationId);
+            if (elem) {
+                elem.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => elem.remove(), 300);
+            }
+        }, 30000);
+    }
+
+    static acceptGameInvite(inviteId: string, notificationId?: string) {
+        // Close notification immediately
+        if (notificationId) {
+            const elem = document.getElementById(notificationId);
+            if (elem) elem.remove();
+        }
+        
+        const socket = GlobalState.getSocket();
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+            Notification.error('Chat bağlantısı yok. Lütfen sayfayı yenileyin.', 3000);
+            return;
+        }
+
+        socket.send(JSON.stringify({
+            type: 'game_invite_response',
+            data: {
+                inviteId,
+                accept: true
+            }
+        }));
+    }
+
+    static declineGameInvite(inviteId: string, notificationId?: string) {
+        // Close notification immediately
+        if (notificationId) {
+            const elem = document.getElementById(notificationId);
+            if (elem) elem.remove();
+        }
+        
+        const socket = GlobalState.getSocket();
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+            Notification.error('Chat bağlantısı yok. Lütfen sayfayı yenileyin.', 3000);
+            return;
+        }
+
+        socket.send(JSON.stringify({
+            type: 'game_invite_response',
+            data: {
+                inviteId,
+                accept: false
+            }
+        }));
+        
+        Notification.info('Oyun daveti reddedildi.', 2000);
+    }
+
+    static handleGameInviteResponse(data: any) {
+        const { accepted, expired, message } = data;
+        
+        if (expired) {
+            Notification.warning(message, 3000);
+        } else if (accepted === false) {
+            Notification.info(message, 3000);
+        }
+    }
+
+    static handleGameStarting(data: any) {
+        const { roomId, opponentUsername, message } = data;
+        
+        Notification.success(message, 3000);
+        
+        // Navigate to game page after a short delay
+        setTimeout(() => {
+            GlobalState.setPage(CLASSIC_GAME_PAGE(roomId));
+        }, 1500);
     }
 };
 

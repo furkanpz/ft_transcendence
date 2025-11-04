@@ -8,18 +8,30 @@ class QueueManager {
 	public tournamentGameQueue : number[] = new Array();
 	public multiplayerGameQueue : number[] = new Array();
 	public playerSockets : Map<number, WebSocket> = new Map(); 
+    public guestAliases: Map<number, string> = new Map();
 
 	public addQueue(userId: number, socket: WebSocket, gameType : GameType) : boolean
 	{
-		if (gameType === GameType.Tournament && tournamentManager.isPlayerInTournament(userId)) {
-			console.log(`Player ${userId} is already in an active tournament`);
-			const tournamentId = tournamentManager.getTournamentIdForPlayer(userId);
-			socket.send(JSON.stringify({
-				action: "matchFound", 
-				queueType: "tournament",
-				tournamentId: tournamentId
-			}));
-			return true;
+		// For tournament, don't check if already in tournament for new sessions
+		// Only check if they're already in the queue
+		if (gameType === GameType.Tournament) {
+			const activeTournamentId = tournamentManager.getTournamentIdForPlayer(userId);
+			if (activeTournamentId) {
+				const tournament = tournamentManager.getTournament(activeTournamentId);
+				// Only redirect if tournament is still in progress
+				if (tournament && (tournament.status === 'waiting' || tournament.status === 'in_progress')) {
+					console.log(`Player ${userId} is already in active tournament ${activeTournamentId}`);
+					socket.send(JSON.stringify({
+						action: "matchFound", 
+						queueType: "tournament",
+						tournamentId: activeTournamentId
+					}));
+					return true;
+				} else {
+					// Clean up stale tournament reference
+					tournamentManager.removePlayerFromTournamentMap(userId);
+				}
+			}
 		}
 		
 		if (this.playerSockets.has(userId) ||
@@ -88,14 +100,21 @@ class QueueManager {
 			if (this.tournamentGameQueue.length >= 4)
 			{
 				const players = this.tournamentGameQueue.splice(0, 4);
+				// Build alias map for selected players (guests)
+				const aliasMap = new Map<number, string>();
+				for (const pid of players) {
+					const alias = this.guestAliases.get(pid);
+					if (alias) aliasMap.set(pid, alias);
+				}
 				
-				tournamentManager.createTournament(players).then(tournamentId => {
+				tournamentManager.createTournament(players, aliasMap).then(tournamentId => {
 					players.forEach((value) => 
 						{
 							this.playerSockets.get(value)?.send(JSON.stringify({
 								action: "matchFound", 
 								queueType: "tournament",
-								tournamentId: tournamentId
+								tournamentId: tournamentId,
+								playerId: value
 							}));
 							this.playerSockets.delete(value);
 						}
