@@ -13,16 +13,17 @@ import { SIGNUP_PAGE, SignUpPage } from "./pages/SignUpPage";
 import { FRIENDS_PAGE, FriendsPage } from "./pages/FriendsPage";
 import { Navbar } from "./components/Navbar";
 import { Notification } from "./components/Notification";
+import { SINGLE_GAME_PAGE } from "./pages/SingleGamePage";
 
 const FETCH_ADDRESS = "https://localhost:3000/api"
 const WS_ADDRESS = "wss://localhost:3000/ws"
 
 interface Page {
 	title: string;
-	onUnload: () => Promise<void>;
-	onPreLoad: () => Promise<void>;
-	render: () => Promise<void>;
-	onLoad: () => Promise<void>;
+	onUnload(): Promise<void>;
+	onPreLoad(): Promise<void>;
+	render(): Promise<void>;
+	onLoad(): Promise<void>;
 };
 
 const PAGES: { [key: string]: Page } = {
@@ -222,6 +223,7 @@ export { Page, GlobalState, FETCH_ADDRESS, WS_ADDRESS, PAGES };
 (window as any).BLOCKED_USERS_PAGE = BLOCKED_USERS_PAGE;
 (window as any).MATCHMAKING_PAGE = MATCHMAKING_PAGE;
 (window as any).CHAT_PAGE = CHAT_PAGE;
+(window as any).SINGLE_GAME_PAGE = SINGLE_GAME_PAGE;
 
 (window as any).SignUpPage = SignUpPage;
 (window as any).LoginPage = LoginPage;

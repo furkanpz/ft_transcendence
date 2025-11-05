@@ -4,17 +4,30 @@ import { GAME_2V2_PAGE } from "./Game2v2Page";
 import { GAME_TOURNAMENT_PAGE } from "./TournamentPage";
 import { HOME_PAGE } from "./HomePage";
 import { MULTIPLAYER_GAME_PAGE } from "./MultiplayerGamePage";
+import { SINGLE_GAME_PAGE } from "./SingleGamePage";
 
 declare const Notification: typeof import("../components/Notification").Notification;
 
 class MatchmakingPage implements Page {
 
-	title: string = "Tournament";
+	title: string = "";
 	data: any;
 	gameType: string;
 
 	constructor(gameType: string) {
 		this.gameType = gameType;
+		switch (gameType)
+		{
+			case "classic":
+				this.title = "Classic"
+				break;
+			case "tournament":
+				this.title = "Tournament"
+				break;
+			case "2v2":
+				this.title = "2v2 Multiplayer"
+				break;
+		}
   	}
 
 	async render(): Promise<void> {
@@ -216,7 +229,6 @@ class MatchmakingPage implements Page {
 			
 			switch (message.queueType)
 			{
-				case "1v1":
 				case "classic":
 					console.log("Navigating to ClassicGamePage with roomId:", roomId);
 					Notification.success(`Match found! Starting game...`);

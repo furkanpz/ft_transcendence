@@ -55,7 +55,7 @@ class QueueManager {
 				const roomId = gameManager.createRoom(players, GameType.Classic);
 				players.forEach((value) => 
 					{
-						this.playerSockets.get(value)?.send(JSON.stringify({action: "matchFound", queueType: "1v1", roomId: roomId}));
+						this.playerSockets.get(value)?.send(JSON.stringify({action: "matchFound", queueType: "classic", roomId: roomId}));
 						this.playerSockets.delete(value);
 					}
 				);

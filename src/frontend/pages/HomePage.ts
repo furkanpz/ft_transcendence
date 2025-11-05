@@ -4,6 +4,7 @@ import { SIGNUP_PAGE } from "./SignUpPage";
 import { MATCHMAKING_PAGE } from "./MatchmakingPage";
 import { PROFILE_PAGE } from "./ProfilePage";
 import { GAME_TOURNAMENT_PAGE } from "./TournamentPage";
+import { SINGLE_GAME_PAGE } from "./SingleGamePage";
 
 class HomePage implements Page {
 	title: string = "Home";
@@ -111,7 +112,7 @@ class HomePage implements Page {
 							<button onclick="GlobalState.setPage(MATCHMAKING_PAGE('classic'))" class="btn-primary" data-i18n="one_v_one" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
 								1v1
 							</button>
-							<button onclick="GlobalState.setPage(MATCHMAKING_PAGE('classic'))" class="btn-primary" data-i18n="single_player" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
+							<button onclick="GlobalState.setPage(SINGLE_GAME_PAGE)" class="btn-primary" data-i18n="single_player" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
 								Single Player
 							</button>
 							<button onclick="GlobalState.setPage(MATCHMAKING_PAGE('tournament'))" class="btn-secondary" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
@@ -122,6 +123,17 @@ class HomePage implements Page {
 						${
 							this.data != null
 								? `
+									<button id="1v1Local-btn" class="mode-btn mode-1v1">
+                                        <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                            <circle cx="9" cy="7" r="4"/>
+                                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                        </svg>
+                                        <div class="mode-title" data-i18n="one_v_one_local">1V1 Local</div>
+                                        <div class="mode-sub" data-i18n="same_machine">Play on the same machine</div>
+                                    </button>
+
 									<button id="1v1Online-btn" class="mode-btn mode-1v1">
 										<svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 											<circle cx="7" cy="12" r="3"/>
@@ -188,6 +200,12 @@ class HomePage implements Page {
 			console.log("Found active tournament, redirecting:", activeTournament);
 			GlobalState.setPage(GAME_TOURNAMENT_PAGE(activeTournament));
 			return;
+		}
+
+		const LocalBtn = document.getElementById("1v1Local-btn");
+		if (LocalBtn)
+		{
+			LocalBtn.addEventListener("click", () => GlobalState.setPage(SINGLE_GAME_PAGE));
 		}
 		
 		const PVPBtn = document.getElementById("1v1Online-btn");
