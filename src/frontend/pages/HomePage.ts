@@ -134,15 +134,7 @@ class HomePage implements Page {
 											<div class="mode-sub" data-i18n="same_machine">Play on the same machine</div>
                                     </button>
 
-									<button id="1v1Online-btn" class="mode-btn mode-1v1">
-										<svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-											<circle cx="7" cy="12" r="3"/>
-											<circle cx="17" cy="12" r="3"/>
-											<path d="M9.5 12h5"/>
-										</svg>
-										<div class="mode-title" data-i18n="one_v_one_online">1V1 Online</div>
-										<div class="mode-sub" data-i18n="fast_matches">Fast competitive matches</div>
-									</button>
+                                    
 
 									<button id="multiplayer-btn" class="mode-btn mode-multi">
 										<svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -181,23 +173,18 @@ class HomePage implements Page {
 	}
 
 	async onPreLoad(): Promise<void> {
-		console.log("Home page preloading");
 		const response =  await fetch(`${FETCH_ADDRESS}/auth/check`, {credentials: "include"});
 		if (response.ok)
 		{
 			const dataWeHave = await response.json();
-			console.log("datawehabe: ", dataWeHave);
 			this.data = dataWeHave.username;
 		}
 		else{ this.data = null;}
 	}
 
 	async onLoad() : Promise<void> {
-		console.log("Home page loaded");
-		
 		const activeTournament = localStorage.getItem('activeTournament');
 		if (activeTournament) {
-			console.log("Found active tournament, redirecting:", activeTournament);
 			GlobalState.setPage(GAME_TOURNAMENT_PAGE(activeTournament));
 			return;
 		}
@@ -208,11 +195,6 @@ class HomePage implements Page {
 			LocalBtn.addEventListener("click", () => GlobalState.setPage(SINGLE_GAME_PAGE));
 		}
 		
-		const PVPBtn = document.getElementById("1v1Online-btn");
-		if (PVPBtn)
-		{
-			PVPBtn.addEventListener("click", () => {GlobalState.setPage(MATCHMAKING_PAGE('classic'))});
-		}
 
 		const multiplayerBtn = document.getElementById("multiplayer-btn");
 		if (multiplayerBtn)
@@ -241,7 +223,6 @@ class HomePage implements Page {
 	}
 
 	async onUnload(): Promise<void> {
-		console.log("Home page unloaded");
 	}
 };
 

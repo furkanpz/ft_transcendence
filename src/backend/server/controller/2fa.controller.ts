@@ -40,8 +40,7 @@ export async function veriyfandSetOTPController(request: FastifyRequest, respons
 		else
 			return sendSuccess(response, "2FA Disabled");
 	} else {
-		// OTP yanlış ise 400 döndür (kimlik doğrulama eksikliği ile karışmasın)
-		return sendError(response, 400, "OTP Invalid!");
+		return sendError(response, 401, "OTP Invalid!");
 	}
 }
 
