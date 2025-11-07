@@ -22,7 +22,7 @@ class ProfilePage implements Page {
 				}
 				
 				.profile-section {
-					margin-bottom: 1.5rem;
+					if (response.ok) {
 				}
 				
 				.stats-grid {
@@ -62,7 +62,7 @@ class ProfilePage implements Page {
 				
 				.avatar-container {
 					position: relative;
-					display: inline-block;
+					this.updateProfileStatus(t('network_error_generic'), 'error');
 				}
 				
 				.avatar-edit-btn {
@@ -114,7 +114,7 @@ class ProfilePage implements Page {
 			</style>
 			
 			<div class="profile-container animate-fade-in">
-				<h1 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 2rem; text-align: center;" class="neon-text-magenta" data-i18n="user_profile">User Profile</h1>
+				<h1 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 2rem; text-align: center;" class="neon-text-magenta" data-i18n="user_profile">${t('user_profile')}</h1>
 				
 				<div id="successMessage" class="success-message">
 					<svg style="width: 20px; height: 20px;" fill="currentColor" viewBox="0 0 20 20">
@@ -138,62 +138,62 @@ class ProfilePage implements Page {
 				</div>
 
 				<div class="glass-card profile-section" style="border-color: var(--neon-green);">
-					<h2 style="font-size: 1.5rem; font-weight: 600; text-align: center; margin-bottom: 1rem;" class="neon-text-green" data-i18n="stats">Stats</h2>
+					<h2 style="font-size: 1.5rem; font-weight: 600; text-align: center; margin-bottom: 1rem;" class="neon-text-green" data-i18n="stats">${t('stats')}</h2>
 					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
 						<div style="text-align: center; padding: 1rem;">
 							<div style="font-size: 1.75rem; font-weight: bold; color: var(--neon-cyan); margin-bottom: 0.5rem;" id="totalMatchesCount">0</div>
-							<div style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.7);">Toplam Maç</div>
+							<div style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.7);">${t('total_matches')}</div>
 						</div>
 						<div style="text-align: center; padding: 1rem;">
 							<div style="font-size: 1.75rem; font-weight: bold; color: var(--neon-green); margin-bottom: 0.5rem;" id="winsCount">0</div>
-							<div style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.7);" data-i18n="win">Win</div>
+							<div style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.7);" data-i18n="win">${t('win')}</div>
 						</div>
 						<div style="text-align: center; padding: 1rem;">
 							<div style="font-size: 1.75rem; font-weight: bold; color: #ff0066; margin-bottom: 0.5rem;" id="lossesCount">0</div>
-							<div style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.7);" data-i18n="lose">Lose</div>
+							<div style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.7);" data-i18n="lose">${t('lose')}</div>
 						</div>
 						<div style="text-align: center; padding: 1rem;">
 							<div style="font-size: 1.75rem; font-weight: bold; color: var(--neon-yellow); margin-bottom: 0.5rem;" id="winRateCount">0%</div>
-							<div style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.7);">Kazanma Oranı</div>
+							<div style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.7);">${t('win_rate')}</div>
 						</div>
 					</div>
 					<div style="border-top: 1px solid rgba(255, 255, 255, 0.1); margin: 1rem 0; padding-top: 1rem;">
-						<h3 style="font-size: 1.25rem; font-weight: 600; text-align: center; margin-bottom: 0.75rem;" class="neon-text-magenta">🏆 Turnuva İstatistikleri</h3>
+						<h3 style="font-size: 1.25rem; font-weight: 600; text-align: center; margin-bottom: 0.75rem;" class="neon-text-magenta" data-i18n="tournament_stats">🏆 ${t('tournament_stats')}</h3>
 						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;">
 							<div style="text-align: center; padding: 0.75rem;">
 								<div style="font-size: 1.5rem; font-weight: bold; color: var(--neon-purple); margin-bottom: 0.5rem;" id="totalTournamentsCount">0</div>
-								<div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);">Toplam Turnuva</div>
+								<div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);" data-i18n="tournament_total">${t('tournament_total')}</div>
 							</div>
 							<div style="text-align: center; padding: 0.75rem;">
 								<div style="font-size: 1.5rem; font-weight: bold; color: var(--neon-green); margin-bottom: 0.5rem;" id="tournamentWinsCount">0</div>
-								<div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);">Turnuva Win</div>
+								<div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);" data-i18n="tournament_wins">${t('tournament_wins')}</div>
 							</div>
 							<div style="text-align: center; padding: 0.75rem;">
 								<div style="font-size: 1.5rem; font-weight: bold; color: #ff0066; margin-bottom: 0.5rem;" id="tournamentLossesCount">0</div>
-								<div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);">Turnuva Lose</div>
+								<div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);" data-i18n="tournament_losses">${t('tournament_losses')}</div>
 							</div>
 							<div style="text-align: center; padding: 0.75rem;">
 								<div style="font-size: 1.5rem; font-weight: bold; color: var(--neon-yellow); margin-bottom: 0.5rem;" id="tournamentWinRateCount">0%</div>
-								<div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);">Turnuva Kazanma</div>
+								<div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);" data-i18n="tournament_win_rate">${t('tournament_win_rate')}</div>
 							</div>
 						</div>
 					</div>
 				</div>
 
 				<div class="glass-card profile-section" style="border-color: var(--neon-purple);">
-					<h2 style="font-size: 1.5rem; font-weight: 600; text-align: center; margin-bottom: 1rem;" class="neon-text-purple">📜 Maç Geçmişi</h2>
+					<h2 style="font-size: 1.5rem; font-weight: 600; text-align: center; margin-bottom: 1rem;" class="neon-text-purple">📜 ${t('match_history')}</h2>
 					<div id="matchHistoryContainer" style="max-height: 400px; overflow-y: auto;">
 						<div style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.5);">
-							<p>Maç geçmişi yükleniyor...</p>
+							<p>${t('match_history_loading')}</p>
 						</div>
 					</div>
 				</div>
 
 				<div class="glass-card profile-section" style="border-color: var(--neon-magenta);">
-					<h2 style="font-size: 1.5rem; font-weight: 600; text-align: center; margin-bottom: 1rem;" class="neon-text-magenta">🏆 Turnuva Geçmişi</h2>
+					<h2 style="font-size: 1.5rem; font-weight: 600; text-align: center; margin-bottom: 1rem;" class="neon-text-magenta">🏆 ${t('tournament_history')}</h2>
 					<div id="tournamentHistoryContainer" style="max-height: 400px; overflow-y: auto;">
 						<div style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.5);">
-							<p>Turnuva geçmişi yükleniyor...</p>
+							<p>${t('tournament_history_loading')}</p>
 						</div>
 					</div>
 				</div>
@@ -202,76 +202,76 @@ class ProfilePage implements Page {
 					<div id="profileStatus" style="margin-bottom: 1rem;"></div>
 					<div>
 						<div class="form-group">
-							<label class="form-label" data-i18n="username_label">Username:</label>
+							<label class="form-label" data-i18n="username_label">${t('username_label')}</label>
 							<input type="text" id="currentUsername" readonly style="width: 100%; background: rgba(20, 20, 40, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 0.875rem; border-radius: 12px; color: rgba(255, 255, 255, 0.7);">
 						</div>
 						<div class="form-group">
-							<label class="form-label" data-i18n="email_label">Email:</label>
+							<label class="form-label" data-i18n="email_label">${t('email_label')}</label>
 							<input type="text" id="currentEmail" readonly style="width: 100%; background: rgba(20, 20, 40, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 0.875rem; border-radius: 12px; color: rgba(255, 255, 255, 0.7);">
 						</div>
 					</div>
 				</div>
 
 				<div class="glass-card profile-section" style="border-color: var(--neon-magenta);">
-					<h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;" class="neon-text-magenta" data-i18n="change_username">Change Username</h2>
+					<h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;" class="neon-text-magenta" data-i18n="change_username">${t('change_username')}</h2>
 					<div>
 						<div class="form-group">
-							<label class="form-label" data-i18n="new_username_label">New Username:</label>
-							<input type="text" id="newUsername" placeholder="Enter new username" data-i18n-placeholder="enter_new_username" style="width: 100%;">
+							<label class="form-label" data-i18n="new_username_label">${t('new_username_label')}</label>
+							<input type="text" id="newUsername" placeholder="${t('enter_new_username')}" data-i18n-placeholder="enter_new_username" style="width: 100%;">
 						</div>
 						<button id="changeUsernameBtn" class="btn-secondary" style="width: 100%;" data-i18n="update_username">
-							Update Username
+							${t('update_username')}
 						</button>
 					</div>
 				</div>
 
 				<div class="glass-card profile-section" style="border-color: var(--neon-yellow);">
-					<h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;" class="neon-text-yellow" data-i18n="change_password">Change Password</h2>
+					<h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;" class="neon-text-yellow" data-i18n="change_password">${t('change_password')}</h2>
 					<div>
 						<div class="form-group">
-							<label class="form-label" data-i18n="current_password_label">Current Password:</label>
-							<input type="password" id="currentPassword" placeholder="Enter current password" data-i18n-placeholder="enter_current_password" style="width: 100%;">
+							<label class="form-label" data-i18n="current_password_label">${t('current_password_label')}</label>
+							<input type="password" id="currentPassword" placeholder="${t('enter_current_password')}" data-i18n-placeholder="enter_current_password" style="width: 100%;">
 						</div>
 						<div class="form-group">
-							<label class="form-label" data-i18n="new_password_label">New Password:</label>
-							<input type="password" id="newPassword" placeholder="Enter new password" data-i18n-placeholder="enter_new_password" style="width: 100%;">
+							<label class="form-label" data-i18n="new_password_label">${t('new_password_label')}</label>
+							<input type="password" id="newPassword" placeholder="${t('enter_new_password')}" data-i18n-placeholder="enter_new_password" style="width: 100%;">
 						</div>
 						<div class="form-group">
-							<label class="form-label" data-i18n="confirm_new_password_label">Confirm New Password:</label>
-							<input type="password" id="confirmPassword" placeholder="Confirm new password" data-i18n-placeholder="confirm_new_password" style="width: 100%;">
+							<label class="form-label" data-i18n="confirm_new_password_label">${t('confirm_new_password_label')}</label>
+							<input type="password" id="confirmPassword" placeholder="${t('confirm_new_password')}" data-i18n-placeholder="confirm_new_password" style="width: 100%;">
 						</div>
 						<button id="changePasswordBtn" class="btn-secondary" style="width: 100%;" data-i18n="update_password">
-							Update Password
+							${t('update_password')}
 						</button>
 					</div>
 				</div>
 
 				<div class="glass-card profile-section" style="border-color: var(--neon-purple);">
-					<h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;" class="neon-text-purple" data-i18n="two_fa_title">Two-Factor Authentication (2FA)</h2>
+					<h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;" class="neon-text-purple" data-i18n="two_fa_title">${t('two_fa_title')}</h2>
 					<div>
 						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
 							<div>
-								<p style="font-weight: 500; margin-bottom: 0.25rem; color: rgba(255, 255, 255, 0.9);" data-i18n="two_fa_status_label">2FA Status:</p>
-								<p id="twoFAStatus" style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.6);" data-i18n="disabled">Disabled</p>
+								<p style="font-weight: 500; margin-bottom: 0.25rem; color: rgba(255, 255, 255, 0.9);" data-i18n="two_fa_status_label">${t('two_fa_status_label')}</p>
+								<p id="twoFAStatus" style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.6);" data-i18n="disabled">${t('disabled')}</p>
 							</div>
 							<button id="toggle2FABtn" class="btn-secondary" data-i18n="enable_2fa">
-								Enable 2FA
+								${t('enable_2fa')}
 							</button>
 							</div>
 							
 							<div id="twoFASetup" style="display: none; padding-top: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.1);">
 							<div class="form-group">
-								<p style="font-size: 0.875rem; margin-bottom: 0.5rem; color: rgba(255, 255, 255, 0.8);" data-i18n="please_check_email_for_code">Please check your email for the 6-digit verification code.</p>
+								<p style="font-size: 0.875rem; margin-bottom: 0.5rem; color: rgba(255, 255, 255, 0.8);" data-i18n="please_check_email_for_code">${t('please_check_email_for_code')}</p>
 								<div id="qrCodeContainer" class="glass-card" style="padding: 2rem; text-align: center; background: rgba(20, 20, 40, 0.5);">
-									<p style="color: rgba(255, 255, 255, 0.5);" data-i18n="enter_code_below">Enter the code below to enable 2FA.</p>
+									<p style="color: rgba(255, 255, 255, 0.5);" data-i18n="enter_code_below">${t('enter_code_below')}</p>
 								</div>
 							</div>
 							<div class="form-group">
-								<label class="form-label" data-i18n="enter_6_digit_code">Enter the 6-digit code sent to your email:</label>
-								<input type="text" id="verificationCode" placeholder="000000" data-i18n-placeholder="six_digit_code_placeholder" maxlength="6" style="width: 100%; text-align: center; font-size: 1.5rem; letter-spacing: 0.5rem; font-weight: 600;">
+								<label class="form-label" data-i18n="enter_6_digit_code">${t('enter_6_digit_code')}</label>
+								<input type="text" id="verificationCode" placeholder="${t('six_digit_code_placeholder')}" data-i18n-placeholder="six_digit_code_placeholder" maxlength="6" style="width: 100%; text-align: center; font-size: 1.5rem; letter-spacing: 0.5rem; font-weight: 600;">
 							</div>
 							<button id="verify2FABtn" class="btn-success" style="width: 100%;" data-i18n="verify_enable_2fa">
-								Verify & Enable 2FA
+								${t('verify_enable_2fa')}
 							</button>
 						</div>
 					</div>
@@ -279,7 +279,7 @@ class ProfilePage implements Page {
 
 				<div style="text-align: center; margin-top: 2rem;">
 					<button id="homeBtn" class="btn-primary" data-i18n="back_to_home">
-						← Back to Home
+						← ${t('back_to_home')}
 					</button>
 				</div>
 			</div>
@@ -305,7 +305,7 @@ class ProfilePage implements Page {
 					if (!file) return;
 
 					if (file.size > 5 * 1024 * 1024) {
-						Notification.error("File size must be less than 5MB");
+						Notification.error(t('file_size_limit_error'));
 						return;
 					}
 
@@ -321,7 +321,7 @@ class ProfilePage implements Page {
 
 						if (response.ok) {
 							const data = await response.json();
-							Notification.success("Avatar changed successfully!");
+							Notification.success(t('avatar_changed_success'));
 							
 							const profilePicture = document.getElementById("profilePicture") as HTMLImageElement;
 							let avatarUrl = data.data?.avatar_url || data.avatar_url;
@@ -377,18 +377,17 @@ class ProfilePage implements Page {
 								
 								refreshAvatar();
 								
-								setTimeout(refreshAvatar, 300);
-								setTimeout(refreshAvatar, 1000);
+								setTimeout(refreshAvatar, 1300);
 							}
 							
 							await this.loadUserData();
 						} else {
 							const error = await response.json();
-							Notification.error("Failed to upload avatar: " + (error.message || "Unknown error"));
+							Notification.error("Failed to upload avatar: " + (error.message || "Unknown error")); // i18n anahtar eklenebilir: avatar_upload_failed
 						}
 					} catch (error) {
 						console.error("Upload error:", error);
-						Notification.error("Network error. Please try again.");
+						Notification.error("Network error. Please try again."); // i18n anahtar eklenebilir: network_error_generic
 					}
 				});
 			})
@@ -430,7 +429,9 @@ class ProfilePage implements Page {
 					}
 				}
 
-				this.update2FAStatus(userData.twoFactorEnabled || userData['2fa_enabled'] || false);
+				// Backend farklı alan isimleri kullanabilir; hepsini normalize et
+				const twofaFlag = !!(userData.twoFactorEnabled || userData['2fa_enabled'] || userData.twof_active || userData.twofa || false);
+				this.update2FAStatus(twofaFlag);
 				console.log('User data loaded successfully');
 				
 				this.loadDetailedStats();
@@ -438,9 +439,9 @@ class ProfilePage implements Page {
 				this.loadMatchHistory();
 				this.loadTournamentHistory();
 			} else if (response.status === 401) {
-				console.warn('User not authenticated');
-				this.updateProfileStatus('Authentication required', 'error');
-				Notification.warning('You must be logged in to view your profile. Redirecting to login page...');
+				console.warn('User not authenticated or session expired');
+				this.updateProfileStatus(t('auth_required'), 'error');
+				Notification.warning(t('auth_required_redirect'));
 				GlobalState.setPage(LOGIN_PAGE);
 			} else {
 				console.error('API error, status:', response.status);
@@ -558,22 +559,22 @@ class ProfilePage implements Page {
 		const confirmPassword = confirmPasswordInput?.value;
 
 		if (!currentPassword || !newPassword || !confirmPassword) {
-			Notification.warning('Please fill in all password fields');
+			Notification.warning(t('password_fields_incomplete'));
 			return;
 		}
 
 		if (newPassword !== confirmPassword) {
-			Notification.error('New passwords do not match');
+			Notification.error(t('password_mismatch'));
 			return;
 		}
 
 		if (newPassword.length < 6) {
-			Notification.warning('New password must be at least 6 characters long');
+			Notification.warning(t('password_too_short'));
 			return;
 		}
 
 		if (newPassword === currentPassword) {
-			Notification.warning('New password must be different from current password');
+			Notification.warning(t('password_same_as_old'));
 			return;
 		}
 
@@ -582,14 +583,14 @@ class ProfilePage implements Page {
 		const hasNumbers = /\d/.test(newPassword);
 
 		if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
-			Notification.warning('Password must contain at least one uppercase letter, one lowercase letter, and one number');
+			Notification.warning(t('password_complexity_error'));
 			return;
 		}
 
 		const changePasswordBtn = document.getElementById('changePasswordBtn') as HTMLButtonElement;
 		const originalText = changePasswordBtn.textContent;
 		changePasswordBtn.disabled = true;
-		changePasswordBtn.textContent = 'Updating...';
+		changePasswordBtn.textContent = t('updating');
 
 		try {
 			const response = await fetch(`${FETCH_ADDRESS}/user/password`, {
@@ -608,29 +609,29 @@ class ProfilePage implements Page {
 			if (response.ok) {
 				try {
 					const result = await response.json();
-					this.showSuccessMessage(result.message || 'Password updated successfully!');
+					this.showSuccessMessage(result.message || t('password_update_success'));
 				} catch {
-					this.showSuccessMessage('Password updated successfully!');
+					this.showSuccessMessage(t('password_update_success'));
 				}
 
 				currentPasswordInput.value = '';
 				newPasswordInput.value = '';
 				confirmPasswordInput.value = '';
 			} else if (response.status === 401) {
-				Notification.warning('Please login to update your password');
+				Notification.warning(t('please_login_verify_2fa'));
 			} else if (response.status === 403) {
-				Notification.error('Current password is incorrect');
+				Notification.error(t('current_password_incorrect'));
 			} else {
 				try {
 					const error = await response.json();
-					Notification.error(`Error: ${error.message || 'Failed to update password'}`);
+					Notification.error(`Error: ${error.message || t('password_update_failed')}`);
 				} catch {
-					Notification.error('Failed to update password. Please try again.');
+					Notification.error(t('password_update_failed'));
 				}
 			}
 		} catch (error) {
 			console.error('Network error updating password:', error);
-			Notification.error('Network error. Please check your connection and try again.');
+			Notification.error(t('network_error_generic'));
 		} finally {
 			changePasswordBtn.disabled = false;
 			changePasswordBtn.textContent = originalText;
@@ -642,20 +643,20 @@ class ProfilePage implements Page {
 		const newUsername = newUsernameInput?.value.trim();
 
 		if (!newUsername) {
-			Notification.warning('Please enter a new username.');
+			Notification.warning(t('username_empty_error'));
 			return;
 		}
 
 		const currentUsernameInput = document.getElementById('currentUsername') as HTMLInputElement;
 		if (newUsername === currentUsernameInput.value) {
-			Notification.warning('New username must be different from the current one.');
+			Notification.warning(t('username_same_error'));
 			return;
 		}
 
 		const changeUsernameBtn = document.getElementById('changeUsernameBtn') as HTMLButtonElement;
 		const originalText = changeUsernameBtn.textContent;
 		changeUsernameBtn.disabled = true;
-		changeUsernameBtn.textContent = 'Updating...';
+		changeUsernameBtn.textContent = t('updating');
 
 		try {
 			const response = await fetch(`${FETCH_ADDRESS}/user/username`, {
@@ -671,7 +672,7 @@ class ProfilePage implements Page {
 
 			if (response.ok) {
 				const result = await response.json();
-				this.showSuccessMessage(result.message || 'Username updated successfully!');
+				this.showSuccessMessage(result.message || t('username_update_success'));
 
 				if (currentUsernameInput) {
 					currentUsernameInput.value = newUsername;
@@ -679,11 +680,11 @@ class ProfilePage implements Page {
 				newUsernameInput.value = '';
 			} else {
 				const error = await response.json();
-				Notification.error(`Error: ${error.message || 'Failed to update username.'}`);
+				Notification.error(`Error: ${error.message || t('username_update_failed')}`);
 			}
 		} catch (error) {
 			console.error('Network error updating username:', error);
-			Notification.error('Network error. Please check your connection and try again.');
+			Notification.error(t('network_error_generic'));
 		} finally {
 			changeUsernameBtn.disabled = false;
 			changeUsernameBtn.textContent = originalText;
@@ -727,14 +728,14 @@ class ProfilePage implements Page {
 				} else {
 					try {
 						const error = await response.json();
-						Notification.error(`Error: ${error.message || 'Failed to disable 2FA'}`);
+						Notification.error(`Error: ${error.message || t('two_fa_disable_failed')}`);
 					} catch {
-						Notification.error('Failed to disable 2FA. Please try again.');
+						Notification.error(t('two_fa_disable_failed'));
 					}
 				}
 			} catch (error) {
 				console.error('Network error disabling 2FA:', error);
-				Notification.error('Network error. Please check your connection and try again.');
+				Notification.error(t('network_error_generic'));
 			}
 		} else {
 			if (twoFASetup && twoFASetup.style.display !== 'none') {
@@ -765,18 +766,18 @@ class ProfilePage implements Page {
 						Notification.error(`Error: ${result.message || 'Failed to start 2FA setup'}`);
 					}
 				} else if (response.status === 401) {
-					Notification.warning(t('please_login_setup_2fa'));
+					Notification.warning(t('auth_required'));
 				} else {
 					try {
 						const error = await response.json();
-						Notification.error(`Error: ${error.message || 'Failed to setup 2FA'}`);
+						Notification.error(`Error: ${error.message || t('two_fa_setup_failed')}`);
 					} catch {
-						Notification.error('Failed to setup 2FA. Please try again.');
+						Notification.error(t('two_fa_setup_failed'));
 					}
 				}
 			} catch (error) {
 				console.error('Network error setting up 2FA:', error);
-				Notification.error('Network error. Please check your connection and try again.');
+				Notification.error(t('network_error_generic'));
 			}
 		}
 
@@ -848,20 +849,20 @@ class ProfilePage implements Page {
 
 				verificationCodeInput.value = '';
 			} else if (response.status === 401) {
-				Notification.warning(t('please_login_verify_2fa'));
+				Notification.warning(t('auth_required'));
 			} else if (response.status === 400) {
 				Notification.error(t('invalid_verification_code'));
 			} else {
 				try {
 					const error = await response.json();
-					Notification.error(`Error: ${error.message || 'Invalid verification code'}`);
+					Notification.error(`Error: ${error.message || t('invalid_verification_code')}`);
 				} catch {
 					Notification.error(t('invalid_verification_code'));
 				}
 			}
 		} catch (error) {
 			console.error('Network error verifying 2FA:', error);
-			Notification.error('Network error. Please check your connection and try again.');
+			Notification.error(t('network_error_generic'));
 		} finally {
 			verify2FABtn.disabled = false;
 			verify2FABtn.textContent = originalText;
@@ -951,7 +952,7 @@ class ProfilePage implements Page {
 				if (matches.length === 0) {
 					container.innerHTML = `
 						<div style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.5);">
-							<p>Henüz maç geçmişi yok</p>
+							<p data-i18n="match_history_empty">${t('match_history_empty')}</p>
 						</div>
 					`;
 					return;
@@ -993,7 +994,7 @@ class ProfilePage implements Page {
 								</div>
 								<div style="text-align: right;">
 									<div style="font-weight: 700; font-size: 1.25rem; color: ${resultColor};">
-										Kazanan: ${winnerName}
+										${t('winner_label')} ${winnerName}
 									</div>
 									<div style="font-size: 1rem; color: rgba(255, 255, 255, 0.8);">
 										${match.p1_score} - ${match.p2_score}
@@ -1006,7 +1007,7 @@ class ProfilePage implements Page {
 			} else {
 				container.innerHTML = `
 					<div style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.5);">
-						<p>Maç geçmişi yüklenemedi</p>
+						<p data-i18n="match_history_load_error">${t('match_history_load_error')}</p>
 					</div>
 				`;
 			}
@@ -1014,7 +1015,7 @@ class ProfilePage implements Page {
 			console.error('Error loading match history:', error);
 			container.innerHTML = `
 				<div style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.5);">
-					<p>Maç geçmişi yüklenirken hata oluştu</p>
+					<p data-i18n="match_history_load_error">${t('match_history_load_error')}</p>
 				</div>
 			`;
 		}
@@ -1040,7 +1041,7 @@ class ProfilePage implements Page {
 				if (tournaments.length === 0) {
 					container.innerHTML = `
 						<div style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.5);">
-							<p>Henüz turnuva geçmişi yok</p>
+							<p data-i18n="tournament_history_empty">${t('tournament_history_empty')}</p>
 						</div>
 					`;
 					return;
@@ -1069,7 +1070,7 @@ class ProfilePage implements Page {
 									</div>
 									${tournament.winner_username ? `
 										<div style="font-size: 0.875rem; color: var(--neon-green); margin-top: 0.25rem;">
-											🏆 Şampiyon: ${tournament.winner_username}
+											🏆 ${t('champion_label')} ${tournament.winner_username}
 										</div>
 									` : ''}
 								</div>
@@ -1085,7 +1086,7 @@ class ProfilePage implements Page {
 			} else {
 				container.innerHTML = `
 					<div style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.5);">
-						<p>Turnuva geçmişi yüklenemedi</p>
+						<p data-i18n="tournament_history_load_error">${t('tournament_history_load_error')}</p>
 					</div>
 				`;
 			}
@@ -1093,7 +1094,7 @@ class ProfilePage implements Page {
 			console.error('Error loading tournament history:', error);
 			container.innerHTML = `
 				<div style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.5);">
-					<p>Turnuva geçmişi yüklenirken hata oluştu</p>
+					<p data-i18n="tournament_history_load_error">${t('tournament_history_load_error')}</p>
 				</div>
 			`;
 		}

@@ -1,4 +1,5 @@
 import { GlobalState, Page, FETCH_ADDRESS} from "../main"
+import { t } from "../i18n"
 import { USER_PROFILE_PAGE } from "./UserProfilePage";
 import { BLOCKED_USERS_PAGE } from "./BlockedUsersPage"
 import { HOME_PAGE } from "./HomePage";
@@ -41,7 +42,7 @@ class FriendsPage implements Page {
 							<div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple)); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.25rem; flex-shrink: 0;">
 								${(req.username || "?").charAt(0).toUpperCase()}
 							</div>
-							<span style="font-weight: 600; font-size: 1rem; color: white;">${req.username || "Your Friend"}</span>
+							<span style="font-weight: 600; font-size: 1rem; color: white;">${req.username || ''}</span>
 						</div>
 						
 						<div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
@@ -49,25 +50,28 @@ class FriendsPage implements Page {
 								data-id="${req.friend_id}"
 								id="viewProfileBtn"
 								class="btn-secondary"
+								data-i18n="view_profile"
 								style="padding: 0.625rem 1.25rem; font-size: 0.875rem;"
 							>
-								View Profile
+								${t('view_profile')}
 							</button>
 							<button
 								data-id="${req.friend_id}"
 								id="removeFriendBtn"
 								class="btn-danger"
+								data-i18n="remove_friend"
 								style="padding: 0.625rem 1.25rem; font-size: 0.875rem;"
 							>
-								Remove Friend
+								${t('remove_friend')}
 							</button>
 							<button
 								data-id="${req.friend_id}"
 								id="blockUserBtn"
 								class="btn-danger"
+								data-i18n="block_user"
 								style="padding: 0.625rem 1.25rem; font-size: 0.875rem;"
 							>
-								Block
+								${t('block_user')}
 							</button>
 						</div>
 					</div>
@@ -75,7 +79,7 @@ class FriendsPage implements Page {
 			`).join("")
 			: `<div class="glass-card" style="text-align: center; padding: 3rem;">
 				<div style="font-size: 4rem; margin-bottom: 1rem;">😔</div>
-				<p style="color: rgba(255, 255, 255, 0.7); font-size: 1.125rem;">No friends yet</p>
+				<p style="color: rgba(255, 255, 255, 0.7); font-size: 1.125rem;" data-i18n="no_friends_yet">${t('no_friends_yet')}</p>
 			</div>`;
 
 		const pendingHtml = pendingRequests.length > 0
@@ -113,7 +117,7 @@ class FriendsPage implements Page {
 			`).join("")
 			: `<div class="glass-card" style="text-align: center; padding: 3rem;">
 				<div style="font-size: 4rem; margin-bottom: 1rem;">📭</div>
-				<p style="color: rgba(255, 255, 255, 0.7); font-size: 1.125rem;">No pending requests</p>
+				<p style="color: rgba(255, 255, 255, 0.7); font-size: 1.125rem;" data-i18n="no_pending_requests">${t('no_pending_requests')}</p>
 			</div>`;
 			
 		const app = document.getElementById("app");
@@ -199,21 +203,21 @@ class FriendsPage implements Page {
 				<div class="friends-header">
 					<div class="friends-header-text">
 						<h1><span data-i18n="friends">Friends</span></h1>
-						<p data-i18n="friends_manage_help">Manage your friends and requests</p>
+						<p data-i18n="friends_manage_help">${t('friends_manage_help')}</p>
 					</div>
 					<div class="friends-header-actions">
 						<button id="backToHomeBtn" class="btn-primary" data-i18n="back_to_home">
-							← Back to Home
+							← ${t('back_to_home')}
 						</button>
 					</div>
 				</div>
 
 				<div class="glass-card send-request-section">
-					<h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; color: white;" data-i18n="send_friend_request">✉️ Send Friend Request</h2>
+					<h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; color: white;" data-i18n="send_friend_request">✉️ ${t('send_friend_request')}</h2>
 					<div class="send-request-form">
 						<input
 							type="text"
-							placeholder="Enter username..." data-i18n-placeholder="enter_username"
+							placeholder="${t('enter_username')}" data-i18n-placeholder="enter_username"
 							id="inp"
 							style="flex: 1; min-width: 200px;"
 						/>
@@ -222,18 +226,18 @@ class FriendsPage implements Page {
 							class="btn-success"
 							style="padding: 0.875rem 1.5rem; white-space: nowrap;"
 						>
-							<span data-i18n="send">Send</span>
+							<span data-i18n="send">${t('send')}</span>
 						</button>
 					</div>
 				</div>
 
 				<div class="friends-section">
-					<h2 class="section-title"><span data-i18n="pending_requests">Pending Requests</span></h2>
+					<h2 class="section-title"><span data-i18n="pending_requests">${t('pending_requests')}</span></h2>
 					${pendingHtml}
 				</div>
 
 				<div class="friends-section">
-					<h2 class="section-title"><span data-i18n="your_friends">Your Friends</span></h2>
+					<h2 class="section-title"><span data-i18n="your_friends">${t('your_friends')}</span></h2>
 					${friendsHTML}
 				</div>
 
@@ -243,7 +247,7 @@ class FriendsPage implements Page {
 						class="btn-danger"
 						data-i18n="see_blocked_users"
 					>
-						🚫 See Blocked Users
+						🚫 ${t('see_blocked_users')}
 					</button>
 				</div>
 			</div>`
@@ -299,14 +303,14 @@ class FriendsPage implements Page {
 					});
 					
 					if (response.ok) {
-						Notification.success("User blocked successfully");
+						Notification.success(t('user_blocked_success'));
 						window.location.reload();
 					} else {
-						Notification.error("Failed to block user");
+						Notification.error(t('user_block_failed'));
 					}
 				} catch (error) {
 					console.error("Error blocking user:", error);
-					Notification.error("Error blocking user");
+					Notification.error(t('error_blocking_user'));
 				}
 			});
 		});
@@ -317,7 +321,7 @@ class FriendsPage implements Page {
 				const friendId = button.dataset.id;
 				if (!friendId) return;
 				
-				if (!confirm("Are you sure you want to remove this friend?")) return;
+				if (!confirm(t('confirm_remove_friend'))) return;
 				
 				try {
 					const response = await fetch(`${FETCH_ADDRESS}/user/friends/request`, {
@@ -331,14 +335,14 @@ class FriendsPage implements Page {
 					});
 					
 					if (response.ok) {
-						Notification.success("Friend removed successfully");
+						Notification.success(t('friend_removed_success'));
 						window.location.reload();
 					} else {
-						Notification.error("Failed to remove friend");
+						Notification.error(t('failed_to_remove_friend'));
 					}
 				} catch (error) {
 					console.error("Error removing friend:", error);
-					Notification.error("Error removing friend");
+					Notification.error(t('failed_to_remove_friend'));
 				}
 			});
 		});
@@ -361,14 +365,14 @@ class FriendsPage implements Page {
 					});
 					
 					if (response.ok) {
-						Notification.success("Friend request accepted");
+						Notification.success(t('accept_request_success'));
 						window.location.reload();
 					} else {
-						Notification.error("Failed to accept friend request");
+						Notification.error(t('friend_request_failed'));
 					}
 				} catch (error) {
 					console.error("Error accepting request:", error);
-					Notification.error("Error accepting friend request");
+					Notification.error(t('friend_request_failed'));
 				}
 			});
 		});
@@ -391,14 +395,14 @@ class FriendsPage implements Page {
 					});
 					
 					if (response.ok) {
-						Notification.success("Friend request rejected");
+						Notification.success(t('reject_request_success'));
 						window.location.reload();
 					} else {
-						Notification.error("Failed to reject friend request");
+						Notification.error(t('friend_request_failed'));
 					}
 				} catch (error) {
 					console.error("Error rejecting request:", error);
-					Notification.error("Error rejecting friend request");
+					Notification.error(t('friend_request_failed'));
 				}
 			});
 		});
@@ -409,7 +413,7 @@ class FriendsPage implements Page {
 				const name = nameInput?.value.trim();
 				
 				if (!name) {
-					Notification.warning("Please enter a username");
+					Notification.warning(t('please_enter_username'));
 					return;
 				}
 				
@@ -429,15 +433,15 @@ class FriendsPage implements Page {
 					const data = await response.json();
 					
 					if (!response.ok) {
-						Notification.error(data.message || "Failed to send friend request");
+						Notification.error(data.message || t('friend_request_failed'));
 					} else {
 						nameInput.value = "";
-						Notification.success(data.message || "Friend request sent successfully");
+						Notification.success(data.message || t('friend_request_sent_success'));
 						window.location.reload();
 					}
 				} catch (error) {
 					console.error("Error sending friend request:", error);
-					Notification.error("Error sending friend request");
+					Notification.error(t('friend_request_failed'));
 				}
 			});
 		}

@@ -57,6 +57,11 @@ class SingleGamePage implements Page {
     async onPreLoad(): Promise<void> { }
 
     async onLoad(): Promise<void> {
+    // Sayfa içi kaydırmayı kapat
+    const prevOverflow = document.body.style.overflow;
+    (document.body as any)._prevOverflow = prevOverflow;
+    document.body.style.overflow = 'hidden';
+
         // HTML elementlerini bul
         const canvas = document.getElementById("game") as HTMLCanvasElement;
         const player1NameEl = document.getElementById("player1-name");
@@ -82,6 +87,14 @@ class SingleGamePage implements Page {
         // Sayfadan ayrılırken oyun döngüsünü durdur
         if (this.game) {
             this.game.stopGame();
+        }
+        // Kaydırmayı eski haline getir
+        const prevOverflow = (document.body as any)._prevOverflow as string | undefined;
+        if (prevOverflow !== undefined) {
+            document.body.style.overflow = prevOverflow;
+            delete (document.body as any)._prevOverflow;
+        } else {
+            document.body.style.overflow = '';
         }
         
         // ClassicGamePage'de olduğu gibi socket'i kapatmaya gerek yok

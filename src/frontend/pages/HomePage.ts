@@ -115,7 +115,7 @@ class HomePage implements Page {
 							<button onclick="GlobalState.setPage(SINGLE_GAME_PAGE)" class="btn-primary" data-i18n="single_player" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
 								Single Player
 							</button>
-							<button onclick="GlobalState.setPage(MATCHMAKING_PAGE('tournament'))" class="btn-secondary" style="padding: 1.5rem 2rem; font-size: 1.125rem;">
+							<button onclick="GlobalState.setPage(MATCHMAKING_PAGE('tournament'))" class="btn-secondary" style="padding: 1.5rem 2rem; font-size: 1.125rem;" data-i18n="tournament_guest">
 								Tournament (Guest)
 							</button>
 						` : ''}
@@ -130,8 +130,8 @@ class HomePage implements Page {
                                             <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
                                             <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                                         </svg>
-                                        <div class="mode-title" data-i18n="one_v_one_local">1V1 Local</div>
-                                        <div class="mode-sub" data-i18n="same_machine">Play on the same machine</div>
+											<div class="mode-title" data-i18n="one_v_one_local">1V1 Local</div>
+											<div class="mode-sub" data-i18n="same_machine">Play on the same machine</div>
                                     </button>
 
 									<button id="1v1Online-btn" class="mode-btn mode-1v1">

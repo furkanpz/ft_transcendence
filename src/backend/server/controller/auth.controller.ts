@@ -74,9 +74,9 @@ export async function googleAuthController(request: FastifyRequest, response: Fa
 		const { token } = await server.googleOAuth2.getAccessTokenFromAuthorizationCodeFlow(request);
         const access_token = token.access_token;
 
-        if (!access_token) {
-        return response.code(500).send({success: false,  message: 'Access token missing' });
-        }
+	if (!access_token) {
+	return response.redirect(`${MAIN_URL.replace(/\/$/, '')}/login?error=google_access_token_missing`);
+	}
 	
 		const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
 			headers: {
@@ -84,24 +84,55 @@ export async function googleAuthController(request: FastifyRequest, response: Fa
 			}
 		});
 		if (!res.ok) {
-			const errJson = await res.json().catch(() => ({}));
-			return response.code(res.status).send({success: false,  message: 'Failed to fetch user info from Google', ...errJson });
+			return response.redirect(`${MAIN_URL.replace(/\/$/, '')}/login?error=google_userinfo_failed`);
 		}
 		const googleUser = await res.json();
 		if (!googleUser.email)
-			return response.code(400).send({success: false, message: "Google account does not have a public email address."});
-        let db_user = await userServices.userEmailFindInDb(googleUser.email) as db_User;
-        if (!db_user) {
+			return response.redirect(`${MAIN_URL.replace(/\/$/, '')}/login?error=google_no_public_email`);
+	let db_user = await userServices.userEmailFindInDb(googleUser.email) as db_User;
+		if (!db_user) {
             const randomPassword = crypto.randomBytes(16).toString('hex'); 
-            const newUser: User = {
-                email: googleUser.email,
-                username: googleUser.name.replace(/\s+/g, '_').toLowerCase(),  // aynı adda login olunursa diğer hesaba giriş yapılabilir!!!
-                password: randomPassword,
-            };
+			// Google display name'den güvenli username üret
+			const rawName: string = (googleUser.name || '').toString();
+			let safeUsername = rawName
+				.normalize('NFKD')
+				.replace(/[^\w]+/g, '_') // harf/rakam/altçizgi dışını altçizgi yap
+				.replace(/_+/g, '_')
+				.replace(/^_+|_+$/g, '')
+				.toLowerCase();
+			if (!safeUsername) {
+				const localPart = (googleUser.email || '').split('@')[0] || 'user';
+				safeUsername = localPart.replace(/[^\w]+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '').toLowerCase();
+			}
+			// uzunluk sınırlamaları: 3-36
+			if (safeUsername.length < 3) {
+				safeUsername = safeUsername.padEnd(3, '0');
+			}
+			if (safeUsername.length > 36) {
+				safeUsername = safeUsername.substring(0, 36);
+			}
+			// Benzersiz hale getir (varsa _1, _2 ... ekle)
+			let finalUsername = safeUsername;
+			let attempt = 0;
+			while (attempt < 25 && await userServices.userFindInDb(finalUsername)) {
+				attempt++;
+				const suffix = '_' + attempt;
+				const base = safeUsername.substring(0, Math.max(0, 36 - suffix.length));
+				finalUsername = base + suffix;
+			}
+			if (await userServices.userFindInDb(finalUsername)) {
+				// Fallback tamamen rastgele
+				finalUsername = 'user_' + crypto.randomBytes(4).toString('hex');
+			}
+			const newUser: User = {
+				email: googleUser.email,
+				username: finalUsername,
+				password: randomPassword,
+			};
     
             const register_result = await authServices.createUser(newUser);
-            if (!register_result.success)
-                return response.code(500).send({success: false,  message: 'Failed to register Google user' });
+			if (!register_result.success)
+				return response.redirect(`${MAIN_URL.replace(/\/$/, '')}/login?error=google_register_failed`);
     
             db_user = await userServices.userEmailFindInDb(googleUser.email) as db_User;
         }
@@ -110,17 +141,21 @@ export async function googleAuthController(request: FastifyRequest, response: Fa
 			const OTP = generateOTP();
 			await setTemp2FA(db_user.id, OTP.otp, OTP.secret);
 			await send2FA(db_user.email, OTP.otp);
-			return (sendSuccess(response, "2FAREQUIRED", {username: db_user.username}));
+			// Normal login akışına benzer şekilde frontend'e yönlendir ve 2FA ekranını açtır
+			const redirectUrl = `${MAIN_URL.replace(/\/$/, '')}/login?twofa=1&username=${encodeURIComponent(db_user.username)}`;
+			return response.redirect(redirectUrl);
 		}
        
         const jwt_token = await createJWT(db_user);
 		if (!jwt_token)
-			return (sendError(response, 500, "Failed to generate token"));
+			return response.redirect(`${MAIN_URL.replace(/\/$/, '')}/login?error=token_generate_failed`);
     
-        response.setCookie('access_token', jwt_token, {
-            httpOnly: true,
-            path: '/',
-        });
+		response.setCookie('access_token', jwt_token, {
+			httpOnly: true,
+			path: '/',
+			sameSite: 'strict',
+			secure: true
+		});
     
         userServices.setIsOnline(true, db_user.id);
         return response.redirect(MAIN_URL);

@@ -20,6 +20,42 @@ class LoginPage implements Page {
 	}
 	public async onLoad(): Promise<void> {
 		console.log("Login page loaded");
+		// Google OAuth sonrası twofa yönlendirmesini yakala ve normal login akışı gibi 2FA UI'ını aç
+		try {
+			const params = new URLSearchParams(window.location.search);
+			// Hata bildirimleri
+			const error = params.get("error");
+			if (error) {
+				const errorMap: Record<string, string> = {
+					google_access_token_missing: "Google erişim tokenı alınamadı.",
+					google_userinfo_failed: "Google kullanıcı bilgileri alınamadı.",
+					google_no_public_email: "Google hesabında herkese açık e-posta yok.",
+					google_register_failed: "Google kullanıcısı kaydedilemedi.",
+					token_generate_failed: "Oturum tokenı oluşturulamadı."
+				};
+				const msg = errorMap[error] || "Google kimlik doğrulama hatası.";
+				Notification.error(msg);
+			}
+			if (params.get("twofa") === "1") {
+				const username = params.get("username") || "";
+				LoginPage.currentUsername = username;
+				const loginForm = document.getElementById("loginForm");
+				const twoFactorArea = document.getElementById("twoFactorArea");
+				if (loginForm && twoFactorArea) {
+					loginForm.style.display = "none";
+					twoFactorArea.style.display = "flex";
+					(twoFactorArea as HTMLElement).style.flexDirection = "column";
+					(twoFactorArea as HTMLElement).style.alignItems = "center";
+					const otpInput = document.getElementById("otpCode") as HTMLInputElement | null;
+					if (otpInput) setTimeout(() => otpInput.focus(), 100);
+				}
+				// URL'deki query parametrelerini temizle
+				const cleanPath = "/login";
+				window.history.replaceState({ pageKey: cleanPath }, document.title, cleanPath);
+			}
+		} catch (e) {
+			console.error("2FA redirect handling error:", e);
+		}
 	}
 	public async render(): Promise<void> {
 		const app = document.getElementById("app");
@@ -135,6 +171,14 @@ class LoginPage implements Page {
 		event.preventDefault();
 		const otpInput = document.getElementById("otpCode") as HTMLInputElement;
 		const otpCode = otpInput.value;
+
+		// Username pattern doğrulaması
+		const username = LoginPage.currentUsername || '';
+		const usernameValid = /^[a-zA-Z0-9_]{3,36}$/.test(username);
+		if (!usernameValid) {
+			Notification.error("Username formatı geçersiz. Lütfen tekrar giriş yapın.");
+			return;
+		}
 
 		if (!otpCode || otpCode.length !== 6) {
 			Notification.warning("Please enter the 6-digit code!");
