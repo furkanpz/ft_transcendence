@@ -294,7 +294,6 @@ class ChatPage implements Page {
     }
 
     async onPreLoad(): Promise<void> {
-        console.log("Preparing to load Chat page");
     }
 
     async onLoad(): Promise<void> {
@@ -323,7 +322,6 @@ class ChatPage implements Page {
         ChatPage.connectWebSocket();
         
         setTimeout(() => {
-            console.log('🕐 Delayed updateChatsList call');
             ChatPage.updateChatsList();
         }, 500);
         
@@ -407,10 +405,8 @@ class ChatPage implements Page {
 
     static invalidateAvatarCache(username?: string): void {
         if (username) {
-            console.log('🗑️ Invalidating avatar cache for:', username);
             const oldUrl = ChatPage.userAvatars[username];
             delete ChatPage.userAvatars[username];
-            console.log(`🗑️ Deleted cache: ${oldUrl}`);
             
             const chatsList = document.getElementById("chatsList");
             if (chatsList) {
@@ -425,7 +421,7 @@ class ChatPage implements Page {
                             const newAvatarHtml = ChatPage.getAvatarHtml(username, isOnline, 48, true);
                             avatarElement.outerHTML = newAvatarHtml;
                             updated = true;
-                            console.log(`✅ Updated DOM avatar for ${username}`);
+
                         }
                     }
                 });
@@ -439,7 +435,7 @@ class ChatPage implements Page {
                             const currentSrc = (img as HTMLImageElement).src;
                             const newSrc = currentSrc.split('?')[0] + `?t=${Date.now()}`;
                             (img as HTMLImageElement).src = newSrc;
-                            console.log(`🔄 Forced image reload for ${username}`);
+
                         }
                     }
                 });
@@ -453,7 +449,7 @@ class ChatPage implements Page {
                         const isOnline = ChatPage.onlineUsers.includes(username);
                         const newAvatarHtml = ChatPage.getAvatarHtml(username, isOnline, 48, true);
                         headerAvatar.outerHTML = newAvatarHtml;
-                        console.log(`✅ Updated header avatar for ${username}`);
+
                     }
                     const headerImages = chatHeader.querySelectorAll('.user-avatar img');
                     headerImages.forEach((img: Element) => {
@@ -466,7 +462,7 @@ class ChatPage implements Page {
             
             ChatPage.updateChatsList();
         } else {
-            console.log('🗑️ Clearing all avatar cache');
+    
             ChatPage.userAvatars = {};
             ChatPage.updateChatsList();
             if (ChatPage.activeChatUser) {
@@ -508,7 +504,7 @@ class ChatPage implements Page {
 
             socket.onopen = () => {
                 GlobalState.setSocket(socket);
-                console.log('✅ Chat WebSocket connected');
+
 
                 socket.send(JSON.stringify({ type: 'get_online_users' }));
                 socket.send(JSON.stringify({ type: 'get_offline_messages' }));
@@ -524,12 +520,12 @@ class ChatPage implements Page {
 
             socket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
-                console.log('📨 WebSocket message received:', data.type, data);
+
 
                 switch (data.type) {
                     case 'message':
                         const msgData = data.data;
-                        console.log('💬 Message data:', msgData);
+
                         const senderUsername = msgData.username;
 
                         if (senderUsername !== ChatPage.getCurrentUsername()) {
@@ -551,7 +547,7 @@ class ChatPage implements Page {
                                 
                                 const socket = GlobalState.getSocket();
                                 if (socket && socket.readyState === WebSocket.OPEN) {
-                                    console.log(`📥 Auto-joining room ${msgData.room_id} for conversation with ${senderUsername}`);
+
                                     socket.send(JSON.stringify({
                                         type: 'join_room',
                                         data: { room_id: msgData.room_id }
@@ -589,7 +585,7 @@ class ChatPage implements Page {
                         for (const [user, roomId] of Object.entries(ChatPage.userRoomIds)) {
                             if (roomId === historyData.room_id) {
                                 ChatPage.userChats[user] = roomMessages.map((msg: any) => ({
-                                    sender: msg.username === ChatPage.getCurrentUsername() ? 'Siz' : msg.username,
+                                    sender: msg.username === ChatPage.getCurrentUsername() ? i18n.t('you') : msg.username,
                                     message: msg.message,
                                     type: msg.username === ChatPage.getCurrentUsername() ? 'sent' : 'received',
                                     timestamp: new Date(msg.timestamp),
@@ -624,12 +620,11 @@ class ChatPage implements Page {
 
                     case 'online_users':
                         const usersList = data.data?.users || data.users || [];
-                        console.log('📊 Received online users:', usersList);
-                        console.log('📊 Current username:', ChatPage.getCurrentUsername());
+
                         
                         if (Array.isArray(usersList)) {
                             ChatPage.onlineUsers = usersList;
-                            console.log('✅ Updated onlineUsers:', ChatPage.onlineUsers);
+
                             
                             ChatPage.onlineUsers.forEach(user => {
                                 if (!ChatPage.allUsers.includes(user)) {
@@ -655,11 +650,11 @@ class ChatPage implements Page {
                         break;
 
                     case 'user_joined':
-                        console.log('👤 User joined:', data.username, 'Full data:', data);
+
                         const joinedUsername = data.username || data.data?.username;
                         if (joinedUsername && !ChatPage.onlineUsers.includes(joinedUsername)) {
                             ChatPage.onlineUsers.push(joinedUsername);
-                            console.log('✅ Added to onlineUsers. Current list:', ChatPage.onlineUsers);
+
                             
                             if (!ChatPage.allUsers.includes(joinedUsername)) {
                                 ChatPage.allUsers.push(joinedUsername);
@@ -679,12 +674,12 @@ class ChatPage implements Page {
                         break;
 
                     case 'user_left':
-                        console.log('👋 User left:', data.username, 'Full data:', data);
+
                         const leftUsername = data.username || data.data?.username;
                         if (leftUsername) {
                             const beforeLength = ChatPage.onlineUsers.length;
                             ChatPage.onlineUsers = ChatPage.onlineUsers.filter(user => user !== leftUsername);
-                            console.log(`✅ Removed ${leftUsername} from onlineUsers. Before: ${beforeLength}, After: ${ChatPage.onlineUsers.length}`);
+
                             ChatPage.updateChatsList();
                             i18n.translateDOM();
                             if (ChatPage.activeChatUser === leftUsername) {
@@ -739,7 +734,7 @@ class ChatPage implements Page {
 
     static async loadExistingChats() {
         try {
-            console.log('🔄 Loading existing chats...');
+
             const response = await fetch(`${FETCH_ADDRESS}/chat/rooms`, {
                 credentials: 'include'
             });
@@ -747,7 +742,7 @@ class ChatPage implements Page {
             if (response.ok) {
                 const data = await response.json();
                 const rooms = data.rooms || data || [];
-                console.log(`📦 Fetched ${rooms.length} rooms from backend`);
+
 
                 for (const room of rooms) {
                     if (room.is_private) {
@@ -759,7 +754,6 @@ class ChatPage implements Page {
                         }
                         if (!username) continue;
 
-                        console.log(`📂 Room: ${room.name} → Other user: ${username}`);
 
                         ChatPage.userRoomIds[username] = room.id;
 
@@ -771,17 +765,15 @@ class ChatPage implements Page {
                             if (historyResponse.ok) {
                                 const historyData = await historyResponse.json();
                                 const messages = historyData.messages || historyData || [];
-                                console.log(`📨 Room ${room.name} has ${messages.length} messages`);
 
                                 ChatPage.userChats[username] = messages.map((msg: any) => ({
-                                    sender: msg.username === ChatPage.getCurrentUsername() ? 'Siz' : msg.username,
+                                    sender: msg.username === ChatPage.getCurrentUsername() ? i18n.t('you') : msg.username,
                                     message: msg.message,
                                     type: msg.username === ChatPage.getCurrentUsername() ? 'sent' : 'received',
                                     timestamp: new Date(msg.timestamp),
                                     messageType: msg.message_type || 'text'
                                 }));
                                 
-                                console.log(`✅ Stored ${ChatPage.userChats[username].length} messages for user: ${username}`);
                             }
                         } catch (historyError) {
                             console.error(`❌ Error loading history for room ${room.id}:`, historyError);
@@ -793,8 +785,6 @@ class ChatPage implements Page {
                     }
                 }
 
-                console.log('📊 Final userChats:', Object.keys(ChatPage.userChats));
-                console.log('📊 UserChats object:', ChatPage.userChats);
                 ChatPage.updateChatsList();
             }
         } catch (error) {
@@ -837,7 +827,7 @@ class ChatPage implements Page {
 
             ChatPage.connectWebSocket();
 
-            ChatPage.addMessageToActiveChat('Siz', message, 'sent');
+            ChatPage.addMessageToActiveChat(i18n.t('you'), message, 'sent');
             messageInput.value = '';
             return;
         }
@@ -857,7 +847,7 @@ class ChatPage implements Page {
                 }
             }));
 
-            ChatPage.addMessageToActiveChat('Siz', message, 'sent');
+            ChatPage.addMessageToActiveChat(i18n.t('you'), message, 'sent');
             messageInput.value = '';
         } catch (error) {
             ChatPage.addSystemMessage('Mesaj gönderilemedi. Lütfen tekrar deneyin.');
@@ -993,12 +983,9 @@ class ChatPage implements Page {
     static async createOrJoinPrivateRoom(username: string): Promise<string | null> {
         try {
             const currentUser = ChatPage.getCurrentUsername();
-            console.log(`🔍 Current user: "${currentUser}", Target user: "${username}"`);
             const users = [currentUser, username].sort();
-            console.log(`🔍 Sorted users:`, users);
             const roomName = `private_${users[0]}_${users[1]}`;
             
-            console.log(`🔍 Looking for room: ${roomName}`);
             const roomsResponse = await fetch(`${FETCH_ADDRESS}/chat/rooms`, {
                 credentials: 'include'
             });
@@ -1006,16 +993,13 @@ class ChatPage implements Page {
             if (roomsResponse.ok) {
                 const roomsData = await roomsResponse.json();
                 const rooms = roomsData.rooms || roomsData.data?.rooms || roomsData || [];
-                console.log(`📋 Found ${rooms.length} rooms:`, rooms);
 
                 for (const room of rooms) {
                     if (room.is_private && (room.peer_username === username)) {
                         ChatPage.userRoomIds[username] = room.id;
-                        console.log(`✅ Found existing room: ${room.id}`);
 
                         const socket = GlobalState.getSocket();
                         if (socket && socket.readyState === WebSocket.OPEN) {
-                            console.log(`📤 Sending join_room for: ${room.id}`);
                             socket.send(JSON.stringify({
                                 type: 'join_room',
                                 data: { room_id: room.id }
@@ -1070,7 +1054,7 @@ class ChatPage implements Page {
 
         if (messageInput && sendButton && messageForm) {
             messageInput.disabled = true;
-            messageInput.placeholder = "Bu kullanıcıyı engelledin";
+            messageInput.placeholder = i18n.t('user_blocked');
             sendButton.disabled = true;
             messageForm.style.opacity = "0.5";
         }
@@ -1083,7 +1067,7 @@ class ChatPage implements Page {
 
         if (messageInput && sendButton && messageForm) {
             messageInput.disabled = false;
-            messageInput.placeholder = "Mesajını yaz...";
+            messageInput.placeholder = i18n.t('type_message');
             sendButton.disabled = false;
             messageForm.style.opacity = "1";
         }
@@ -1105,12 +1089,12 @@ class ChatPage implements Page {
 
             chatHeader.innerHTML = `
             <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 1rem; cursor: pointer;" onclick="(async () => { await ChatPage.showUserProfile('${ChatPage.activeChatUser}'); })()">
                     <div style="position: relative;">
                         ${avatarHtml}
                     </div>
                     <div>
-                        <h3 style="font-weight: 600; font-size: 1.125rem; color: white; margin: 0;">${ChatPage.escapeHtml(ChatPage.activeChatUser)}</h3>
+                        <h3 style="font-weight: 600; font-size: 1.125rem; color: white; margin: 0; transition: color 0.3s;" onmouseover="this.style.color='var(--neon-cyan)'" onmouseout="this.style.color='white'">${ChatPage.escapeHtml(ChatPage.activeChatUser)}</h3>
                         <p style="font-size: 0.875rem; color: ${statusColor}; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
                             <span style="display: inline-block; width: 8px; height: 8px; background: ${statusColor}; border-radius: 50%; ${isOnline ? 'box-shadow: 0 0 8px var(--neon-green);' : ''}"></span>
                             ${statusText}
@@ -1122,7 +1106,7 @@ class ChatPage implements Page {
                         style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan)); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);"
                         onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0, 240, 255, 0.4)';"
                         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 240, 255, 0.3)';">
-                    🎮 Pong'a Davet Et
+                    🎮 ${i18n.t('invite_to_pong')}
                 </button>
                 ` : ''}
             </div>
@@ -1195,7 +1179,7 @@ class ChatPage implements Page {
                 
                 ${isBlocked ? `
                     <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <p class="text-red-700 text-sm text-center">Bu kullanıcıyı engelledin</p>
+                        <p class="text-red-700 text-sm text-center">${i18n.t('user_blocked')}</p>
                     </div>
                 ` : ''}
             </div>
@@ -1277,11 +1261,11 @@ class ChatPage implements Page {
                             </div>
                             <div class="user-status" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>${hasExistingChat && lastMessage ?
-                            (lastMessage.type === 'game_invite' ? 'Game invite' : ChatPage.escapeHtml(lastMessage.message)) :
-                            'New chat'
+                            (lastMessage.type === 'game_invite' ? i18n.t('game_invite') : ChatPage.escapeHtml(lastMessage.message)) :
+                            i18n.t('new_chat')
                         }</span>
                                 <span style="font-size: 0.75rem; color: ${isOnline ? 'var(--neon-green)' : 'rgba(255, 255, 255, 0.4)'};">
-                                    ${isOnline ? '● Online' : '○ Offline'}
+                                    ${isOnline ? '● ' + i18n.t('online') : '○ ' + i18n.t('offline')}
                                 </span>
                             </div>
                         </div>
@@ -1300,8 +1284,6 @@ class ChatPage implements Page {
     }
 
     static updateChatsList() {
-        console.log('🔄 updateChatsList called');
-        console.log('📊 Current userChats keys:', Object.keys(ChatPage.userChats));
         
         const chatsList = document.getElementById("chatsList");
         if (chatsList) {
@@ -1311,10 +1293,8 @@ class ChatPage implements Page {
                 return new Date(lastMessageB).getTime() - new Date(lastMessageA).getTime();
             });
 
-            console.log(`📋 Sorted chat users (${chatUsers.length}):`, chatUsers);
 
             if (chatUsers.length === 0) {
-                console.log('⚠️ No chat users found, showing empty state');
                 chatsList.innerHTML = `
                 <div style="text-align: center; color: rgba(255, 255, 255, 0.5); padding: 2rem;">
                     <p data-i18n="no_chats_yet">No chats yet</p>
@@ -1324,7 +1304,6 @@ class ChatPage implements Page {
                 return;
             }
 
-            console.log('✅ Rendering chat list with users:', chatUsers);
 
             const avatarPromises = chatUsers.map(user => {
                 if (!ChatPage.userAvatars[user]) {
@@ -1340,7 +1319,6 @@ class ChatPage implements Page {
                     const isOnline = ChatPage.onlineUsers.includes(user);
                     const lastMessage = ChatPage.userChats[user]?.[ChatPage.userChats[user].length - 1];
                     const unreadCount = ChatPage.unreadCounts[user] || 0;
-                    console.log(`User: ${user}, isOnline: ${isOnline}, onlineUsers:`, ChatPage.onlineUsers);
                     const avatarHtml = ChatPage.getAvatarHtml(user, isOnline, 48);
 
                     return `
@@ -1348,13 +1326,13 @@ class ChatPage implements Page {
                         ${avatarHtml}
                         <div class="user-info">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-                                <div class="user-name">${safeUser}</div>
+                                <div class="user-name" style="cursor: pointer;" title="Çift tıklayarak profil görüntüle">${safeUser}</div>
                                 ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : ''}
                             </div>
                             <div class="user-status" style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span>${lastMessage ? (lastMessage.type === 'game_invite' ? 'Game invite' : (ChatPage.escapeHtml(lastMessage.message || '').substring(0, 30) + '...')) : 'New chat'}</span>
+                                <span>${lastMessage ? (lastMessage.type === 'game_invite' ? i18n.t('game_invite') : (ChatPage.escapeHtml(lastMessage.message || '').substring(0, 30) + '...')) : i18n.t('new_chat')}</span>
                                 <span style="font-size: 0.75rem; color: ${isOnline ? 'var(--neon-green)' : 'rgba(255, 255, 255, 0.4)'};">
-                                    ${isOnline ? '● Online' : '○ Offline'}
+                                    ${isOnline ? '● ' + i18n.t('online') : '○ ' + i18n.t('offline')}
                                 </span>
                             </div>
                         </div>
@@ -1363,12 +1341,144 @@ class ChatPage implements Page {
                 }).join('');
                 
                 document.querySelectorAll('.user-item[data-username]').forEach(item => {
+                    const username = (item as HTMLElement).dataset.username;
+                    
                     item.addEventListener('click', () => {
-                        const username = (item as HTMLElement).dataset.username;
                         if (username) ChatPage.startChatWith(username);
+                    });
+                    
+                    item.addEventListener('dblclick', async () => {
+                        if (username) await ChatPage.showUserProfile(username);
                     });
                 });
             });
+        }
+    }
+
+    static async showUserProfile(username: string) {
+        const isOnline = ChatPage.onlineUsers.includes(username);
+        const avatar = ChatPage.getAvatarHtml(username, isOnline, 64);
+        
+        let stats = { wins: 0, losses: 0, totalMatches: 0, winRate: 0 };
+        let displayUsername = username;
+        
+        try {
+            
+            const userIdResponse = await fetch(`${FETCH_ADDRESS}/user/getUserId/${username}`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (userIdResponse.ok) {
+                const userIdData = await userIdResponse.json();
+                
+                if (userIdData.success && userIdData.userId) {
+                    
+                    const statsResponse = await fetch(`${FETCH_ADDRESS}/user/other/${userIdData.userId}/detailed-stats`, {
+                        method: 'GET',
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    
+                    if (statsResponse.ok) {
+                        const statsData = await statsResponse.json();
+                        
+                        if (statsData.success && statsData.stats) {
+                            const userStats = statsData.stats;
+                            const totalMatches = (userStats.wins || 0) + (userStats.losses || 0);
+                            const winRate = totalMatches > 0 ? Math.round(((userStats.wins || 0) / totalMatches) * 100) : 0;
+                            
+                            stats = {
+                                wins: userStats.wins || 0,
+                                losses: userStats.losses || 0,
+                                totalMatches: totalMatches,
+                                winRate: winRate
+                            };
+                            
+                        } else {
+                        }
+                    } else {
+                    }
+                } else {
+                }
+            } else {
+            }
+        } catch (error) {
+        }
+        
+        const modal = document.createElement('div');
+        modal.id = 'profileModal';
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7); display: flex; align-items: center; 
+            justify-content: center; z-index: 9999; backdrop-filter: blur(5px);
+        `;
+        
+        modal.innerHTML = `
+            <div style="background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 2rem; border-radius: 16px; max-width: 400px; width: 90%; border: 1px solid rgba(0, 240, 255, 0.3); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                    ${avatar}
+                    <div>
+                        <h3 style="margin: 0; color: white; font-size: 1.25rem; font-weight: 600;">${ChatPage.escapeHtml(username)}</h3>
+                        <p style="margin: 0.5rem 0 0 0; color: ${isOnline ? 'var(--neon-green)' : 'rgba(255, 255, 255, 0.6)'}; display: flex; align-items: center; gap: 0.5rem; font-weight: 500;">
+                            <span style="display: inline-block; width: 10px; height: 10px; background: ${isOnline ? 'var(--neon-green)' : 'rgba(255, 255, 255, 0.4)'}; border-radius: 50%; ${isOnline ? 'box-shadow: 0 0 8px var(--neon-green);' : ''}"></span>
+                            ${isOnline ? i18n.t('online') : i18n.t('offline')}
+                        </p>
+                    </div>
+                </div>
+                
+                <div style="background: rgba(255, 255, 255, 0.05); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <h4 style="margin: 0 0 0.75rem 0; color: var(--neon-cyan); font-size: 1rem; font-weight: 600;">📊 ${i18n.t('stats')}</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; color: rgba(255, 255, 255, 0.8); font-size: 0.9rem;">
+                        <div style="text-align: center; padding: 0.5rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                            <div style="color: var(--neon-green); font-weight: 600; font-size: 1.1rem;">${stats.wins || 0}</div>
+                            <div>${i18n.t('wins')}</div>
+                        </div>
+                        <div style="text-align: center; padding: 0.5rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                            <div style="color: #ff6b6b; font-weight: 600; font-size: 1.1rem;">${stats.losses || 0}</div>
+                            <div>${i18n.t('losses')}</div>
+                        </div>
+                        <div style="text-align: center; padding: 0.5rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                            <div style="color: var(--neon-cyan); font-weight: 600; font-size: 1.1rem;">${stats.totalMatches || 0}</div>
+                            <div>${i18n.t('total_matches')}</div>
+                        </div>
+                        <div style="text-align: center; padding: 0.5rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                            <div style="color: #ffd93d; font-weight: 600; font-size: 1.1rem;">${stats.winRate || 0}%</div>
+                            <div>${i18n.t('win_rate')}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: center;">
+                    <button onclick="ChatPage.closeProfileModal()" 
+                            style="background: linear-gradient(135deg, var(--neon-cyan), var(--neon-green)); color: white; border: none; padding: 0.75rem 2rem; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3); transition: all 0.3s;"
+                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0, 240, 255, 0.4)';"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 240, 255, 0.3)';">
+                        ${i18n.t('close')}
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) ChatPage.closeProfileModal();
+        });
+        
+        document.body.appendChild(modal);
+    }
+
+    static closeProfileModal() {
+        const modal = document.getElementById('profileModal');
+        if (modal) {
+            modal.remove();
+            document.body.style.filter = '';
+            document.body.style.overflow = '';
         }
     }
 
@@ -1447,8 +1557,8 @@ class ChatPage implements Page {
                 inviteDiv.innerHTML = `
                 <div class="bg-green-50 border border-green-200 rounded-xl p-4 max-w-sm">
                     <div class="text-center">
-                        <div class="text-green-600 font-semibold mb-2">Game Invite Sent</div>
-                        <div class="text-sm text-green-700">You sent a Pong invite to ${safeUsername}</div>
+                        <div class="text-green-600 font-semibold mb-2">${i18n.t('game_invite_sent')}</div>
+                        <div class="text-sm text-green-700">${i18n.t('you_sent_pong_invite')} ${safeUsername}</div>
                     </div>
                 </div>
             `;
@@ -1456,8 +1566,8 @@ class ChatPage implements Page {
                 inviteDiv.innerHTML = `
                 <div class="bg-green-50 border border-green-200 rounded-xl p-4 max-w-sm">
                     <div class="text-center">
-                        <div class="text-green-600 font-semibold mb-2">Game Invite</div>
-                        <div class="text-sm text-green-700 mb-3">${safeUsername} invites you to a Pong match!</div>
+                        <div class="text-green-600 font-semibold mb-2">${i18n.t('game_invite')}</div>
+                        <div class="text-sm text-green-700 mb-3">${safeUsername} ${i18n.t('invites_you_to_pong')}</div>
                         <div class="flex gap-2">
                             <button data-username="${safeUsername}" data-action="accept" 
                                     class="game-invite-btn flex-1 bg-green-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-600 transition duration-200">
@@ -1720,7 +1830,6 @@ class ChatPage implements Page {
 
     static handleGameInvite(data: any) {
         if (data.sent) {
-            console.log('Game invite sent:', data);
             return;
         }
 
@@ -1752,11 +1861,11 @@ class ChatPage implements Page {
                 <div style="display: flex; gap: 0.5rem;">
                     <button onclick="ChatPage.acceptGameInvite('${inviteId}', '${notificationId}')" 
                             style="flex: 1; padding: 0.5rem 1rem; background: var(--neon-green); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                        Kabul Et
+                        ${i18n.t('accept')}
                     </button>
                     <button onclick="ChatPage.declineGameInvite('${inviteId}', '${notificationId}')" 
                             style="flex: 1; padding: 0.5rem 1rem; background: rgba(255, 0, 0, 0.7); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                        Reddet
+                        ${i18n.t('decline')}
                     </button>
                 </div>
             </div>
