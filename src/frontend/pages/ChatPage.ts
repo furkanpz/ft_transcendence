@@ -9,7 +9,6 @@ class ChatPage implements Page {
     title: string = "Live Chat";
     static onlineUsers: string[] = [];
     static allUsers: string[] = [];
-    static blockedUsers: string[] = [];
     static chatHistory: any[] = [];
     static activeChatUser: string | null = null;
     static userChats: { [key: string]: any[] } = {};
@@ -298,17 +297,6 @@ class ChatPage implements Page {
 
     async onLoad(): Promise<void> {
         ChatPage.activeChatUser = null;
-        
-        try {
-            const response = await fetch(`${FETCH_ADDRESS}/user/friends/block`, {
-                credentials: 'include'
-            });
-            if (response.ok) {
-                const data = await response.json();
-                ChatPage.blockedUsers = data.blockedUsers || data || [];
-            }
-        } catch (error) {
-        }
 
         await ChatPage.loadFriendsList();
         await ChatPage.loadAllUsers();
@@ -552,25 +540,23 @@ class ChatPage implements Page {
                                 }
                             }
                             
-                            if (!ChatPage.blockedUsers.includes(foundUser)) {
-                                if (ChatPage.activeChatUser === foundUser) {
-                                    ChatPage.addMessageToActiveChat(senderUsername, msgData.message, 'received');
-                                } else {
-                                    ChatPage.unreadCounts[foundUser] = (ChatPage.unreadCounts[foundUser] || 0) + 1;
-                                    if (!ChatPage.userChats[foundUser]) {
-                                        ChatPage.userChats[foundUser] = [];
-                                    }
-                                    ChatPage.userChats[foundUser].push({
-                                        sender: senderUsername,
-                                        message: msgData.message,
-                                        type: 'received',
-                                        timestamp: new Date(msgData.timestamp),
-                                        messageType: 'text'
-                                    });
-
-                                    ChatPage.updateChatsList();
-                                    i18n.translateDOM();
+                            if (ChatPage.activeChatUser === foundUser) {
+                                ChatPage.addMessageToActiveChat(senderUsername, msgData.message, 'received');
+                            } else {
+                                ChatPage.unreadCounts[foundUser] = (ChatPage.unreadCounts[foundUser] || 0) + 1;
+                                if (!ChatPage.userChats[foundUser]) {
+                                    ChatPage.userChats[foundUser] = [];
                                 }
+                                ChatPage.userChats[foundUser].push({
+                                    sender: senderUsername,
+                                    message: msgData.message,
+                                    type: 'received',
+                                    timestamp: new Date(msgData.timestamp),
+                                    messageType: 'text'
+                                });
+
+                                ChatPage.updateChatsList();
+                                i18n.translateDOM();
                             }
                         }
                         break;
@@ -819,11 +805,6 @@ class ChatPage implements Page {
         const message = messageInput.value.trim();
         if (!message) return;
 
-        if (ChatPage.blockedUsers.includes(ChatPage.activeChatUser)) {
-            ChatPage.addSystemMessage((window as any).i18n.t('user_blocked_by_you_warning'));
-            return;
-        }
-
         const roomId = ChatPage.userRoomIds[ChatPage.activeChatUser];
         const socket = GlobalState.getSocket();
 
@@ -973,16 +954,10 @@ class ChatPage implements Page {
                 </button>
             </div>
             
-            ${!ChatPage.blockedUsers.includes(safeUsername) ? `
-                <button id="blockUserBtn" data-username="${safeUsername}"
-                        class="w-full bg-red-500 text-white px-4 py-3 rounded-lg hover:bg-red-600 transition duration-200 font-semibold">
-                    🚫 ${(window as any).i18n.t('block_user') || 'Block User'}
-                </button>
-            ` : `
-                <div class="w-full p-3 bg-red-50 border border-red-200 rounded-lg text-center">
-                    <span class="text-red-700 text-sm">${(window as any).i18n.t('user_blocked_by_you_warning') || 'You have blocked this user.'}</span>
-                </div>
-            `}
+            <button id="blockUserBtn" data-username="${safeUsername}"
+                    class="w-full bg-red-500 text-white px-4 py-3 rounded-lg hover:bg-red-600 transition duration-200 font-semibold">
+                🚫 ${(window as any).i18n.t('block_user') || 'Block User'}
+            </button>
         </div>
     `;
         document.body.appendChild(modal);
@@ -1049,6 +1024,17 @@ class ChatPage implements Page {
     static async startChatWith(username: string) {
         ChatPage.activeChatUser = username;
 
+        const messageInput = document.getElementById("messageInput") as HTMLInputElement;
+        const sendButton = document.getElementById("sendButton") as HTMLButtonElement;
+        
+        if (messageInput) {
+            messageInput.disabled = false;
+            messageInput.placeholder = i18n.t('type_message');
+        }
+        if (sendButton) {
+            sendButton.disabled = false;
+        }
+
         ChatPage.updateChatHeader();
         ChatPage.updateChatsList();
 
@@ -1063,39 +1049,9 @@ class ChatPage implements Page {
 
         ChatPage.unreadCounts[username] = 0;
         ChatPage.updateChatsList();
-
-        if (ChatPage.blockedUsers.includes(username)) {
-            ChatPage.disableChatInput();
-        } else {
-            ChatPage.enableChatInput();
-        }
     }
 
-    static disableChatInput() {
-        const messageInput = document.getElementById("messageInput") as HTMLInputElement;
-        const sendButton = document.getElementById("sendButton") as HTMLButtonElement;
-        const messageForm = document.getElementById("messageForm") as HTMLFormElement;
 
-        if (messageInput && sendButton && messageForm) {
-            messageInput.disabled = true;
-            messageInput.placeholder = i18n.t('user_blocked');
-            sendButton.disabled = true;
-            messageForm.style.opacity = "0.5";
-        }
-    }
-
-    static enableChatInput() {
-        const messageInput = document.getElementById("messageInput") as HTMLInputElement;
-        const sendButton = document.getElementById("sendButton") as HTMLButtonElement;
-        const messageForm = document.getElementById("messageForm") as HTMLFormElement;
-
-        if (messageInput && sendButton && messageForm) {
-            messageInput.disabled = false;
-            messageInput.placeholder = i18n.t('type_message');
-            sendButton.disabled = false;
-            messageForm.style.opacity = "1";
-        }
-    }
 
     static async updateChatHeader() {
         const chatHeader = document.getElementById("chatHeader");
@@ -1103,7 +1059,7 @@ class ChatPage implements Page {
             const isOnline = ChatPage.onlineUsers.includes(ChatPage.activeChatUser);
             const statusText = isOnline ? 'Online' : 'Offline';
             const statusColor = isOnline ? 'var(--neon-green)' : 'rgba(255, 255, 255, 0.4)';
-            const isBlocked = ChatPage.blockedUsers.includes(ChatPage.activeChatUser);
+
 
             if (!ChatPage.userAvatars[ChatPage.activeChatUser]) {
                 await ChatPage.fetchUserAvatar(ChatPage.activeChatUser);
@@ -1125,7 +1081,7 @@ class ChatPage implements Page {
                         </p>
                     </div>
                 </div>
-                ${!isBlocked && isOnline ? `
+                ${isOnline ? `
                 <button onclick="ChatPage.inviteToGame('${ChatPage.activeChatUser}')" 
                         style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan)); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);"
                         onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0, 240, 255, 0.4)';"
@@ -1406,14 +1362,12 @@ class ChatPage implements Page {
                 </div>
 
                 <div style="display: flex; justify-content: center; gap: 1rem;">
-                    ${!ChatPage.blockedUsers.includes(username) ? `
-                        <button onclick="ChatPage.blockUser('${username}'); ChatPage.closeProfileModal();" 
-                                style="background: linear-gradient(135deg, #ff4444, #cc0000); color: white; border: none; padding: 0.75rem 2rem; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 15px rgba(255, 68, 68, 0.3); transition: all 0.3s;"
-                                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(255, 68, 68, 0.4)';"
-                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(255, 68, 68, 0.3)';">
-                            🚫 ${i18n.t('block_user')}
-                        </button>
-                    ` : ''}
+                    <button onclick="ChatPage.blockUser('${username}'); ChatPage.closeProfileModal();" 
+                            style="background: linear-gradient(135deg, #ff4444, #cc0000); color: white; border: none; padding: 0.75rem 2rem; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 15px rgba(255, 68, 68, 0.3); transition: all 0.3s;"
+                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(255, 68, 68, 0.4)';"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(255, 68, 68, 0.3)';">
+                        🚫 ${i18n.t('block_user')}
+                    </button>
                     <button onclick="ChatPage.closeProfileModal()" 
                             style="background: linear-gradient(135deg, var(--neon-cyan), var(--neon-green)); color: white; border: none; padding: 0.75rem 2rem; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3); transition: all 0.3s;"
                             onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0, 240, 255, 0.4)';"
