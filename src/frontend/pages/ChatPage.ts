@@ -393,11 +393,8 @@ class ChatPage implements Page {
                 } else {
                     
                 }
-            } else {
-                console.error(`❌ Avatar fetch failed for ${username}: ${response.status}`);
             }
         } catch (error) {
-            console.error(`Failed to fetch avatar for ${username}:`, error);
         }
 
         return null;
@@ -712,23 +709,42 @@ class ChatPage implements Page {
                         break;
 
                     case 'error':
-                        ChatPage.addSystemMessage(`Hata: ${data.data?.message || 'Bilinmeyen hata'}`);
+                        const errorMessage = data.data?.message || (window as any).i18n.t('unknown_error');
+                        
+
+                        if (errorMessage.toLowerCase().includes('access denied') || 
+                            errorMessage.toLowerCase().includes('denied') ||
+                            errorMessage.toLowerCase().includes('blocked')) {
+                            
+                            const warningMessage = (window as any).i18n.getLanguage() === 'tr' 
+                                ? `❌ ${ChatPage.activeChatUser || 'Bu kullanıcı'} sizi engellemiş. Sayfa yenileniyor...`
+                                : `❌ ${ChatPage.activeChatUser || 'This user'} has blocked you. Refreshing page...`;
+                                
+                            ChatPage.addSystemMessage(warningMessage);
+                            
+
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 2000)
+                        } else {
+                            ChatPage.addSystemMessage(`${(window as any).i18n.t('error_prefix')}: ${errorMessage}`);
+                        }
                         break;
                 }
             };
 
             socket.onclose = (event) => {
                 if (!event.wasClean) {
-                    Notification.error('Unable to connect to chat service. Please check your internet connection and try again.', 8000);
+                    Notification.error((window as any).i18n.t('unable_to_connect_chat'), 8000);
                 }
             };
 
             socket.onerror = (error) => {
-                Notification.error('Failed to establish chat connection. Please refresh the page to reconnect.', 8000);
+                Notification.error((window as any).i18n.t('failed_establish_connection'), 8000);
             };
 
         } catch (error) {
-            Notification.error('Chat service is currently unavailable. Please try again later.', 8000);
+            Notification.error((window as any).i18n.t('chat_service_unavailable'), 8000);
         }
     }
 
@@ -776,7 +792,7 @@ class ChatPage implements Page {
                                 
                             }
                         } catch (historyError) {
-                            console.error(`❌ Error loading history for room ${room.id}:`, historyError);
+
                         }
 
                         if (!ChatPage.allUsers.includes(username)) {
@@ -788,7 +804,6 @@ class ChatPage implements Page {
                 ChatPage.updateChatsList();
             }
         } catch (error) {
-            console.error('❌ Error loading existing chats:', error);
         }
     }
 
@@ -797,7 +812,7 @@ class ChatPage implements Page {
         const messageInput = document.getElementById("messageInput") as HTMLInputElement;
 
         if (!ChatPage.activeChatUser) {
-            ChatPage.addSystemMessage('Lütfen bir kullanıcı seçin');
+            ChatPage.addSystemMessage((window as any).i18n.t('please_select_user'));
             return;
         }
 
@@ -805,7 +820,7 @@ class ChatPage implements Page {
         if (!message) return;
 
         if (ChatPage.blockedUsers.includes(ChatPage.activeChatUser)) {
-            ChatPage.addSystemMessage(`${ChatPage.activeChatUser} kullanıcısı bloklanmış. Mesaj gönderilemez.`);
+            ChatPage.addSystemMessage((window as any).i18n.t('user_blocked_by_you_warning'));
             return;
         }
 
@@ -813,17 +828,17 @@ class ChatPage implements Page {
         const socket = GlobalState.getSocket();
 
         if (!roomId) {
-            ChatPage.addSystemMessage('Oda hazırlanıyor, lütfen bekleyin...');
+            ChatPage.addSystemMessage((window as any).i18n.t('room_preparing'));
 
             const createdRoomId = await ChatPage.createOrJoinPrivateRoom(ChatPage.activeChatUser);
             if (!createdRoomId) {
-                ChatPage.addSystemMessage('Oda oluşturulamadı. Lütfen tekrar deneyin.');
+                ChatPage.addSystemMessage((window as any).i18n.t('room_creation_failed'));
                 return;
             }
         }
 
         if (!socket || socket.readyState !== WebSocket.OPEN) {
-            ChatPage.addSystemMessage('WebSocket bağlantısı yok. Sayfa yenileniyor...');
+            ChatPage.addSystemMessage((window as any).i18n.t('websocket_disconnected'));
 
             ChatPage.connectWebSocket();
 
@@ -834,7 +849,7 @@ class ChatPage implements Page {
 
         const finalRoomId = ChatPage.userRoomIds[ChatPage.activeChatUser];
         if (!finalRoomId) {
-            ChatPage.addSystemMessage('Oda ID bulunamadı. Lütfen kullanıcıyı tekrar seçin.');
+            ChatPage.addSystemMessage((window as any).i18n.t('room_id_not_found'));
             return;
         }
 
@@ -850,54 +865,52 @@ class ChatPage implements Page {
             ChatPage.addMessageToActiveChat(i18n.t('you'), message, 'sent');
             messageInput.value = '';
         } catch (error) {
-            ChatPage.addSystemMessage('Mesaj gönderilemedi. Lütfen tekrar deneyin.');
+            ChatPage.addSystemMessage((window as any).i18n.t('message_send_failed'));
         }
     }
 
     static async blockUser(username: string) {
-        if (confirm(`${username} kullanıcısını engellemek istediğinizden emin misiniz? Engellediğinizde birbirinize mesaj gönderemezsiniz.`)) {
+        const confirmMessage = (window as any).i18n.getLanguage() === 'tr' 
+            ? `${username} kullanıcısını engellemek istediğinizden emin misiniz? Engellediğinizde birbirinize mesaj gönderemezsiniz.`
+            : `Are you sure you want to block ${username}? You won't be able to send messages to each other.`;
+        
+        if (confirm(confirmMessage)) {
             try {
+
+                const userIdResponse = await fetch(`${FETCH_ADDRESS}/user/getUserId/${username}`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (!userIdResponse.ok) {
+                    ChatPage.addSystemMessage((window as any).i18n.t('user_not_found'));
+                    return;
+                }
+
+                const userIdData = await userIdResponse.json();
+                if (!userIdData.success || !userIdData.userId) {
+                    ChatPage.addSystemMessage((window as any).i18n.t('user_id_failed'));
+                    return;
+                }
+
+
                 const response = await fetch(`${FETCH_ADDRESS}/user/friends/block`, {
                     method: 'POST',
                     credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username })
+                    body: JSON.stringify({ blocked_id: userIdData.userId })
                 });
 
                 if (response.ok) {
-                    ChatPage.blockedUsers.push(username);
-                    ChatPage.addSystemMessage(`${username} kullanıcısı engellendi.`);
-                    ChatPage.updateChatsList();
-                    ChatPage.updateUserInfoPanel();
 
-                    if (ChatPage.activeChatUser === username) {
-                        ChatPage.disableChatInput();
-                    }
+                    window.location.reload();
+                } else {
+                    const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+                    ChatPage.addSystemMessage(`${(window as any).i18n.t('block_failed')}: ${errorData.message || response.status}`);
                 }
             } catch (error) {
-                ChatPage.addSystemMessage('Engelleme işlemi başarısız.');
+                ChatPage.addSystemMessage((window as any).i18n.t('block_operation_failed'));
             }
-        }
-    }
-
-    static async unblockUser(username: string) {
-        try {
-            const response = await fetch(`${FETCH_ADDRESS}/user/friends/block/${username}`, {
-                method: 'DELETE',
-                credentials: 'include'
-            }); 
-            if (response.ok) {
-                ChatPage.blockedUsers = ChatPage.blockedUsers.filter(user => user !== username);
-                ChatPage.addSystemMessage(`${username} kullanıcısının engeli kaldırıldı.`);
-                ChatPage.updateChatsList();
-                ChatPage.updateUserInfoPanel();
-
-                if (ChatPage.activeChatUser === username) {
-                    ChatPage.enableChatInput();
-                }
-            }
-        } catch (error) {
-            ChatPage.addSystemMessage('Engel kaldırma işlemi başarısız.');
         }
     }
 
@@ -910,10 +923,10 @@ class ChatPage implements Page {
                 const profile = await response.json();
                 ChatPage.showProfileModal(profile);
             } else {
-                ChatPage.addSystemMessage('Profil yüklenemedi.');
+                ChatPage.addSystemMessage((window as any).i18n.t('profile_load_failed'));
             }
         } catch (error) {
-            ChatPage.addSystemMessage('Profil yüklenemedi.');
+            ChatPage.addSystemMessage((window as any).i18n.t('profile_load_failed'));
         }
     }
 
@@ -949,16 +962,27 @@ class ChatPage implements Page {
                 </div>
             </div>
             
-            <div class="flex gap-3">
+            <div class="flex gap-3 mb-3">
                 <button id="sendMessageBtn" data-username="${safeUsername}"
                         class="flex-1 bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-600 transition duration-200 font-semibold">
-                    Send Message
+                    ${(window as any).i18n.t('send') || 'Send Message'}
                 </button>
                 <button id="inviteGameBtn" data-username="${safeUsername}"
                         class="flex-1 bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 transition duration-200 font-semibold">
-                    Invite to Game
+                    ${(window as any).i18n.t('invite_to_pong') || 'Invite to Game'}
                 </button>
             </div>
+            
+            ${!ChatPage.blockedUsers.includes(safeUsername) ? `
+                <button id="blockUserBtn" data-username="${safeUsername}"
+                        class="w-full bg-red-500 text-white px-4 py-3 rounded-lg hover:bg-red-600 transition duration-200 font-semibold">
+                    🚫 ${(window as any).i18n.t('block_user') || 'Block User'}
+                </button>
+            ` : `
+                <div class="w-full p-3 bg-red-50 border border-red-200 rounded-lg text-center">
+                    <span class="text-red-700 text-sm">${(window as any).i18n.t('user_blocked_by_you_warning') || 'You have blocked this user.'}</span>
+                </div>
+            `}
         </div>
     `;
         document.body.appendChild(modal);
@@ -978,14 +1002,18 @@ class ChatPage implements Page {
                 modal.remove();
             }
         });
+        modal.querySelector('#blockUserBtn')?.addEventListener('click', () => {
+            const username = (modal.querySelector('#blockUserBtn') as HTMLElement)?.dataset.username;
+            if (username) {
+                ChatPage.blockUser(username);
+                modal.remove();
+            }
+        });
     }
 
     static async createOrJoinPrivateRoom(username: string): Promise<string | null> {
         try {
-            const currentUser = ChatPage.getCurrentUsername();
-            const users = [currentUser, username].sort();
-            const roomName = `private_${users[0]}_${users[1]}`;
-            
+
             const roomsResponse = await fetch(`${FETCH_ADDRESS}/chat/rooms`, {
                 credentials: 'include'
             });
@@ -1009,14 +1037,11 @@ class ChatPage implements Page {
                         return room.id;
                     }
                 }
-            } else {
-                console.error(`❌ Failed to fetch rooms: ${roomsResponse.status}`);
             }
 
-            ChatPage.addSystemMessage('Sadece arkadaşlarla özel sohbet mümkündür. Arkadaş olunca sohbet odası otomatik oluşur.');
+            ChatPage.addSystemMessage((window as any).i18n.t('friends_only_chat'));
             return null;
         } catch (error) {
-            console.error(`❌ createOrJoinPrivateRoom error:`, error);
             return null;
         }
     }
@@ -1026,12 +1051,11 @@ class ChatPage implements Page {
 
         ChatPage.updateChatHeader();
         ChatPage.updateChatsList();
-        ChatPage.updateUserInfoPanel();
 
         const roomId = await ChatPage.createOrJoinPrivateRoom(username);
 
         if (!roomId) {
-            ChatPage.addSystemMessage('Oda oluşturulamadı. Lütfen tekrar deneyin.');
+            ChatPage.addSystemMessage((window as any).i18n.t('room_creation_failed'));
         }
 
         ChatPage.loadChatMessages(username);
@@ -1118,81 +1142,7 @@ class ChatPage implements Page {
         }
     }
 
-    static toggleUserInfoPanel() {
-        const userInfoPanel = document.getElementById("userInfoPanel");
-        if (userInfoPanel) {
-            userInfoPanel.classList.toggle('hidden');
-        }
-    }
 
-    static updateUserInfoPanel() {
-        const userInfoPanel = document.getElementById("userInfoPanel");
-        if (userInfoPanel && ChatPage.activeChatUser) {
-            const isBlocked = ChatPage.blockedUsers.includes(ChatPage.activeChatUser);
-
-            userInfoPanel.innerHTML = `
-            <div class="p-6">
-                <div class="text-center mb-6">
-                    <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-3">
-                        ${ChatPage.activeChatUser.charAt(0).toUpperCase()}
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-800">${ChatPage.activeChatUser}</h3>
-                    <p class="text-gray-600 text-sm">Galibiyet/Mağlubiyet: 5/2</p>
-                </div>
-                
-                <div class="space-y-3 mb-6">
-                    <button onclick="ChatPage.viewProfile('${ChatPage.activeChatUser}')" 
-                            class="w-full bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-600 transition duration-200 font-semibold">
-                        👤 Profili Görüntüle
-                    </button>
-                    
-                    ${!isBlocked ? `
-                        <button onclick="ChatPage.inviteToGame('${ChatPage.activeChatUser}')" 
-                                class="w-full bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 transition duration-200 font-semibold flex items-center justify-center">
-                            🎮 Pong Oynamaya Davet Et
-                        </button>
-                    ` : ''}
-                </div>
-                
-                <div class="border-t pt-4">
-                    <div class="relative">
-                        <button onclick="ChatPage.toggleOptionsMenu()" class="flex items-center text-gray-600 hover:text-gray-800 transition duration-200">
-                            <span class="text-xl mr-2">⋮</span>
-                            Daha Fazla Seçenek
-                        </button>
-                        
-                        <div id="optionsMenu" class="hidden absolute top-full left-0 mt-2 w-full bg-white border rounded-lg shadow-lg z-10">
-                            ${!isBlocked ? `
-                                <button onclick="ChatPage.blockUser('${ChatPage.activeChatUser}')" 
-                                        class="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition duration-200">
-                                    🚫 Kullanıcıyı Engelle
-                                </button>
-                            ` : `
-                                <button onclick="ChatPage.unblockUser('${ChatPage.activeChatUser}')" 
-                                        class="w-full text-left px-4 py-3 text-green-600 hover:bg-green-50 transition duration-200">
-                                    ✅ Engeli Kaldır
-                                </button>
-                            `}
-                        </div>
-                    </div>
-                </div>
-                
-                ${isBlocked ? `
-                    <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <p class="text-red-700 text-sm text-center">${i18n.t('user_blocked')}</p>
-                    </div>
-                ` : ''}
-            </div>
-        `;
-        }
-    }
-
-    static toggleOptionsMenu() {
-        const optionsMenu = document.getElementById("optionsMenu");
-        if (optionsMenu) {
-            optionsMenu.classList.toggle('hidden');
-        }
-    }
 
     static async searchUsers() {
         const searchInput = document.getElementById("userSearchInput") as HTMLInputElement;
@@ -1231,7 +1181,7 @@ class ChatPage implements Page {
             if (users.length === 0) {
                 chatsList.innerHTML = `
                 <div class="text-center text-gray-500 py-8">
-                    <p>Kullanıcı bulunamadı</p>
+                    <p>${(window as any).i18n.t('user_not_found')}</p>
                 </div>
             `;
                 return;
@@ -1288,10 +1238,10 @@ class ChatPage implements Page {
         const chatsList = document.getElementById("chatsList");
         if (chatsList) {
             const chatUsers = Object.keys(ChatPage.userChats).sort((a, b) => {
-                const lastMessageA = ChatPage.userChats[a]?.[ChatPage.userChats[a].length - 1]?.timestamp || 0;
-                const lastMessageB = ChatPage.userChats[b]?.[ChatPage.userChats[b].length - 1]?.timestamp || 0;
-                return new Date(lastMessageB).getTime() - new Date(lastMessageA).getTime();
-            });
+                    const lastMessageA = ChatPage.userChats[a]?.[ChatPage.userChats[a].length - 1]?.timestamp || 0;
+                    const lastMessageB = ChatPage.userChats[b]?.[ChatPage.userChats[b].length - 1]?.timestamp || 0;
+                    return new Date(lastMessageB).getTime() - new Date(lastMessageA).getTime();
+                });
 
 
             if (chatUsers.length === 0) {
@@ -1455,7 +1405,15 @@ class ChatPage implements Page {
                     </div>
                 </div>
 
-                <div style="display: flex; justify-content: center;">
+                <div style="display: flex; justify-content: center; gap: 1rem;">
+                    ${!ChatPage.blockedUsers.includes(username) ? `
+                        <button onclick="ChatPage.blockUser('${username}'); ChatPage.closeProfileModal();" 
+                                style="background: linear-gradient(135deg, #ff4444, #cc0000); color: white; border: none; padding: 0.75rem 2rem; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 15px rgba(255, 68, 68, 0.3); transition: all 0.3s;"
+                                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(255, 68, 68, 0.4)';"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(255, 68, 68, 0.3)';">
+                            🚫 ${i18n.t('block_user')}
+                        </button>
+                    ` : ''}
                     <button onclick="ChatPage.closeProfileModal()" 
                             style="background: linear-gradient(135deg, var(--neon-cyan), var(--neon-green)); color: white; border: none; padding: 0.75rem 2rem; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3); transition: all 0.3s;"
                             onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0, 240, 255, 0.4)';"
@@ -1699,13 +1657,11 @@ class ChatPage implements Page {
 
             if (createRoomResponse.ok) {
                 const roomData = await createRoomResponse.json();
-
-                ChatPage.addSystemMessage(`Mesaj ${messageData.to} kullanıcısına gönderildi (room created)`);
             } else {
-                ChatPage.addSystemMessage('Mesaj gönderilemedi. Room oluşturulamadı.');
+                ChatPage.addSystemMessage((window as any).i18n.t('room_creation_failed'));
             }
         } catch (error) {
-            ChatPage.addSystemMessage('Mesaj gönderme hatası.');
+            ChatPage.addSystemMessage((window as any).i18n.t('message_error'));
         }
     }
 
@@ -1800,7 +1756,7 @@ class ChatPage implements Page {
     static inviteToGame(username: string) {
         const socket = GlobalState.getSocket();
         if (!socket || socket.readyState !== WebSocket.OPEN) {
-            Notification.error('Chat bağlantısı yok. Lütfen sayfayı yenileyin.', 3000);
+            Notification.error((window as any).i18n.t('chat_connection_lost'), 3000);
             return;
         }
 
@@ -1817,14 +1773,13 @@ class ChatPage implements Page {
                         toUsername: username
                     }
                 }));
-                Notification.success(`${username} kullanıcısına oyun daveti gönderildi!`, 3000);
+                Notification.success(`${username} ${(window as any).i18n.t('game_invite_sent_notification')}`, 3000);
             } else {
-                Notification.error('Kullanıcı bulunamadı.', 3000);
+                Notification.error((window as any).i18n.t('user_not_found'), 3000);
             }
         })
         .catch(error => {
-            console.error('Error getting user ID:', error);
-            Notification.error('Oyun daveti gönderilemedi.', 3000);
+            Notification.error((window as any).i18n.t('game_invite_send_failed'), 3000);
         });
     }
 
@@ -1890,7 +1845,7 @@ class ChatPage implements Page {
         
         const socket = GlobalState.getSocket();
         if (!socket || socket.readyState !== WebSocket.OPEN) {
-            Notification.error('Chat bağlantısı yok. Lütfen sayfayı yenileyin.', 3000);
+            Notification.error((window as any).i18n.t('chat_connection_lost'), 3000);
             return;
         }
 
@@ -1911,7 +1866,7 @@ class ChatPage implements Page {
         
         const socket = GlobalState.getSocket();
         if (!socket || socket.readyState !== WebSocket.OPEN) {
-            Notification.error('Chat bağlantısı yok. Lütfen sayfayı yenileyin.', 3000);
+            Notification.error((window as any).i18n.t('chat_connection_lost'), 3000);
             return;
         }
 
@@ -1923,7 +1878,7 @@ class ChatPage implements Page {
             }
         }));
         
-        Notification.info('Oyun daveti reddedildi.', 2000);
+        Notification.info((window as any).i18n.t('game_invite_declined'), 2000);
     }
 
     static handleGameInviteResponse(data: any) {
